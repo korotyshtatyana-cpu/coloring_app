@@ -1,0 +1,36 @@
+name: canvas
+description: Canvas feature with drawing tools
+version: 1.0.0
+
+environment:
+  sdk: ">=3.2.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  core:
+    path: ../../core
+  core_ui:
+    path: ../../core_ui
+  domain:
+    path: ../../domain
+  navigation:
+    path: ../../navigation
+
+  flutter_bloc: ^8.1.4
+  equatable: ^2.0.5
+  get_it: ^7.6.7
+  flutter_svg: ^2.0.9
+  image: ^4.2.0
+  screenshot: ^2.1.0
+  flutter_colorpicker: ^1.0.3
+  sliding_up_panel: ^2.0.0+1
+  share_plus: ^7.2.2
+  gallery_saver: ^2.3.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  auto_route_generator: ^10.6.0
+  build_runner: ^2.4.8

@@ -1,0 +1,30 @@
+name: navigation
+description: Navigation module with auto_route
+version: 1.0.0
+
+environment:
+  sdk: ">=3.2.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  auto_route: ^11.1.0
+
+  core:
+    path: ../core
+  auth:
+    path: ../features/auth
+  canvas:
+    path: ../features/canvas
+  gallery:
+    path: ../features/gallery
+  settings:
+    path: ../features/settings
+  flutter_bloc: ^8.1.4
+  equatable: ^2.0.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  auto_route_generator: ^10.6.0
+  build_runner: ^2.4.8

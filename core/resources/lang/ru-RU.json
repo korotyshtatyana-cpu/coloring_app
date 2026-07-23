@@ -1,0 +1,23 @@
+{
+  "app_title": "Coloring PRO",
+  "gallery": "Галерея",
+  "all": "Все",
+  "favorites": "Избронные",
+  "work_in_progress": "В процессе",
+  "categories": "Категории",
+  "brush_size": "Размер кисти",
+  "opacity": "Прозрачность",
+  "color": "Цвет",
+  "brushes": "Кисти",
+  "eraser": "Eraser",
+  "undo": "Вперед",
+  "redo": "Назад",
+  "contour": "Контур",
+  "settings": "Настройки",
+  "save": "Сохранить",
+  "share": "Поделиться",
+  "export": "Экспорт",
+  "loading": "Зашрузка...",
+  "error": "Что-то погло не так",
+  "retry": "Попробовать еще раз"
+}
