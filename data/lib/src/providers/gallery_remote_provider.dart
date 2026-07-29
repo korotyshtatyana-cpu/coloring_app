@@ -64,12 +64,14 @@ class GalleryRemoteProvider {
 
     final List<Map<String, dynamic>> response = await _client
         .from(RequestConstants.favoritesTable)
-        .select(RequestConstants.selectContourId)
+        .select(RequestConstants.selectAll) // Use selectAll to be safe
         .eq(RequestConstants.userIdColumn, user.id);
 
     return response
-        .map((Map<String, dynamic> row) =>
-            row[RequestConstants.contourIdColumn] as String)
+        .map(
+          (Map<String, dynamic> row) =>
+              row[RequestConstants.contourIdColumn] as String,
+        )
         .toList();
   }
 
@@ -80,25 +82,20 @@ class GalleryRemoteProvider {
       throw Exception(RequestConstants.userNotAuthenticated);
     }
 
-    final List<Map<String, dynamic>> existing = await _client
-        .from(RequestConstants.favoritesTable)
-        .select(RequestConstants.selectAll)
-        .eq(RequestConstants.userIdColumn, user.id)
-        .eq(RequestConstants.contourIdColumn, contourId);
-
-    if (existing.isEmpty) {
-      await _client
-          .from(RequestConstants.favoritesTable)
-          .insert(<String, dynamic>{
-        RequestConstants.userIdColumn: user.id,
-        RequestConstants.contourIdColumn: contourId,
-      });
-    } else {
-      await _client
-          .from(RequestConstants.favoritesTable)
-          .delete()
-          .eq(RequestConstants.userIdColumn, user.id)
-          .eq(RequestConstants.contourIdColumn, contourId);
+    try {
+      await _client.rpc(
+        RequestConstants.toggleFavoriteRpc,
+        params: {
+          RequestConstants.pUserId: user.id,
+          RequestConstants.pContourId: contourId,
+        },
+      );
+    } on PostgrestException catch (e) {
+      // Catch unique constraint violation (duplicate key) to handle race conditions.
+      // If the record was already created/deleted by another request, we consider it success.
+      if (e.code != RequestConstants.codeUniqueViolation) {
+        rethrow;
+      }
     }
   }
 }

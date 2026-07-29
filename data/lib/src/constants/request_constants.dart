@@ -28,6 +28,11 @@ abstract final class RequestConstants {
   static const String contourIdParam = 'contour_id';
   static const String onConflictUserContour = '(user_id, contour_id)';
 
+  // RPC functions and parameters
+  static const String toggleFavoriteRpc = 'toggle_favorite';
+  static const String pUserId = 'p_user_id';
+  static const String pContourId = 'p_contour_id';
+
   // Error messages
   static const String userNotAuthenticated = 'User not authenticated';
   static const String googleSignInAborted = 'Google sign in aborted';
@@ -38,6 +43,9 @@ abstract final class RequestConstants {
   static const String platformNotSupported = 'Platform is not supported';
   static const String silentSignInNotAvailable =
       'Silent sign-in is not available';
+
+  // Postgres error codes
+  static const String codeUniqueViolation = '23505';
 
   // Export file name
   static const String exportFilePrefix = 'coloring_pro';

@@ -161,10 +161,25 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
   ) async {
     try {
       await _toggleFavoriteUseCase.execute(event.contourId);
-      final favorites = await _getFavoriteIdsUseCase.execute();
-      emit(state.copyWith(favoriteIds: favorites));
+
+      final List<String> updatedFavorites = [...state.favoriteIds];
+      if (updatedFavorites.contains(event.contourId)) {
+        updatedFavorites.remove(event.contourId);
+      } else {
+        updatedFavorites.add(event.contourId);
+      }
+
+      emit(state.copyWith(favoriteIds: updatedFavorites));
     } catch (e, stackTrace) {
-      ErrorHandler.report(e, stackTrace);
+      ErrorHandler.handleError(e, stackTrace);
+      
+      // On error, re-sync from server to ensure state consistency
+      try {
+        final syncedFavorites = await _getFavoriteIdsUseCase.execute();
+        emit(state.copyWith(favoriteIds: syncedFavorites));
+      } catch (_) {
+        // If re-sync also fails, we at least showed the error dialog
+      }
     }
   }
 }
