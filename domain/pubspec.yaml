@@ -1,9 +1,10 @@
 name: domain
 description: Domain module with business logic
 version: 1.0.0
+publish_to: 'none'
 
 environment:
-  sdk: ">=3.2.0 <4.0.0"
+  sdk: ">=3.12.0 <4.0.0"
 
 dependencies:
   flutter:

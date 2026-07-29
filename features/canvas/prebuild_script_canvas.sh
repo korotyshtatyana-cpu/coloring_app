@@ -1,4 +1,9 @@
 #!/bin/bash
+set -e
+
+cd "$(dirname "$0")"
 
 flutter pub get
-flutter pub run build_runner build --delete-conflicting-outputs
+dart run build_runner build --delete-conflicting-outputs
+
+echo "Canvas prebuild completed!"

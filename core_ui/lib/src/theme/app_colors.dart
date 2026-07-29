@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 abstract class AppColors {
   factory AppColors.of(BuildContext context) {
     final Brightness brightness = Theme.of(context).brightness;
-    return brightness == Brightness.light ? const LightColors() : const DarkColors();
+    return brightness == Brightness.light
+        ? const LightColors()
+        : const DarkColors();
   }
 
   Color get primaryBg;
@@ -112,6 +114,7 @@ class LightColors implements AppColors {
   @override
   Color get averagePurple => const Color(0xFF7B35CA);
 
+  @override
   Color get neonTeal => const Color(0xFF05D6BA);
 
   @override

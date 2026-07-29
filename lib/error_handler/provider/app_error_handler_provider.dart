@@ -1,10 +1,16 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../error_handler.dart';
 
+import '../error_reporting.dart';
+
+/// Widget that installs global error handlers for the application.
 class AppErrorHandlerProvider extends StatefulWidget {
+  /// Child widget.
   final Widget child;
 
+  /// Creates an [AppErrorHandlerProvider].
   const AppErrorHandlerProvider({
     super.key,
     required this.child,
@@ -24,10 +30,15 @@ class _AppErrorHandlerProviderState extends State<AppErrorHandlerProvider> {
 
   void _setupErrorHandlers() {
     FlutterError.onError = (FlutterErrorDetails details) {
-      ErrorHandler.handleError(
+      ErrorReporting.report(
         details.exception,
         details.stack ?? StackTrace.current,
       );
+    };
+
+    PlatformDispatcher.instance.onError = (Object error, StackTrace stackTrace) {
+      ErrorReporting.report(error, stackTrace);
+      return true;
     };
 
     Bloc.observer = _AppBlocObserver();
@@ -42,7 +53,7 @@ class _AppErrorHandlerProviderState extends State<AppErrorHandlerProvider> {
 class _AppBlocObserver extends BlocObserver {
   @override
   void onError(BlocBase bloc, Object error, StackTrace stackTrace) {
-    ErrorHandler.handleError(error, stackTrace);
+    ErrorReporting.report(error, stackTrace);
     super.onError(bloc, error, stackTrace);
   }
 }

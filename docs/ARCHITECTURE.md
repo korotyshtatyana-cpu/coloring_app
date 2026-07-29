@@ -2,10 +2,20 @@
 
 ## Общая архитектура (Clean Architecture)
 
+Приложение разделено на Dart/Flutter модули (package), каждый со своим `pubspec.yaml`:
+`core`, `core_ui`, `domain`, `data`, `navigation`, `features/*`.
+
 ### Слои
 - **Presentation:** BLoC для управления состоянием, экраны и виджеты. BLoC создаются на уровне экрана через `BlocProvider`.
 - **Domain:** Чистая бизнес-логика. UseCases возвращают данные или выбрасывают исключения.
-- **Data:** Репозитории управляют логикой синхронизации. Состояние рисунка хранится локально в Drift для мгновенного отклика. Синхронизация с Supabase (весь JSON проекта) происходит при закрытии экрана или сворачивании приложения (AppLifecycleState.paused/inactive).
+- **Data:** Репозитории управляют логикой синхронизации. Состояние рисунка хранится локально в Drift для мгновенного отклика. Синхронизация с Supabase (JSON проекта) происходит при сохранении/автосохранении.
+
+### Точки входа
+Приложение не использует `lib/main.dart`. Вместо этого запуск выполняется через флейвор-специфичные точки входа:
+- `lib/main_dev.dart` — development-конфигурация (`Flavor.dev`).
+- `lib/main_prod.dart` — production-конфигурация (`Flavor.prod`).
+
+Обе точки входа делегируют общую инициализацию `main_common.dart`, который настраивает DI, локализацию и роутер.
 
 
 ## Модули и их ответственность
@@ -13,40 +23,37 @@
 ### core
 **Назначение:** Ядро приложения
 **Содержит:**
-- Локализация (easy_localization + генерация ключей)
-- Темы (светлая/темная)
-- Расширения для Flutter
-- Утилиты (константы, логгер)
-- Конфигурация (AppConfig, Flavor)
-- DI (appLocator, CoreDi)
+- Локализация (`easy_localization` + генерация ключей)
+- Утилиты (константы, логгер, `Result`)
+- Конфигурация (`AppConfig`, `Flavor`)
+- DI (`appLocator`, `CoreDi`)
 - Ресурсы: переводы в `resources/lang/`
 
 **Структура:**
 ```text
 core/lib/
-├── core.dart # Публичный API
-├── src/
-│ ├── config/
-│ │ └── app_config.dart # AppConfig с Flavor
-│ ├── constants/
-│ │ └── constants.dart
-│ ├── di/
-│ │ ├── app_locator.dart # GetIt instance
-│ │ └── core_di.dart # Регистрация core зависимостей
-│ ├── extensions/
-│ │ ├── context_extensions.dart
-│ │ └── theme_extensions.dart
-│ ├── localization/
-│ │ ├── locale_keys.g.dart # Автогенерируемые ключи
-│ │ └── app_localization.dart # Обертка для easy_localization
-│ ├── theme/
-│ │ └── app_theme.dart
-│ └── utils/
-│ ├── logger.dart # AppLogger
-│ └── result.dart # Result тип
+├── core.dart                    # Публичный API
+└── src/
+    ├── config/
+    │   └── app_config.dart      # AppConfig с Flavor
+    ├── di/
+    │   ├── app_locator.dart     # GetIt instance
+    │   └── core_di.dart         # Регистрация core зависимостей
+    ├── error_handler/
+    │   └── error_handler.dart   # Реэкспорт базового ErrorHandler
+    ├── localization/
+    │   ├── app_localization.dart
+    │   └── generated/
+    │       └── locale_keys.g.dart   # Автогенерируемые ключи
+    └── utils/
+        ├── constants.dart       # Константы приложения
+        ├── logger.dart          # AppLogger
+        └── result.dart          # Result тип
 ```
 
-**Публичный API (core.dart):** экспортирует все публичные компоненты модуля.
+**Публичный API (core.dart):** экспортирует все публичные компоненты модуля, а также:
+- `package:flutter_dotenv/flutter_dotenv.dart`
+- `package:easy_localization/easy_localization.dart`
 
 **AppConfig:** содержит конфигурацию приложения в зависимости от флейвора. Поля: `flavor`, `supabaseUrl`, `supabaseAnonKey`, `googleWebClientId`, `appsFlyerDevKey`, `appleAppId`. Фабричный метод `fromFlavor(Flavor)`.
 
@@ -61,33 +68,33 @@ core/lib/
 **Назначение:** UI компоненты (только виджеты, без DI)
 **Содержит:**
 - Переиспользуемые виджеты (кнопки, диалоги, поля ввода, карточки)
-- Тема и стили
+- Тема и стили (только светлая тема)
 - Ресурсы: шрифты, иконки, изображения
 
 **Структура:**
 ```text
 core_ui/lib/
 ├── core_ui.dart # Публичный API
-├── src/
-│ ├── constants/
-│ │ └── package_constants.dart
-│ ├── theme/
-│ │ ├── app_colors.dart
-│ │ ├── app_dimens.dart
-│ │ ├── app_fonts.dart
-│ │ └── app_theme.dart
-│ └── widgets/
-│ ├── buttons/
-│ │ ├── primary_button.dart
-│ │ └── icon_button.dart
-│ ├── dialogs/
-│ │ ├── loading_dialog.dart
-│ │ └── error_dialog.dart
-│ ├── inputs/
-│ │ ├── custom_slider.dart
-│ │ └── search_field.dart
-│ └── cards/
-│ └── contour_card.dart
+└── src/
+    ├── constants/
+    │   └── package_constants.dart
+    ├── theme/
+    │   ├── app_colors.dart
+    │   ├── app_dimens.dart
+    │   ├── app_fonts.dart
+    │   └── app_theme.dart        # Только lightTheme
+    └── widgets/
+        ├── buttons/
+        │   ├── primary_button.dart
+        │   └── icon_button.dart   # AppIconButton
+        ├── dialogs/
+        │   ├── loading_dialog.dart
+        │   └── error_dialog.dart
+        ├── inputs/
+        │   ├── custom_slider.dart
+        │   └── search_field.dart
+        └── cards/
+            └── contour_card.dart
 ```
 
 
@@ -95,7 +102,7 @@ core_ui/lib/
 
 **Виджеты:**
 - `PrimaryButton` — основная кнопка с закругленными углами
-- `IconButton` — кнопка с иконкой для тулбаров
+- `AppIconButton` — кнопка с иконкой для тулбаров
 - `LoadingDialog` — диалог загрузки с индикатором
 - `ErrorDialog` — диалог ошибки с кнопкой "Повторить"
 - `CustomSlider` — кастомный слайдер для размера и прозрачности
@@ -110,47 +117,56 @@ core_ui/lib/
 - UseCases
 - Доменные модели
 - Базовые классы UseCase
-- DI (DomainDi)
+- DI (`DomainDI`)
 
 **Структура:**
 ```text
 domain/lib/
 ├── domain.dart # Публичный API
-├── src/
-│ ├── di/
-│ │ └── domain_di.dart # Регистрация usecases
-│ ├── entities/
-│ │ ├── contour_entity.dart
-│ │ ├── project_entity.dart
-│ │ ├── stroke_entity.dart
-│ │ ├── user_entity.dart
-│ │ └── brush_type.dart
-│ ├── repositories/
-│ │ ├── auth_repository.dart
-│ │ ├── gallery_repository.dart
-│ │ └── canvas_repository.dart
-│ ├── use_cases/
-│ │ ├── auth/
-│ │ │ ├── check_auth_use_case.dart
-│ │ │ └── sign_in_use_case.dart
-│ │ ├── gallery/
-│ │ │ ├── get_contours_use_case.dart
-│ │ │ ├── toggle_favorite_use_case.dart
-│ │ │ └── get_work_in_progress_use_case.dart
-│ │ └── canvas/
-│ │ ├── add_stroke_use_case.dart
-│ │ ├── undo_stroke_use_case.dart
-│ │ ├── redo_stroke_use_case.dart
-│ │ ├── save_project_use_case.dart
-│ │ ├── load_project_use_case.dart
-│ │ └── export_image_use_case.dart
-│ └── use_case.dart # Базовые классы UseCase
+└── src/
+    ├── di/
+    │   └── domain_di.dart
+    ├── entities/
+    │   ├── contour_entity.dart
+    │   ├── project_entity.dart
+    │   ├── stroke_entity.dart
+    │   ├── user_entity.dart
+    │   └── brush_type.dart
+    ├── repositories/
+    │   ├── auth_repository.dart
+    │   ├── canvas_repository.dart
+    │   ├── gallery_repository.dart
+    │   ├── settings_repository.dart
+    │   └── share_repository.dart
+    └── use_cases/
+        ├── auth/
+        │   ├── check_auth_use_case.dart
+        │   ├── sign_in_use_case.dart
+        │   └── sign_in_silently_use_case.dart
+        ├── canvas/
+        │   ├── add_stroke_use_case.dart
+        │   ├── export_image_params.dart
+        │   ├── export_image_use_case.dart
+        │   ├── load_project_use_case.dart
+        │   ├── save_project_use_case.dart
+        │   └── share_file_use_case.dart
+        ├── gallery/
+        │   ├── get_contour_by_id_use_case.dart
+        │   ├── get_contours_by_ids_use_case.dart
+        │   ├── get_contours_use_case.dart
+        │   ├── get_favorite_ids_use_case.dart
+        │   ├── get_work_in_progress_use_case.dart
+        │   └── toggle_favorite_use_case.dart
+        ├── settings/
+        │   ├── get_settings_use_case.dart
+        │   └── update_settings_use_case.dart
+        └── use_case.dart     # Базовые классы UseCase
 ```
 
 
 **Публичный API (domain.dart):** экспортирует все сущности, репозитории, usecases и DI.
 
-**Базовые классы UseCase:**
+**Базовые классы UseCase:** (`domain/lib/src/use_cases/use_case.dart`)
 - `UseCase<Input, Output>` — синхронный UseCase
 - `FutureUseCase<Input, Output>` — асинхронный UseCase
 - `StreamUseCase<Input, Output>` — стримовый UseCase
@@ -164,158 +180,202 @@ domain/lib/
 - `BrushType` — enum (circle, square, watercolor, chalk, marker, calligraphy, texture, airbrush)
 
 **Репозитории (интерфейсы):**
-- `AuthRepository` — checkAuth(), signIn()
-- `GalleryRepository` — getContours(limit, offset, category), toggleFavorite(contourId), getWorkInProgress()
-- `CanvasRepository` — addStroke(projectId, stroke), undoStroke(projectId), redoStroke(projectId), saveProject(project), loadProject(contourId), exportImage(projectId)
+- `AuthRepository` — checkAuth(), signIn(), signInSilently()
+- `GalleryRepository` — getContours, getContoursByIds, getFavoriteIds, toggleFavorite, getWorkInProgress, getContourById
+- `CanvasRepository` — addStroke, saveProject, loadProject, exportImage, saveImageToGallery
+- `SettingsRepository` — getLanguageCode, saveLanguageCode
+- `ShareRepository` — shareFile
 
 **UseCases:**
 - `CheckAuthUseCase` — проверяет авторизацию
-- `SignInUseCase` — выполняет вход
+- `SignInUseCase` — выполняет ручной вход
+- `SignInSilentlyUseCase` — пытается войти автоматически
 - `GetContoursUseCase` — получает список контуров с пагинацией
+- `GetContoursByIdsUseCase` — получает контуры по списку id
+- `GetFavoriteIdsUseCase` — возвращает id избранных контуров
 - `ToggleFavoriteUseCase` — добавляет/удаляет из избранного
 - `GetWorkInProgressUseCase` — получает начатые проекты
+- `GetContourByIdUseCase` — загружает один контур по id
 - `AddStrokeUseCase` — добавляет мазок
-- `UndoStrokeUseCase` — отменяет последний мазок
-- `RedoStrokeUseCase` — возвращает отмененный мазок
 - `SaveProjectUseCase` — сохраняет проект
 - `LoadProjectUseCase` — загружает проект
 - `ExportImageUseCase` — экспортирует изображение
+- `ShareFileUseCase` — делится файлом
+- `SaveImageToGalleryUseCase` — сохраняет файл в галерею устройства
+- `GetSettingsUseCase` — читает настройки
+- `UpdateSettingsUseCase` — сохраняет настройки
 
-**DomainDi:** регистрирует все UseCase в `appLocator` с использованием `registerLazySingleton`.
+**DomainDI:** регистрирует все UseCase в `appLocator` с использованием `registerLazySingleton`.
 
 
 ### data
-**Назначение:** Реализация репозиториев
+**Назначение:** Реализация репозиториев и работа с внешними источниками данных
 **Содержит:**
 - Реализации репозиториев
-- DataSources (Supabase, Drift/SQLite)
+- Провайдеры (`Provider`) — источники данных: Supabase, Drift/SQLite
+- Сервисы (`Service`) — переиспользуемые платформенные операции (шаринг, пермишены и т.д.)
 - Data модели (DTO)
 - Мапперы (модель ↔ сущность)
-- Провайдеры (Supabase, Drift)
-- DI (DataDi)
+- Константы запросов (`RequestConstants`)
+- DI (`DataDI`)
+
+В модуле `data` нет папки `datasources`; вместо неё используется `providers/`.
 
 **Структура:**
 ```text
 data/lib/
 ├── data.dart # Публичный API
-├── src/
-│ ├── constants/
-│ ├── di/
-│ │ └── data_di.dart # Регистрация репозиториев
-│ ├── errors/
-│ ├── mappers/
-│ │ ├── contour_mapper.dart
-│ │ ├── project_mapper.dart
-│ │ └── stroke_mapper.dart
-│ ├── models/
-│ │ ├── contour_model.dart
-│ │ ├── project_model.dart
-│ │ └── stroke_model.dart
-│ ├── providers/
-│ │ ├── supabase_provider.dart
-│ │ └── database_provider.dart
-│ ├── repositories/
-│ │ ├── auth_repository_impl.dart
-│ │ ├── gallery_repository_impl.dart
-│ │ └── canvas_repository_impl.dart
-│ └── datasources/
-│ ├── auth_remote_datasource.dart
-│ ├── gallery_remote_datasource.dart
-│ ├── gallery_local_datasource.dart
-│ ├── canvas_remote_datasource.dart
-│ └── canvas_local_datasource.dart
+└── src/
+    ├── constants/
+    │   └── request_constants.dart
+    ├── di/
+    │   └── data_di.dart
+    ├── errors/
+    ├── mappers/
+    │   ├── contour_mapper.dart
+    │   ├── project_mapper.dart
+    │   └── stroke_mapper.dart
+    ├── models/
+    │   ├── contour_model.dart
+    │   ├── project_model.dart
+    │   ├── stroke_model.dart
+    │   └── user_model.dart
+    ├── providers/
+    │   ├── supabase_provider.dart
+    │   ├── database_provider.dart     # Drift AppDatabase
+    │   ├── auth_remote_provider.dart
+    │   ├── gallery_remote_provider.dart
+    │   ├── gallery_local_provider.dart
+    │   ├── canvas_remote_provider.dart
+    │   └── canvas_local_provider.dart
+    ├── repositories/
+    │   ├── auth_repository_impl.dart
+    │   ├── canvas_repository_impl.dart
+    │   ├── gallery_repository_impl.dart
+    │   ├── settings_repository_impl.dart
+    │   └── share_repository_impl.dart
+    └── services/
+        ├── share_service.dart
+        └── gallery_saver_service.dart
 ```
 
 
-**Публичный API (data.dart):** экспортирует все реализации репозиториев, провайдеры и DI.
+**Публичный API (data.dart):** экспортирует все реализации репозиториев, провайдеры, сервисы и DI.
 
 **Провайдеры:**
 - `SupabaseProvider` — инициализация Supabase с конфигом
-- `AppDatabase` (Drift) — база данных SQLite с таблицами Projects и Strokes
-
-**DataSources:**
-- `AuthRemoteDataSource` — работа с Supabase Auth
-- `GalleryRemoteDataSource` — получение контуров и избранного из Supabase
-- `GalleryLocalDataSource` — кэширование контуров в Drift
-- `CanvasRemoteDataSource` — сохранение проектов в Supabase
-- `CanvasLocalDataSource` — сохранение проектов в Drift
+- `AppDatabase` (Drift) — база данных SQLite с таблицами `Projects`, `Strokes` и `Contours`
+- `AuthRemoteProvider` — работа с Supabase Auth; содержит `currentUserId`
+- `GalleryRemoteProvider` — получение контуров и избранного из Supabase
+- `GalleryLocalProvider` — кэширование контуров в Drift
+- `CanvasRemoteProvider` — сохранение проектов в Supabase
+- `CanvasLocalProvider` — сохранение проектов в Drift
 
 **Models (DTO):** `UserModel`, `ContourModel`, `ProjectModel`, `StrokeModel`
 
 **Mappers:** преобразуют Models ↔ Entities
 
-**Реализации репозиториев:** `AuthRepositoryImpl`, `GalleryRepositoryImpl`, `CanvasRepositoryImpl`
+**Реализации репозиториев:** `AuthRepositoryImpl`, `GalleryRepositoryImpl`, `CanvasRepositoryImpl`, `SettingsRepositoryImpl`, `ShareRepositoryImpl`
 
-**DataDi:** регистрирует провайдеры, datasources и репозитории в правильном порядке.
+**Сервисы:**
+- `ShareService` — статический сервис-обертка над `share_plus` для шаринга файлов/изображений.
+- `GallerySaverService` — статический сервис-обертка над `image_gallery_saver` для сохранения изображений в галерею устройства.
+- Платформенные операции (шаринг, запрос пермишенов, работа с файлами) оформляются как сервисы, а не размазываются по провайдерам/репозиториям.
+
+**DataDI:** регистрирует провайдеры, сервисы и репозитории в правильном порядке.
+
+**Реализация `ShareRepository`:** `ShareRepositoryImpl` использует статический `ShareService`.
 
 
 ### navigation
 **Назначение:** Навигация
 **Содержит:**
-- Определение маршрутов (auto_route)
-- Генерируемый роутер
-- DI (NavigationDi)
+- Реэкспорт `auto_route` (публичный API для навигации)
+- Корневой роутер приложения (`AppRouter`)
+- DI-регистрация роутера (`NavigationDI`)
 
 **Структура:**
 ```text
 navigation/lib/
-├── navigation.dart # Публичный API
-├── src/
-│ ├── app_router/
-│ │ ├── app_router.dart # Определение маршрутов
-│ │ └── app_router.gr.dart # Генерируется auto_route
-│ └── di/
-│ └── navigation_di.dart
+├── navigation.dart
+└── src/
+    ├── app_router/
+    │   ├── app_router.dart       # Определение маршрутов: Splash, Canvas, Gallery, Settings
+    │   └── app_router.gr.dart    # Минимальная заглушка (part-of)
+    └── di/
+        └── navigation_di.dart
 ```
 
-**Публичный API (navigation.dart):** экспортирует AutoRoute, AppRouter и DI.
+**Публичный API (navigation.dart):** экспортирует классы `auto_route`, а также `AppRouter` и `NavigationDI`.
 
-**AppRouter:** определяет маршруты: Auth → Gallery → Canvas → Settings. Использует `@AutoRouterConfig` с `replaceInRouteName: 'Screen|Page,Route'`.
+**AppRouter:** корневой роутер приложения находится в модуле `navigation`:
+- `navigation/lib/src/app_router/app_router.dart` — определение маршрутов в порядке: Splash, Canvas, Gallery, Settings. `SplashRoute` — initial.
+- `navigation/lib/src/app_router/app_router.gr.dart` — генерируется `auto_route` (минимальный/заглушка, `part-of`).
 
-**NavigationDi:** регистрирует `AppRouter` в `appLocator`.
+Использует `@AutoRouterConfig` с `replaceInRouteName: 'Screen|Page,Route'`.
+
+**NavigationDI:** регистрирует `AppRouter` в `appLocator`.
 
 
 ### features
 **Назначение:** Фичи приложения
-**Структура каждой фичи:**
-```text
-features/auth/
-├── lib/
-│ ├── auth.dart # Публичный API
-│ ├── src/
-│ │ ├── bloc/
-│ │ │ ├── auth_bloc.dart
-│ │ │ ├── auth_event.dart
-│ │ │ └── auth_state.dart
-│ │ ├── screens/
-│ │ │ └── auth_screen.dart
-│ │ └── widgets/
-│ │ └── login_button.dart
-│ └── pubspec.yaml
-```
 
+**Фича авторизации/загрузки называется `splash`:**
+```text
+features/splash/
+├── lib/
+│   ├── splash.dart               # Публичный API: SplashRoute
+│   ├── splash.gr.dart              # Генерируется auto_route
+│   └── src/
+│       ├── bloc/
+│       │   ├── auth_bloc.dart
+│       │   ├── auth_event.dart
+│       │   └── auth_state.dart
+│       ├── screens/
+│       │   └── splash_screen.dart
+│       └── widgets/
+│           └── login_button.dart
+└── pubspec.yaml
+```
 
 **Каждая фича содержит:**
 - BLoC (события, состояния)
 - Экраны (Screens)
 - Виджеты (Widgets)
-- Публичный API (auth.dart, gallery.dart, canvas.dart, settings.dart)
+- Публичный API (`splash.dart`, `gallery.dart`, `canvas.dart`, `settings.dart`)
+
+**Публичный API фичи:**
+- Фичи не экспортируют BLoC, виджеты и экраны напрямую.
+- Публичный файл объявляет `@AutoRouterConfig` и импортирует реальный экран, чтобы `auto_route` сгенерировал `*Route` класс.
+- Через фичу доступен только сгенерированный класс маршрута (`SplashRoute`, `GalleryRoute`, `CanvasRoute`, `SettingsRoute`).
 
 **Предоставление BLoC:** происходит на уровне экранов (Screens) через `BlocProvider`. Зависимости (UseCases, Router) внедряются в конструктор BLoC из `appLocator`.
 
-Пример:
+**Структура экрана:**
 ```dart
 @RoutePage()
-class MainScreen extends StatelessWidget {
+class SplashScreen extends StatelessWidget {
+  const SplashScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<MainBloc>(
-      create: (context) => MainBloc(
-        appRouter: appLocator<AppRouter>(),
-        getStoryByIdUseCase: appLocator<GetStoryByIdUseCase>(),
-      ),
-      child: const MainContent(),
+    return BlocProvider<AuthBloc>(
+      create: (context) => AuthBloc(
+        checkAuthUseCase: appLocator<CheckAuthUseCase>(),
+        signInUseCase: appLocator<SignInUseCase>(),
+        signInSilentlyUseCase: appLocator<SignInSilentlyUseCase>(),
+      )..add(const CheckAuth()),
+      child: const SplashContent(),
     );
+  }
+}
+
+class SplashContent extends StatelessWidget {
+  const SplashContent({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    // ... UI
   }
 }
 ```
@@ -406,21 +466,12 @@ class SomeBloc extends Bloc<SomeEvent, SomeState> {
 final GetIt appLocator = GetIt.instance;
 ```
 
-### Регистрация UseCase (в DomainDi)
-```dart
-appLocator.registerLazySingleton<SomeUseCase>(
-  () => SomeUseCase(
-    repository: appLocator<SomeRepository>(),
-  ),
-);
-```
-
 ### Порядок инициализации в main_common
-1. CoreDi.init(flavor) — AppConfig, AppLogger 
-2. DataDi.initDependencies() — провайдеры, datasources, репозитории 
-3. DomainDi.initDependencies() — usecases 
-4. NavigationDi.initDependencies() — AppRouter 
-5. appLocator.allReady()
+1. `CoreDi.init(flavor)` — AppConfig, AppLogger
+2. `DataDI.initDependencies()` — провайдеры, сервисы, репозитории
+3. `DomainDI.initDependencies()` — usecases
+4. `NavigationDI.initDependencies()` — AppRouter
+5. `appLocator.allReady()`
 
 ## Локализация (easy_localization)
 ### Файлы переводов
@@ -431,13 +482,15 @@ core/resources/lang/
 ```
 
 ### Генерация ключей
-```text
+```bash
 flutter pub run easy_localization:generate \
   -f json \
-  -O lib/src/localization \
+  -O lib/src/localization/generated \
   -o locale_keys.g.dart \
   -i resources/lang
 ```
+
+Сгенерированные ключи живут в `core/lib/src/localization/generated/locale_keys.g.dart`.
 
 ### Использование в коде
 ```dart
@@ -445,43 +498,35 @@ Text(LocaleKeys.gallery).tr();
 ```
 
 ## Обработка ошибок
-### Структура error_handler
-```text
-lib/error_handler/
-├── error_handler.dart
-├── error_messages.dart
-├── error_reporting.dart
-└── provider/
-    └── app_error_handler_provider.dart
-```
-
-### ErrorHandler
-- init(BuildContext context) — инициализация 
-- handleError(Object error, StackTrace stackTrace, [String? customMessage]) — обработка ошибки 
-- Логирование через AppLogger 
-- Отображение диалога ошибки 
-- Опциональный репортинг
+### Глобальный ErrorHandler
+`lib/error_handler/error_handler.dart` инициализируется с `GlobalKey<NavigatorState>`, получает контекст из `navigatorKey.currentState?.overlay?.context` и показывает `ErrorDialog` через `ErrorDialog.show`.
 
 ### AppErrorHandlerProvider
-- Оборачивает все приложение 
-- Перехватывает ошибки через FlutterError.onError 
-- Перехватывает ошибки в BLoC через Bloc.observer 
-- Показывает диалог ошибки через ErrorHandler
+- Оборачивает приложение в `main_common.dart`
+- Перехватывает ошибки через `FlutterError.onError`
+- Перехватывает ошибки в BLoC через `Bloc.observer`
+- Логирует ошибки через `AppLogger`
+
+### ErrorDialog
+- Универсальный виджет в `core_ui`
+- Статический метод `show` для отображения диалога
+- Используется в галерее как отдельный диалог, а не как виджет внутри списка
 
 ## Drift (SQLite) база данных
 ### Таблицы
-- Projects — id, contourId, userId, data (JSON), lastOpened, createdAt 
-- Strokes — id, projectId, points (JSON), color, size, opacity, brushType
+- `Projects` — id, contourId, userId, data (JSON), lastOpened, createdAt
+- `Strokes` — id, projectId, points (JSON), color, size, opacity, brushType
+- `Contours` — id, title, category, svgData, previewUrl, createdAt
 
 ### Настройка
-- Использовать @DriftDatabase с таблицами 
-- AppDatabase extends _$AppDatabase 
-- schemaVersion = 1
-- _openConnection() — открытие SQLite файла
+- Использовать `@DriftDatabase` с таблицами
+- `AppDatabase extends _$AppDatabase`
+- `schemaVersion = 1`
+- `_openConnection()` — открытие SQLite файла
 
 ### Генерация кода
 ```bash
-flutter pub run build_runner build
+flutter pub run build_runner build --delete-conflicting-outputs
 ```
 
 ## Ключевые константы
@@ -498,6 +543,7 @@ flutter pub run build_runner build
 | `contourDefaultWidth` | 2.0 |
 | `minContourWidth` | 0.5 |
 | `maxContourWidth` | 10.0 |
+| `autosaveDebounce` | 500ms |
 
 ---
 
@@ -515,6 +561,29 @@ flutter pub run build_runner build
 
 ---
 
+## Константы вместо строк
+Все идентификаторы таблиц, колонок, параметров запросов и сообщения об ошибках централизованы в `RequestConstants` (`data/lib/src/constants/request_constants.dart`).
+
+Примеры:
+- Имена таблиц: `usersTable`, `contoursTable`, `favoritesTable`, `projectsTable`
+- Колонки: `createdAtColumn`, `userIdColumn`, `contourIdColumn`
+- Параметры: `limitParam`, `offsetParam`, `orderParam`
+- Сообщения: `userNotAuthenticated`, `googleSignInFailed`
+
+Провайдеры не используют «магические строки» при построении запросов Supabase.
+
+## Сервисы для переиспользуемых платформенных операций
+Платформенно-зависимые и часто повторяющиеся операции оформляются как сервисы в `data/lib/src/services/`:
+- `ShareService` — шаринг файлов/изображений через `share_plus`.
+
+К сервисам относятся также пермишены, экспорт файлов, работа с галереей устройства. Сервисы регистрируются в `DataDI` и внедряются в репозитории/провайдеры, избегая дублирования кода.
+
+## Версии пакетов
+Предпочтение отдается последним стабильным версиям пакетов (`google_sign_in ^7.2.0`, `share_plus`, `flutter_colorpicker`, `image_gallery_saver` и т.д.).
+Зависимости обновляются через `flutter pub outdated` и тестируются с `flutter analyze` / `flutter build apk --debug`.
+
+---
+
 ## Best Practices
 
 1. **Разделение UI и логики** — вся бизнес-логика в BLoC и UseCases
@@ -526,19 +595,28 @@ flutter pub run build_runner build
 7. **Состояния загрузки** — initial, loading, success, failure
 8. **Доступность** — Semantics, тап-области ≥ 44pt
 9. **Жизненный цикл BLoC** — отписки в `close()`
+10. **Тема** — используется только светлая тема; переключатель темы удалён
 
 ### CanvasPainter
-- Отрисовка нижнего слоя (мазки пользователя)
-- Отрисовка верхнего слоя (контур с прозрачностью)
-- Поддержка трансформации (масштаб, поворот, смещение)
+- Отрисовка нижнего слоя: белый фон + мазки пользователя
+- Контур отрисовывается отдельно через `SvgPicture.string` с прозрачностью, цветом и толщиной (`SvgUtils.applyStrokeWidth`)
+- Поддержка трансформации (масштаб, поворот, смещение) передаётся в CustomPainter
 
-### Обработка жестов
-- `onPanStart` — начало мазка
-- `onPanUpdate` — добавление точек (с учетом давления)
-- `onPanEnd` — завершение мазка
-- `onScaleStart/Update/End` — зум и панорамирование
+### Обработка касаний
+- Используется `Listener` (`onPointerDown`, `onPointerMove`, `onPointerUp`, `onPointerCancel`)
+- Координаты и `event.pressure` передаются в BLoC
+- Мультитач — зум и панорамирование через `InteractiveViewer`
 
 ### Давление стилуса
 - Использовать `event.pressure` (0.0-1.0)
-- Динамический размер: `baseSize * pressure`
+- Динамический размер: `max(minBrushSize, baseSize * pressure)`
 - Fallback для устройств без поддержки: `baseSize`
+
+### Автосохранение
+- Дебаунс `Constants.autosaveDebounce` после каждого завершённого мазка
+- Сохранение при сворачивании/фоне через `WidgetsBindingObserver` (`AppLifecycleState.paused/inactive`)
+
+### Экспорт
+- Экспорт обрабатывается в `CanvasBloc`: событие `ExportImage(ExportType)` запускает `ExportImageUseCase`, а затем `ShareFileUseCase` (для `ExportType.share`) или `SaveImageToGalleryUseCase` (для `ExportType.gallery`)
+- `CanvasRepository.exportImage` склеивает белый фон, мазки и контур (с применённой толщиной), сохраняет в PNG
+- `CanvasRepository.saveImageToGallery` сохраняет готовый файл в галерею устройства через `GallerySaverService`

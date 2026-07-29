@@ -7,137 +7,164 @@
 
 ### Этап 1: Core (дополнить существующее)
 1. `app_locator.dart` — GetIt instance (вынести из core_di)
-2. `constants.dart` — константы приложения
+2. `constants.dart` — константы приложения (включая `autosaveDebounce`)
 3. `logger.dart` — AppLogger с использованием пакета logger
 4. `result.dart` — Result/Either тип для обработки ошибок
 5. Обновить `core_di.dart` — добавить регистрацию AppLogger
-6. Обновить `core.dart` — добавить экспорты
+6. Обновить `core.dart` — добавить экспорты утилит и реэкспорт `flutter_dotenv`, `easy_localization`
 
 ### Этап 2: Core_UI (создать виджеты)
 1. `buttons/primary_button.dart` — основная кнопка
-2. `buttons/icon_button.dart` — кнопка с иконкой
+2. `buttons/icon_button.dart` — `AppIconButton`, кнопка с иконкой для тулбаров
 3. `dialogs/loading_dialog.dart` — диалог загрузки
-4. `dialogs/error_dialog.dart` — диалог ошибки
+4. `dialogs/error_dialog.dart` — диалог ошибки со статическим методом `show`
 5. `inputs/custom_slider.dart` — кастомный слайдер
 6. `inputs/search_field.dart` — поле поиска
 7. `cards/contour_card.dart` — карточка контура
 8. Обновить `core_ui.dart` — добавить экспорты
 
 ### Этап 3: Domain (создать полностью)
-1. **Entities:**
-    - `user_entity.dart` — пользователь
-    - `contour_entity.dart` — контур
-    - `project_entity.dart` — проект
-    - `stroke_entity.dart` — мазок
-    - `brush_type.dart` — enum типов кистей
-2. **Repositories (интерфейсы):**
+1. **Базовые классы UseCase:** `domain/lib/src/use_cases/use_case.dart`
+2. **Entities:**
+    - `user_entity.dart`
+    - `contour_entity.dart`
+    - `project_entity.dart`
+    - `stroke_entity.dart`
+    - `brush_type.dart`
+3. **Repositories (интерфейсы):**
     - `auth_repository.dart`
-    - `gallery_repository.dart`
     - `canvas_repository.dart`
-3. **UseCases:**
+    - `gallery_repository.dart`
+    - `settings_repository.dart`
+    - `share_repository.dart`
+4. **UseCases:**
     - `auth/check_auth_use_case.dart`
     - `auth/sign_in_use_case.dart`
-    - `gallery/get_contours_use_case.dart`
-    - `gallery/toggle_favorite_use_case.dart`
-    - `gallery/get_work_in_progress_use_case.dart`
+    - `auth/sign_in_silently_use_case.dart`
     - `canvas/add_stroke_use_case.dart`
-    - `canvas/undo_stroke_use_case.dart`
-    - `canvas/redo_stroke_use_case.dart`
-    - `canvas/save_project_use_case.dart`
-    - `canvas/load_project_use_case.dart`
+    - `canvas/export_image_params.dart`
     - `canvas/export_image_use_case.dart`
-4. Обновить `domain_di.dart` — регистрация всех UseCases
-5. Обновить `domain.dart` — добавить экспорты
+    - `canvas/load_project_use_case.dart`
+    - `canvas/save_project_use_case.dart`
+    - `canvas/share_file_use_case.dart`
+    - `gallery/get_contour_by_id_use_case.dart`
+    - `gallery/get_contours_by_ids_use_case.dart`
+    - `gallery/get_contours_use_case.dart`
+    - `gallery/get_favorite_ids_use_case.dart`
+    - `gallery/get_work_in_progress_use_case.dart`
+    - `gallery/toggle_favorite_use_case.dart`
+    - `settings/get_settings_use_case.dart`
+    - `settings/update_settings_use_case.dart`
+5. Обновить `domain_di.dart` — регистрация всех UseCases
+6. Обновить `domain.dart` — добавить экспорты
 
 ### Этап 4: Data (создать полностью)
 1. **Providers:**
     - `supabase_provider.dart` — инициализация Supabase
-    - `database_provider.dart` — Drift база данных
-2. **DataSources:**
-    - `auth_remote_datasource.dart`
-    - `gallery_remote_datasource.dart`
-    - `gallery_local_datasource.dart`
-    - `canvas_remote_datasource.dart`
-    - `canvas_local_datasource.dart`
-3. **Models (DTO):**
+    - `database_provider.dart` — Drift база данных с таблицами `Projects`, `Strokes`, `Contours`
+    - `auth_remote_provider.dart` — включая `currentUserId`
+    - `gallery_remote_provider.dart`
+    - `gallery_local_provider.dart`
+    - `canvas_remote_provider.dart`
+    - `canvas_local_provider.dart`
+2. **Models (DTO):**
     - `user_model.dart`
     - `contour_model.dart`
     - `project_model.dart`
     - `stroke_model.dart`
-4. **Mappers:**
+3. **Mappers:**
     - `contour_mapper.dart`
     - `project_mapper.dart`
     - `stroke_mapper.dart`
-5. **Repositories (реализации):**
+4. **Repositories (реализации):**
     - `auth_repository_impl.dart`
-    - `gallery_repository_impl.dart`
     - `canvas_repository_impl.dart`
+    - `gallery_repository_impl.dart`
+    - `settings_repository_impl.dart`
+5. **Services:**
+    - `share_service.dart`
 6. Обновить `data_di.dart` — регистрация всех зависимостей
 7. Обновить `data.dart` — добавить экспорты
 
-### Этап 5: Auth Feature (создать полностью)
+> **Важно:** в `data` модуле нет папки `datasources`; вместо неё используется `providers/`.
+
+### Этап 5: Splash Feature (создать полностью)
 1. **BLoC:**
-    - `auth_bloc.dart`
-    - `auth_event.dart`
-    - `auth_state.dart`
+    - `src/bloc/auth_bloc.dart`
+    - `src/bloc/auth_event.dart`
+    - `src/bloc/auth_state.dart`
 2. **Экраны:**
-    - `splash_screen.dart`
+    - `src/screens/splash_screen.dart` — `@RoutePage() class SplashScreen` + `SplashContent`
 3. **Виджеты:**
-    - `login_button.dart`
-4. Обновить `auth.dart` — добавить экспорты
+    - `src/widgets/login_button.dart`
+4. Обновить `splash.dart` — объявить `SplashRouter` с `@AutoRouterConfig`, импортировать `splash_screen.dart` (без `export`), добавить `part 'splash.gr.dart'`
 
 ### Этап 6: Gallery Feature (создать полностью)
 1. **BLoC:**
-    - `gallery_bloc.dart`
-    - `gallery_event.dart`
-    - `gallery_state.dart`
+    - `src/bloc/gallery_bloc.dart`
+    - `src/bloc/gallery_event.dart`
+    - `src/bloc/gallery_state.dart`
 2. **Экраны:**
-    - `gallery_screen.dart`
+    - `src/screens/gallery_screen.dart` — `@RoutePage() class GalleryScreen` + `GalleryContent`
 3. **Виджеты:**
-    - `contour_card.dart`
-    - `filter_chips.dart`
-    - `empty_state.dart`
-4. Обновить `gallery.dart` — добавить экспорты
+    - `src/widgets/contour_card.dart`
+    - `src/widgets/filter_chips.dart` — фильтры All/Favorites/In Progress + категории
+    - `src/widgets/empty_state.dart`
+4. Обновить `gallery.dart` — объявить `GalleryRouter`, импортировать `gallery_screen.dart`, добавить `part 'gallery.gr.dart'`
 
 ### Этап 7: Canvas Feature (создать полностью)
 1. **BLoC:**
-    - `canvas_bloc.dart`
-    - `canvas_event.dart`
-    - `canvas_state.dart`
+    - `src/bloc/canvas_bloc.dart`
+    - `src/bloc/canvas_event.dart`
+    - `src/bloc/canvas_state.dart`
 2. **Экраны:**
-    - `canvas_screen.dart`
+    - `src/screens/canvas_screen.dart` — `@RoutePage() class CanvasScreen` + `CanvasContent` (Stateful)
 3. **Painter:**
-    - `canvas_painter.dart`
+    - `src/painters/canvas_painter.dart` — только мазки
 4. **Виджеты:**
-    - `brush_picker.dart`
-    - `color_picker.dart`
-    - `contour_settings.dart`
-    - `eyedropper_overlay.dart`
-    - `toolbars/top_toolbar.dart`
-    - `toolbars/bottom_toolbar.dart`
-    - `toolbars/left_controls.dart`
-5. Обновить `canvas.dart` — добавить экспорты
+    - `src/widgets/brush_picker.dart` — иконки-заглушки
+    - `src/widgets/color_picker.dart` — `ColorPickerDialog` на базе `flutter_colorpicker` с кнопкой пипетки
+    - `src/widgets/contour_settings.dart` — цвет, прозрачность, толщина контура
+    - `src/widgets/eyedropper_overlay.dart`
+    - `src/widgets/export_menu.dart`
+    - `src/widgets/toolbars/top_toolbar.dart`
+    - `src/widgets/toolbars/bottom_toolbar.dart`
+    - `src/widgets/toolbars/left_controls.dart`
+5. Обновить `canvas.dart` — объявить `CanvasRouter`, импортировать `canvas_screen.dart`, добавить `part 'canvas.gr.dart'`
 
 ### Этап 8: Settings Feature (создать полностью)
 1. **BLoC:**
-    - `settings_bloc.dart`
-    - `settings_event.dart`
-    - `settings_state.dart`
+    - `src/bloc/settings_bloc.dart`
+    - `src/bloc/settings_event.dart`
+    - `src/bloc/settings_state.dart`
 2. **Экраны:**
-    - `settings_screen.dart`
+    - `src/screens/settings_screen.dart` — `@RoutePage() class SettingsScreen` + `SettingsContent`
 3. **Виджеты:**
-    - `theme_switch.dart`
-    - `language_picker.dart`
-4. Обновить `settings.dart` — добавить экспорты
+    - `src/widgets/language_picker.dart`
+4. Обновить `settings.dart` — объявить `SettingsRouter`, импортировать `settings_screen.dart`, добавить `part 'settings.gr.dart'`
+
+> **Переключатель темы (`ThemeSwitch`) не создаётся — тёмная тема удалена из проекта.**
 
 ### Этап 9: Обновить pubspec.yaml
-1. Добавить все необходимые зависимости в корневой pubspec.yaml
-2. Добавить зависимости для каждого модуля
-3. Добавить dev зависимости
+1. В корневом `pubspec.yaml` оставить в `dependencies` только `flutter`, `core` и внешние зависимости, нужные напрямую на уровне приложения.
+2. Все модули подключить через `dependency_overrides`.
+3. Зависимости для каждого модуля добавить в его собственный `pubspec.yaml`.
+4. Генераторы кода (`build_runner`, `auto_route_generator`, `drift_dev`) подключать в тех модулях, где они реально используются.
 
 ### Этап 10: Создать build.yaml
-1. Настроить auto_route генератор
-2. Настроить drift генератор
+```yaml
+targets:
+  $default:
+    builders:
+      auto_route_generator:
+        options:
+          enable_generators:
+            - auto_route
+          include_imports: true
+      drift_dev:
+        options:
+          store_date_time_values_as_text: true
+```
 
 ## Критерии качества
 
@@ -161,13 +188,14 @@
 3. Возвращать данные напрямую или выбрасывать исключения
 
 ### Слой рисования (CanvasPainter):
-1. Использовать `Paint.imageFilter` и `MaskFilter` для реализации сложных кистей (акварель, аэрограф).
-2. Оптимизировать отрисовку через `PictureRecorder` или `RepaintBoundary` при большом количестве мазков.
+1. Рисовать белый фон и мазки пользователя
+2. Контур отображается через `SvgPicture.string` с применением настройки толщины (`SvgUtils.applyStrokeWidth`)
+3. Оптимизировать отрисовку через `RepaintBoundary`
 
 ### Каждый Repository должен:
 1. Иметь интерфейс в domain
 2. Иметь реализацию в data
-3. Работать с data sources
+3. Работать с провайдерами
 
 ## Формат Result
 ```dart
@@ -192,7 +220,6 @@ final class Failure<T> extends Result<T> {
 ```dart
 // domain/lib/src/use_cases/auth/check_auth_use_case.dart
 import '../../../../domain.dart';
-import '../use_case.dart';
 
 class CheckAuthUseCase implements FutureUseCase<NoParams, bool> {
   final AuthRepository _repository;
@@ -205,16 +232,17 @@ class CheckAuthUseCase implements FutureUseCase<NoParams, bool> {
   }
 }
 ```
+
 Правила для UseCase:
-1. Используют интерфейсы FutureUseCase<Input, Output> или UseCase<Input, Output>
-2. execute принимает [Input? params] (опциональный параметр)
-3. Возвращают Future<Output> или Output напрямую 
-4. Зависимости передаются через конструктор с required 
-5. Не используют Result — ошибки пробрасываются наружу
+1. Используют интерфейсы `FutureUseCase<Input, Output>` или `UseCase<Input, Output>`
+2. `execute` принимает `[Input? params]` (опциональный параметр)
+3. Возвращают `Future<Output>` или `Output` напрямую
+4. Зависимости передаются через конструктор с `required`
+5. Не используют `Result` — ошибки пробрасываются наружу
 
 ### Базовые классы UseCase:
 ```dart
-// domain/lib/src/use_case.dart
+// domain/lib/src/use_cases/use_case.dart
 abstract class UseCase<Input, Output> {
   Output execute([Input? params]);
 }
@@ -233,96 +261,78 @@ class NoParams {
 ```
 
 ## Формат BLoC и его использование
+
+### SplashScreen
 ```dart
-// features/gallery/lib/src/screens/gallery_screen.dart
 @RoutePage()
-class GalleryScreen extends StatelessWidget {
+class SplashScreen extends StatelessWidget {
+  const SplashScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<GalleryBloc>(
-      create: (context) => GalleryBloc(
-        getContoursUseCase: appLocator<GetContoursUseCase>(),
-        toggleFavoriteUseCase: appLocator<ToggleFavoriteUseCase>(),
-        getWorkInProgressUseCase: appLocator<GetWorkInProgressUseCase>(),
-      ),
-      child: const GalleryContent(),
+    return BlocProvider<AuthBloc>(
+      create: (context) => AuthBloc(
+        checkAuthUseCase: appLocator<CheckAuthUseCase>(),
+        signInUseCase: appLocator<SignInUseCase>(),
+        signInSilentlyUseCase: appLocator<SignInSilentlyUseCase>(),
+      )..add(const CheckAuth()),
+      child: const SplashContent(),
     );
   }
 }
+```
 
-// features/gallery/lib/src/bloc/gallery_bloc.dart
-import 'dart:async';
-import 'package:bloc/bloc.dart';
-import 'package:core/core.dart';
-import 'package:domain/domain.dart';
-import 'package:equatable/equatable.dart';
-import 'package:navigation/navigation.dart';
-import 'package:flutter/widgets.dart';
-
-part 'gallery_event.dart';
-part 'gallery_state.dart';
-
+### GalleryBloc
+```dart
 class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
   final GetContoursUseCase _getContoursUseCase;
+  final GetContoursByIdsUseCase _getContoursByIdsUseCase;
   final ToggleFavoriteUseCase _toggleFavoriteUseCase;
+  final GetFavoriteIdsUseCase _getFavoriteIdsUseCase;
   final GetWorkInProgressUseCase _getWorkInProgressUseCase;
 
   GalleryBloc({
     required GetContoursUseCase getContoursUseCase,
+    required GetContoursByIdsUseCase getContoursByIdsUseCase,
     required ToggleFavoriteUseCase toggleFavoriteUseCase,
+    required GetFavoriteIdsUseCase getFavoriteIdsUseCase,
     required GetWorkInProgressUseCase getWorkInProgressUseCase,
   })  : _getContoursUseCase = getContoursUseCase,
+        _getContoursByIdsUseCase = getContoursByIdsUseCase,
         _toggleFavoriteUseCase = toggleFavoriteUseCase,
+        _getFavoriteIdsUseCase = getFavoriteIdsUseCase,
         _getWorkInProgressUseCase = getWorkInProgressUseCase,
         super(const GalleryState()) {
     on<LoadContours>(_onLoadContours);
     on<ChangeFilter>(_onChangeFilter);
-    on<ToggleFavorite>(_onToggleFavorite);
     on<SelectCategory>(_onSelectCategory);
+    on<ToggleFavorite>(_onToggleFavorite);
   }
 
-  Future<void> _onLoadContours(
-    LoadContours event,
-    Emitter<GalleryState> emit,
-  ) async {
-    try {
-      emit(state.copyWith(
-        status: GalleryStatus.loading,
-        error: null,
-      ));
+  // ...
+}
+```
 
-      final contours = await _getContoursUseCase.execute(
-        limit: Constants.pageSize,
-        offset: state.currentPage * Constants.pageSize,
-        category: state.selectedCategory,
-      );
+### CanvasScreen
+```dart
+@RoutePage()
+class CanvasScreen extends StatelessWidget {
+  final String contourId;
 
-      final newContours = event.reset
-          ? contours
-          : [...state.contours, ...contours];
-
-      emit(state.copyWith(
-        status: GalleryStatus.success,
-        contours: newContours,
-        currentPage: state.currentPage + 1,
-        hasReachedMax: contours.length < Constants.pageSize,
-        error: null,
-      ));
-    } catch (e, stackTrace) {
-      ErrorHandler.handleError(e, stackTrace);
-      emit(state.copyWith(
-        status: GalleryStatus.failure,
-        error: e.toString(),
-      ));
-    }
-  }
-
-  // ... другие обработчики
+  const CanvasScreen({super.key, required this.contourId});
 
   @override
-  Future<void> close() {
-    // отписки если есть
-    return super.close();
+  Widget build(BuildContext context) {
+    return BlocProvider<CanvasBloc>(
+      create: (context) => CanvasBloc(
+        contourId: contourId,
+        addStrokeUseCase: appLocator<AddStrokeUseCase>(),
+        saveProjectUseCase: appLocator<SaveProjectUseCase>(),
+        loadProjectUseCase: appLocator<LoadProjectUseCase>(),
+        getContourByIdUseCase: appLocator<GetContourByIdUseCase>(),
+      )..add(const LoadProject()),
+      child: const CanvasContent(),
+    );
   }
 }
 ```
@@ -332,12 +342,7 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
 // features/gallery/lib/src/bloc/gallery_state.dart
 part of 'gallery_bloc.dart';
 
-enum GalleryStatus {
-  initial,
-  loading,
-  success,
-  failure,
-}
+enum GalleryStatus { initial, loading, success, failure }
 
 class GalleryState extends Equatable {
   final GalleryStatus status;
@@ -347,6 +352,8 @@ class GalleryState extends Equatable {
   final String? selectedCategory;
   final int currentPage;
   final bool hasReachedMax;
+  final List<String> favoriteIds;
+  final List<String> workInProgressIds;
 
   const GalleryState({
     this.status = GalleryStatus.initial,
@@ -356,6 +363,8 @@ class GalleryState extends Equatable {
     this.selectedCategory,
     this.currentPage = 0,
     this.hasReachedMax = false,
+    this.favoriteIds = const [],
+    this.workInProgressIds = const [],
   });
 
   @override
@@ -367,118 +376,116 @@ class GalleryState extends Equatable {
     selectedCategory,
     currentPage,
     hasReachedMax,
+    favoriteIds,
+    workInProgressIds,
   ];
 
-  GalleryState copyWith({
-    GalleryStatus? status,
-    List<ContourEntity>? contours,
-    String? error,
-    FilterType? activeFilter,
-    String? selectedCategory,
-    int? currentPage,
-    bool? hasReachedMax,
-  }) {
-    return GalleryState(
-      status: status ?? this.status,
-      contours: contours ?? this.contours,
-      error: error ?? this.error,
-      activeFilter: activeFilter ?? this.activeFilter,
-      selectedCategory: selectedCategory ?? this.selectedCategory,
-      currentPage: currentPage ?? this.currentPage,
-      hasReachedMax: hasReachedMax ?? this.hasReachedMax,
-    );
-  }
+  GalleryState copyWith({...});
 }
 ```
 
 ## Формат Event
 ```dart
-// features/gallery/lib/src/bloc/gallery_event.dart
 part of 'gallery_bloc.dart';
 
-abstract class GalleryEvent {
+abstract class GalleryEvent extends Equatable {
   const GalleryEvent();
 }
 
 class LoadContours extends GalleryEvent {
   final bool reset;
-
   const LoadContours({this.reset = false});
+  @override List<Object?> get props => [reset];
 }
 
 class ChangeFilter extends GalleryEvent {
   final FilterType filter;
-
   const ChangeFilter(this.filter);
+  @override List<Object?> get props => [filter];
 }
 
 class SelectCategory extends GalleryEvent {
   final String category;
-
   const SelectCategory(this.category);
+  @override List<Object?> get props => [category];
 }
 
 class ToggleFavorite extends GalleryEvent {
   final String contourId;
-
   const ToggleFavorite(this.contourId);
+  @override List<Object?> get props => [contourId];
 }
 ```
 
 ### Пример экспорта модуля
 ```dart
 // core/lib/core.dart
+export 'package:flutter_dotenv/flutter_dotenv.dart';
+export 'package:easy_localization/easy_localization.dart';
+
 export 'src/config/app_config.dart';
 export 'src/constants/constants.dart';
 export 'src/di/app_locator.dart';
 export 'src/di/core_di.dart';
+export 'src/error_handler/error_handler.dart';
 export 'src/localization/app_localization.dart';
-export 'src/localization/locale_keys.g.dart';
-export 'src/theme/app_theme.dart';
+export 'src/localization/generated/locale_keys.g.dart';
 export 'src/utils/logger.dart';
 export 'src/utils/result.dart';
-export 'src/extensions/context_extensions.dart';
 ```
+
+### Пример публичного API фичи
+```dart
+// features/splash/lib/splash.dart
+import 'package:auto_route/auto_route.dart';
+
+import 'src/screens/splash_screen.dart';
+
+part 'splash.gr.dart';
+
+@AutoRouterConfig(replaceInRouteName: 'Screen,Route')
+class SplashRouter {}
+```
+
+Фичи не экспортируют BLoC, виджеты и экраны. Внешние модули используют только `SplashRoute`, `GalleryRoute`, `CanvasRoute`, `SettingsRoute`.
 
 ### CanvasPainter пример:
 ```dart
 class CanvasPainter extends CustomPainter {
   final List<StrokeEntity> strokes;
-  final ContourEntity contour;
-  final double contourOpacity;
-  final Color contourColor;
-  final double contourWidth;
+  final StrokeEntity? currentStroke;
   final Matrix4 transform;
+
+  CanvasPainter({
+    required this.strokes,
+    this.currentStroke,
+    Matrix4? transform,
+  }) : transform = transform ?? Matrix4.identity();
 
   @override
   void paint(Canvas canvas, Size size) {
     canvas.save();
     canvas.transform(transform.storage);
 
-    // 1. Нижний слой (мазки)
     for (final stroke in strokes) {
       _drawStroke(canvas, stroke);
     }
 
-    // 2. Верхний слой (контур)
-    _drawContour(canvas, contour, contourOpacity, contourColor, contourWidth);
+    if (currentStroke != null) {
+      _drawStroke(canvas, currentStroke!);
+    }
 
     canvas.restore();
   }
 
   void _drawStroke(Canvas canvas, StrokeEntity stroke) {
-    // Рисование мазка с учетом типа кисти
-  }
-
-  void _drawContour(Canvas canvas, ContourEntity contour, ...) {
-    // Рендеринг SVG контура с настройками
+    // Рисование мазка
   }
 
   @override
-  bool shouldRepaint(CanvasPainter oldDelegate) {
+  bool shouldRepaint(covariant CanvasPainter oldDelegate) {
     return oldDelegate.strokes != strokes ||
-           oldDelegate.contourOpacity != contourOpacity ||
-           oldDelegate.contourColor != contourColor ||
+           oldDelegate.currentStroke != currentStroke ||
            oldDelegate.transform != transform;
   }
 }
@@ -489,18 +496,23 @@ class CanvasPainter extends CustomPainter {
 ```yaml
 dependencies:
   drift: ^2.34.2
-  sqlite3_flutter_libs: ^0.6.0+eol
-  path_provider: ^2.1.6
-  path: ^1.9.1
+  sqlite3_flutter_libs: ^0.5.0
+  path_provider: ^2.1.3
+  path: ^1.9.0
 
 dev_dependencies:
-  drift_dev: ^2.34.4
-  build_runner: ^2.15.2
+  drift_dev: ^2.14.0
+  build_runner: ^2.4.8
 ```
+
+### Таблицы
+- `Projects`
+- `Strokes`
+- `Contours` — кэширование контуров
 
 ### Генерация кода Drift
 ```bash
-flutter pub run build_runner build
+flutter pub run build_runner build --delete-conflicting-outputs
 ```
 
 ## Скрипты для генерации
@@ -508,27 +520,45 @@ flutter pub run build_runner build
 ### prebuild_script_core.sh
 ```bash
 #!/bin/bash
+set -e
+
+flutter pub get
 flutter pub run easy_localization:generate \
   -f json \
-  -O lib/src/localization \
+  -O lib/src/localization/generated \
   -o locale_keys.g.dart \
   -i resources/lang
 
-echo "Core localization generated successfully!"
+echo "Core prebuild completed!"
 ```
 
 ### prebuild_script_navigation.sh
 ```bash
 #!/bin/bash
-flutter pub run build_runner build \
-  --delete-conflicting-outputs
+set -e
+
+flutter pub get
+flutter pub run build_runner build --delete-conflicting-outputs
 
 echo "Navigation router generated successfully!"
+```
+
+### prebuild_script_data.sh
+```bash
+#!/bin/bash
+set -e
+
+flutter pub get
+flutter pub run build_runner build --delete-conflicting-outputs
+
+echo "Data prebuild completed!"
 ```
 
 ### fast_prebuild_script.sh (корневой)
 ```bash
 #!/bin/bash
+set -e
+
 echo "Running all prebuild scripts..."
 
 ./core/prebuild_script_core.sh
@@ -536,6 +566,10 @@ echo "Running all prebuild scripts..."
 ./domain/prebuild_script_domain.sh
 ./data/prebuild_script_data.sh
 ./navigation/prebuild_script_navigation.sh
+./features/splash/prebuild_script_splash.sh
+./features/gallery/prebuild_script_gallery.sh
+./features/canvas/prebuild_script_canvas.sh
+./features/settings/prebuild_script_settings.sh
 
 echo "All prebuild scripts completed!"
 ```
@@ -556,16 +590,24 @@ flutter build apk -t lib/main_prod.dart
 ```
 
 ## Примечания по генерации
-1. Все строковые литералы использовать через LocaleKeys 
-2. Все стили выносить в тему 
-3. Все навигационные маршруты - через auto_route 
-4. Все зависимости регистрировать в appLocator 
-5. Использовать Equatable для состояний и сущностей 
-6. Для работы с Supabase использовать supabase_flutter 
+1. Все строковые литералы использовать через `LocaleKeys`
+2. Стили выносить в тему `core_ui`
+3. Все навигационные маршруты — через `auto_route`
+4. Все зависимости регистрировать в `appLocator`
+5. Использовать `Equatable` для состояний и сущностей
+6. Для работы с Supabase использовать `supabase_flutter`
 7. Для локального хранения использовать Drift (SQLite)
-8. Обработку ошибок через ErrorHandler 
-9. Каждый модуль имеет публичный API файл 
-10. Из модулей экспортировать только то, что используется другими модулями 
-11. AppConfig передается в DI при инициализации 
-12. BLoC создаются через BlocProvider непосредственно на экранах, используя appLocator для получения зависимостей (UseCase и др.)
-13. Для Drift использовать генерацию кода через drift_dev
+8. Обработку ошибок через `ErrorHandler`
+9. Каждый модуль имеет публичный API файл
+10. Из модулей экспортировать только то, что используется другими модулями
+11. `AppConfig` передаётся в DI при инициализации
+12. BLoC создаются через `BlocProvider` непосредственно на экранах, используя `appLocator`
+13. Экран фичи состоит из двух классов: `*Screen` (создаёт BLoC, `@RoutePage`) и `*Content` (вся UI-реализация)
+14. Публичный API фичи (`splash.dart`, `gallery.dart`, `canvas.dart`, `settings.dart`) экспортирует только сгенерированный `*Route`
+15. Корневой `AppRouter` находится в модуле `navigation`; маршруты: Splash, Canvas, Gallery, Settings
+16. `App` виджет находится в `lib/main_common.dart`, отдельного `lib/app.dart` нет
+17. Приложение не фиксирует ориентацию только на `portraitUp`
+18. Для Drift использовать генерацию кода через `drift_dev`
+19. Контур на холсте рисуется отдельно через `SvgPicture.string` (с применённой толщиной), а не в `CanvasPainter`
+20. Обработка касаний холста — через `Listener` с передачей `event.pressure`
+21. Тёмная тема и `ThemeSwitch` не генерируются

@@ -1,17 +1,68 @@
-# coloring_app
+# Раскраска PRO
 
-A new Flutter project.
+Мобильное Flutter-приложение для раскрашивания контуров с расширенными инструментами: кисти, ластик, undo/redo, избранное, экспорт и настройки.
 
-## Getting Started
+## Архитектура
 
-This project is a starting point for a Flutter application.
+Проект построен по модульной архитектуре с чётким разделением ответственности:
 
-A few resources to get you started if this is your first Flutter project:
+- **core** — локализация, темы, DI, утилиты и обработка ошибок.
+- **core_ui** — общие виджеты, цвета, шрифты и размеры.
+- **domain** — бизнес-логика, сущности, use cases и репозитории.
+- **data** — реализация репозиториев, провайдеры данных, сервисы.
+- **navigation** — централизованная навигация на базе `auto_route`.
+- **features** — экраны и BLoC-ы функциональных модулей:
+  - `splash` — splash-экран с проверкой авторизации.
+  - `gallery` — галерея контуров, избранное, работа в процессе.
+  - `canvas` — редактор раскраски.
+  - `settings` — настройки приложения.
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+Подробнее об архитектуре, спецификациях API и UI см. в документации:
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- [Архитектура](docs/ARCHITECTURE.md)
+- [Обзор проекта](docs/PROJECT_OVERVIEW.md)
+- [UI спецификация](docs/UI_SPEC.md)
+- [API спецификация](docs/API_SPEC.md)
+- [Чеклист](docs/CHECKLIST.md)
+
+## Запуск
+
+Приложение поддерживает две сборки: разработка (`dev`) и production (`prod`). Конфигурация окружения загружается из файлов `.env.dev` и `.env.prod`.
+
+### Dev
+
+```bash
+flutter run -t lib/main_dev.dart --flavor dev
+```
+
+### Prod
+
+```bash
+flutter run -t lib/main_prod.dart --flavor prod
+```
+
+> Для запуска prod-сборки может потребоваться настроенное окружение и подпись.
+
+## Генерация кода
+
+Проект использует кодогенерацию для навигации (`auto_route`), локализации (`easy_localization`) и data-слоя (`build_runner`).
+
+Запустить генерацию для всех модулей можно одной командой:
+
+```bash
+./fast_prebuild_script.sh
+```
+
+Или по отдельности для каждого модуля:
+
+```bash
+./core/prebuild_script_core.sh
+./core_ui/prebuild_script_core_ui.sh
+./domain/prebuild_script_domain.sh
+./data/prebuild_script_data.sh
+./navigation/prebuild_script_navigation.sh
+./features/splash/prebuild_script_splash.sh
+./features/gallery/prebuild_script_gallery.sh
+./features/canvas/prebuild_script_canvas.sh
+./features/settings/prebuild_script_settings.sh
+```

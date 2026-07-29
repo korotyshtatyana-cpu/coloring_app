@@ -1,6 +1,7 @@
-import 'package:navigation/navigation.dart';
+import 'package:auto_route/auto_route.dart';
+import 'package:flutter/material.dart';
 
-import 'src/canvas_screen.dart';
+import 'src/screens/canvas_screen.dart';
 
 part 'canvas.gr.dart';
 

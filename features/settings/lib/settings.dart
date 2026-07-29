@@ -1,6 +1,6 @@
-import 'package:navigation/navigation.dart';
+import 'package:auto_route/auto_route.dart';
 
-import 'src/settings_screen.dart';
+import 'src/screens/settings_screen.dart';
 
 part 'settings.gr.dart';
 

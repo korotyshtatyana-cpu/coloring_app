@@ -1,5 +1,9 @@
 #!/bin/bash
+set -e
 
-flutter pub run build_runner build
+cd "$(dirname "$0")"
+
+flutter pub get
+dart run build_runner build --delete-conflicting-outputs
 
 echo "Data prebuild completed!"

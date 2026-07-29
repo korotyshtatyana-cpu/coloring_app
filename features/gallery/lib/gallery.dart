@@ -1,6 +1,6 @@
-import 'package:navigation/navigation.dart';
+import 'package:auto_route/auto_route.dart';
 
-import 'src/gallery_screen.dart';
+import 'src/screens/gallery_screen.dart';
 
 part 'gallery.gr.dart';
 

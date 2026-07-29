@@ -1,9 +1,10 @@
 name: settings
 description: Settings feature
 version: 1.0.0
+publish_to: 'none'
 
 environment:
-  sdk: ">=3.2.0 <4.0.0"
+  sdk: ">=3.12.0 <4.0.0"
 
 dependencies:
   flutter:
@@ -14,8 +15,6 @@ dependencies:
     path: ../../core_ui
   domain:
     path: ../../domain
-  navigation:
-    path: ../../navigation
   flutter_bloc: ^8.1.4
   equatable: ^2.0.5
   get_it: ^7.6.7

@@ -6,3 +6,6 @@ targets:
           enable_generators:
             - auto_route
           include_imports: true
+      drift_dev:
+        options:
+          store_date_time_values_as_text: true

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
-import 'package:core/core.dart';
+import 'package:core/core.dart' hide ErrorHandler;
+import 'package:core/core.dart' as core_error show ErrorHandler;
 import 'package:core_ui/core_ui.dart';
 import 'package:data/data.dart';
 import 'package:domain/domain.dart';
@@ -15,8 +15,6 @@ Future<void> mainCommon(Flavor flavor) async {
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
   await EasyLocalization.ensureInitialized();
-  await SystemChrome.setPreferredOrientations(
-      <DeviceOrientation>[DeviceOrientation.portraitUp]);
 
   await _setupDI(flavor);
 
@@ -39,6 +37,16 @@ Future<void> _setupDI(Flavor flavor) async {
   NavigationDI.initDependencies();
 
   await appLocator.allReady();
+
+  _setupErrorHandlerDelegate();
+}
+
+void _setupErrorHandlerDelegate() {
+  core_error.ErrorHandler.setDelegate(
+    (Object error, StackTrace stackTrace, String? message) {
+      ErrorHandler.report(error, stackTrace, message: message);
+    },
+  );
 }
 
 class App extends StatefulWidget {
@@ -51,6 +59,7 @@ class App extends StatefulWidget {
 class _AppState extends State<App> {
   final AppRouter _appRouter = appLocator<AppRouter>();
 
+  late final GlobalKey<NavigatorState> _navigatorKey;
   late final RouterConfig<Object> _routerConfig;
 
   @override
@@ -58,10 +67,8 @@ class _AppState extends State<App> {
     super.initState();
 
     _routerConfig = _appRouter.config();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ErrorHandler.init(context);
-    });
+    _navigatorKey = _appRouter.navigatorKey;
+    ErrorHandler.init(_navigatorKey);
   }
 
   @override

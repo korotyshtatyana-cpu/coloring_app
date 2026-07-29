@@ -1,8 +1,8 @@
 # API спецификация (Supabase)
 
-## Таблицы
+## Таблицы Supabase
 
-```text
+```sql
 CREATE TABLE users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email TEXT UNIQUE NOT NULL,
@@ -36,8 +36,17 @@ CREATE TABLE projects (
   created_at TIMESTAMP DEFAULT NOW(),
   UNIQUE(user_id, contour_id)
 );
-
 ```
+
+## Локальная база Drift (SQLite)
+
+`schemaVersion = 1`. В локальной базе три таблицы:
+
+- `Projects` — id, contourId, userId, data (JSON), lastOpened, createdAt
+- `Strokes` — id, projectId, points (JSON), color, size, opacity, brushType
+- `Contours` — id, title, category, svgData, previewUrl, createdAt
+
+Таблица `Contours` используется для кэширования контуров.
 
 ## Supabase API Endpoints
 ### Получение контуров
@@ -109,6 +118,8 @@ https://PROJECT_ID.supabase.co/storage/v1/object/public/contours/previews/contou
 ```
 
 ## .env файлы
+Файлы содержат только те ключи, которые используются в `AppConfig`.
+
 ### .env.dev
 ```text
 SUPABASE_URL=https://your-project-dev.supabase.co
@@ -130,18 +141,18 @@ APPSFLYER_ANDROID_APP_ID=your-android-app-id
 ```
 
 ## Категории контуров
-| Категория | Описание |
-|-----------|----------|
-| `animals` | Животные |
-| `nature` | Природа |
-| `fantasy` | Фэнтези |
-| `mandala` | Мандалы |
-| `transport` | Транспорт |
-| `cities` | Города |
-| `people` | Люди |
-| `flowers` | Цветы |
-| `patterns` | Узоры |
-| `abstract` | Абстракция |
+| Категория | Описание | Ключ локализации |
+|-----------|----------|------------------|
+| `animals` | Животные | `LocaleKeys.animals` |
+| `nature` | Природа | `LocaleKeys.nature` |
+| `fantasy` | Фэнтези | `LocaleKeys.fantasy` |
+| `mandala` | Мандалы | `LocaleKeys.mandala` |
+| `transport` | Транспорт | `LocaleKeys.transport` |
+| `cities` | Города | `LocaleKeys.cities` |
+| `people` | Люди | `LocaleKeys.people` |
+| `flowers` | Цветы | `LocaleKeys.flowers` |
+| `patterns` | Узоры | `LocaleKeys.patterns` |
+| `abstract` | Абстракция | `LocaleKeys.abstract` |
 
 ## JSON структура для хранения проектов:
 ```json
@@ -149,14 +160,14 @@ APPSFLYER_ANDROID_APP_ID=your-android-app-id
   "strokes": [
     {
       "points": [[12.5, 34.2], [13.1, 35.0], ...],
-      "color": 0xFF3366FF,
+      "color": 4294967295,
       "size": 5.0,
       "opacity": 0.8,
       "brushType": "watercolor"
     }
   ],
   "settings": {
-    "contourColor": 0xFF000000,
+    "contourColor": 4278190080,
     "contourOpacity": 0.5,
     "contourWidth": 2.0
   }

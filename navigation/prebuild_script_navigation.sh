@@ -1,5 +1,9 @@
 #!/bin/bash
-flutter pub run build_runner build \
-  --delete-conflicting-outputs
+set -e
 
-echo "Navigation router generated successfully!"
+cd "$(dirname "$0")"
+
+flutter pub get
+dart run build_runner build --delete-conflicting-outputs
+
+echo "Navigation prebuild completed!"

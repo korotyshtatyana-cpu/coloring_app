@@ -1,9 +1,10 @@
 name: gallery
 description: Gallery feature
 version: 1.0.0
+publish_to: 'none'
 
 environment:
-  sdk: ">=3.2.0 <4.0.0"
+  sdk: ">=3.12.0 <4.0.0"
 
 dependencies:
   flutter:
@@ -14,12 +15,14 @@ dependencies:
     path: ../../core_ui
   domain:
     path: ../../domain
-  navigation:
-    path: ../../navigation
+  canvas:
+    path: ../canvas
+  settings:
+    path: ../settings
+
   flutter_bloc: ^8.1.4
   equatable: ^2.0.5
   get_it: ^7.6.7
-  cached_network_image: ^3.4.0
 
 dev_dependencies:
   flutter_test:

@@ -1,0 +1,153 @@
+import 'dart:async';
+
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:core/core.dart';
+import 'package:domain/domain.dart';
+import 'package:equatable/equatable.dart';
+
+part 'gallery_event.dart';
+part 'gallery_state.dart';
+
+/// BLoC responsible for loading and filtering gallery contours.
+class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
+  final GetContoursUseCase _getContoursUseCase;
+  final GetContoursByIdsUseCase _getContoursByIdsUseCase;
+  final ToggleFavoriteUseCase _toggleFavoriteUseCase;
+  final GetFavoriteIdsUseCase _getFavoriteIdsUseCase;
+  final GetWorkInProgressUseCase _getWorkInProgressUseCase;
+
+  /// Creates a [GalleryBloc] with the required use cases.
+  GalleryBloc({
+    required GetContoursUseCase getContoursUseCase,
+    required GetContoursByIdsUseCase getContoursByIdsUseCase,
+    required ToggleFavoriteUseCase toggleFavoriteUseCase,
+    required GetFavoriteIdsUseCase getFavoriteIdsUseCase,
+    required GetWorkInProgressUseCase getWorkInProgressUseCase,
+  })  : _getContoursUseCase = getContoursUseCase,
+        _getContoursByIdsUseCase = getContoursByIdsUseCase,
+        _toggleFavoriteUseCase = toggleFavoriteUseCase,
+        _getFavoriteIdsUseCase = getFavoriteIdsUseCase,
+        _getWorkInProgressUseCase = getWorkInProgressUseCase,
+        super(const GalleryState()) {
+    on<LoadContours>(_onLoadContours);
+    on<ChangeFilter>(_onChangeFilter);
+    on<SelectCategory>(_onSelectCategory);
+    on<ToggleFavorite>(_onToggleFavorite);
+  }
+
+  Future<void> _onLoadContours(
+    LoadContours event,
+    Emitter<GalleryState> emit,
+  ) async {
+    try {
+      emit(state.copyWith(
+        status: GalleryStatus.loading,
+        error: null,
+      ));
+
+      final favoriteIds = await _getFavoriteIdsUseCase.execute();
+      final workInProgressIds = await _getWorkInProgressUseCase.execute();
+
+      final List<ContourEntity> contours;
+      final bool hasReachedMax;
+      final int currentPage;
+
+      if (state.activeFilter == FilterType.all) {
+        final pageContours = await _getContoursUseCase.execute(
+          GetContoursParams(
+            limit: Constants.pageSize,
+            offset: event.reset ? 0 : state.currentPage * Constants.pageSize,
+            category: state.selectedCategory,
+          ),
+        );
+        contours = event.reset
+            ? pageContours
+            : <ContourEntity>[...state.contours, ...pageContours];
+        hasReachedMax = pageContours.length < Constants.pageSize;
+        currentPage = state.currentPage + 1;
+      } else {
+        final targetIds = state.activeFilter == FilterType.favorites
+            ? favoriteIds
+            : workInProgressIds;
+        final offset = event.reset ? 0 : state.currentPage * Constants.pageSize;
+
+        if (offset >= targetIds.length) {
+          contours = event.reset ? <ContourEntity>[] : state.contours;
+          hasReachedMax = true;
+          currentPage = state.currentPage;
+        } else {
+          final pageIds = targetIds.sublist(
+            offset,
+            (offset + Constants.pageSize).clamp(0, targetIds.length),
+          );
+          final pageContours = await _getContoursByIdsUseCase.execute(
+            GetContoursByIdsParams(
+              ids: pageIds,
+              limit: Constants.pageSize,
+              offset: 0,
+            ),
+          );
+          contours = event.reset
+              ? pageContours
+              : <ContourEntity>[...state.contours, ...pageContours];
+          hasReachedMax = offset + Constants.pageSize >= targetIds.length;
+          currentPage = state.currentPage + 1;
+        }
+      }
+
+      emit(state.copyWith(
+        status: GalleryStatus.success,
+        contours: contours,
+        currentPage: event.reset ? 1 : currentPage,
+        hasReachedMax: hasReachedMax,
+        error: null,
+        favoriteIds: favoriteIds,
+        workInProgressIds: workInProgressIds,
+      ));
+    } catch (e, stackTrace) {
+      ErrorHandler.report(e, stackTrace);
+      emit(state.copyWith(
+        status: GalleryStatus.failure,
+        error: e.toString(),
+      ));
+    }
+  }
+
+  Future<void> _onChangeFilter(
+    ChangeFilter event,
+    Emitter<GalleryState> emit,
+  ) async {
+    emit(state.copyWith(
+      activeFilter: event.filter,
+      selectedCategory: null,
+      currentPage: 0,
+      hasReachedMax: false,
+    ));
+    add(const LoadContours(reset: true));
+  }
+
+  Future<void> _onSelectCategory(
+    SelectCategory event,
+    Emitter<GalleryState> emit,
+  ) async {
+    emit(state.copyWith(
+      selectedCategory: event.category.isEmpty ? null : event.category,
+      currentPage: 0,
+      hasReachedMax: false,
+    ));
+    add(const LoadContours(reset: true));
+  }
+
+  Future<void> _onToggleFavorite(
+    ToggleFavorite event,
+    Emitter<GalleryState> emit,
+  ) async {
+    try {
+      await _toggleFavoriteUseCase.execute(event.contourId);
+      final favorites = await _getFavoriteIdsUseCase.execute();
+      emit(state.copyWith(favoriteIds: favorites));
+    } catch (e, stackTrace) {
+      ErrorHandler.report(e, stackTrace);
+    }
+  }
+}

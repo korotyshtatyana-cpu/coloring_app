@@ -1,8 +1,13 @@
 #!/bin/bash
-flutter pub run easy_localization:generate \
-  -f json \
-  -O lib/src/localization \
-  -o locale_keys.g.dart \
-  -i resources/lang
+set -e
 
-echo "Core localization generated successfully!"
+cd "$(dirname "$0")"
+
+flutter pub get
+dart run easy_localization:generate \
+  -f keys \
+  -O lib/src/localization/generated \
+  -o locale_keys.g.dart \
+  --source-dir resources/lang
+
+echo "Core prebuild completed!"

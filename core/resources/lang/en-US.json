@@ -19,5 +19,22 @@
   "export": "Export",
   "loading": "Loading...",
   "error": "An error occurred",
-  "retry": "Retry"
+  "retry": "Retry",
+  "ok": "OK",
+  "sign_in": "Sign in",
+  "language": "Language",
+  "something_went_wrong": "Something went wrong",
+  "animals": "Animals",
+  "nature": "Nature",
+  "fantasy": "Fantasy",
+  "mandala": "Mandala",
+  "transport": "Transport",
+  "cities": "Cities",
+  "people": "People",
+  "flowers": "Flowers",
+  "patterns": "Patterns",
+  "abstract": "Abstract",
+  "save_to_gallery": "Save to Gallery",
+  "contour_color": "Contour Color",
+  "eyedropper": "Eyedropper"
 }
