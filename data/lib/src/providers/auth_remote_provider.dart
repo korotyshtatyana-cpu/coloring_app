@@ -14,12 +14,10 @@ class AuthRemoteProvider {
   final SupabaseClient _client;
   final GoogleSignIn? _googleSignIn;
 
-  /// Creates a provider with the given [client] and optional [googleSignIn].
-  AuthRemoteProvider({
-    required SupabaseClient client,
-    GoogleSignIn? googleSignIn,
-  })  : _client = client,
-        _googleSignIn = googleSignIn;
+  /// Creates a provider with the given [_client] and optional [googleSignIn].
+  AuthRemoteProvider({required this._client, required String googleWebClientId})
+    : _googleSignIn = GoogleSignIn.instance
+        ..initialize(serverClientId: googleWebClientId);
 
   /// Identifier of the currently authenticated user, or `null`.
   String? get currentUserId => _client.auth.currentUser?.id;
@@ -57,8 +55,8 @@ class AuthRemoteProvider {
 
   Future<UserModel> _signInWithGoogleSilently() async {
     final GoogleSignIn googleSignIn = _googleSignIn ?? GoogleSignIn.instance;
-    final Future<GoogleSignInAccount?>? attempt =
-        googleSignIn.attemptLightweightAuthentication();
+    final Future<GoogleSignInAccount?>? attempt = googleSignIn
+        .attemptLightweightAuthentication();
     final GoogleSignInAccount? account = attempt == null ? null : await attempt;
     if (account == null) {
       throw Exception(RequestConstants.silentSignInNotAvailable);
@@ -67,7 +65,8 @@ class AuthRemoteProvider {
   }
 
   Future<UserModel> _signInWithGoogleAccount(
-      GoogleSignInAccount account) async {
+    GoogleSignInAccount account,
+  ) async {
     final GoogleSignInAuthentication auth = account.authentication;
     final String? idToken = auth.idToken;
 
@@ -94,12 +93,12 @@ class AuthRemoteProvider {
 
     final AuthorizationCredentialAppleID credential =
         await SignInWithApple.getAppleIDCredential(
-      scopes: <AppleIDAuthorizationScopes>[
-        AppleIDAuthorizationScopes.email,
-        AppleIDAuthorizationScopes.fullName,
-      ],
-      nonce: hashedNonce,
-    );
+          scopes: <AppleIDAuthorizationScopes>[
+            AppleIDAuthorizationScopes.email,
+            AppleIDAuthorizationScopes.fullName,
+          ],
+          nonce: hashedNonce,
+        );
 
     final String? idToken = credential.identityToken;
     if (idToken == null) {
@@ -132,8 +131,10 @@ class AuthRemoteProvider {
 
   String _generateNonce() {
     final Random secureRandom = Random.secure();
-    final List<int> randomBytes =
-        List<int>.generate(32, (_) => secureRandom.nextInt(256));
+    final List<int> randomBytes = List<int>.generate(
+      32,
+      (_) => secureRandom.nextInt(256),
+    );
     return base64UrlEncode(randomBytes);
   }
 

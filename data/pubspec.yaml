@@ -22,10 +22,10 @@ dependencies:
   get_it: ^7.6.7
   google_sign_in: ^7.2.0
   sign_in_with_apple: ^8.1.0
-  share_plus: ^7.2.2
+  share_plus: ^10.1.4
   flutter_svg: ^2.0.9
   crypto: ^3.0.6
-  image_gallery_saver: ^2.0.3
+  saver_gallery: ^4.1.2
 
 dev_dependencies:
   flutter_test:

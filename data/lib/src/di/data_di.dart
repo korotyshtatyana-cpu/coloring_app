@@ -1,6 +1,5 @@
 import 'package:core/core.dart';
 import 'package:domain/domain.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data.dart';
@@ -9,16 +8,16 @@ import '../../data.dart';
 abstract class DataDI {
   /// Initializes all data-level dependencies in the global [appLocator].
   static Future<void> initDependencies() async {
-    await _initApi();
+    final config = appLocator<AppConfig>();
+
+    await _initApi(config);
     _initProviders();
-    _initServices();
-    _initRepositories();
+    await _initServices(config);
+    _initRepositories(config);
   }
 
-  static Future<void> _initApi() async {
-    final supabaseProvider = SupabaseProvider(
-      config: appLocator<AppConfig>(),
-    );
+  static Future<void> _initApi(AppConfig config) async {
+    final supabaseProvider = SupabaseProvider(config: config);
     await supabaseProvider.initialize();
     appLocator.registerSingleton<SupabaseProvider>(supabaseProvider);
   }
@@ -27,13 +26,12 @@ abstract class DataDI {
     appLocator.registerLazySingleton<AppDatabase>(AppDatabase.new);
   }
 
-  static Future<void> _initServices() async {
-    appLocator.registerLazySingleton<GoogleSignIn>(() => GoogleSignIn.instance);
+  static Future<void> _initServices(AppConfig config) async {
     final preferences = await SharedPreferences.getInstance();
     appLocator.registerSingleton<SharedPreferences>(preferences);
   }
 
-  static void _initRepositories() {
+  static void _initRepositories(AppConfig config) {
     appLocator.registerLazySingleton<ShareRepository>(
       () => const ShareRepositoryImpl(),
     );
@@ -41,38 +39,30 @@ abstract class DataDI {
     appLocator.registerLazySingleton<AuthRemoteProvider>(
       () => AuthRemoteProvider(
         client: appLocator<SupabaseProvider>().client,
-        googleSignIn: appLocator<GoogleSignIn>(),
+        googleWebClientId: config.googleWebClientId,
       ),
     );
 
     appLocator.registerLazySingleton<GalleryRemoteProvider>(
-      () => GalleryRemoteProvider(
-        client: appLocator<SupabaseProvider>().client,
-      ),
+      () =>
+          GalleryRemoteProvider(client: appLocator<SupabaseProvider>().client),
     );
 
     appLocator.registerLazySingleton<GalleryLocalProvider>(
-      () => GalleryLocalProvider(
-        database: appLocator<AppDatabase>(),
-      ),
+      () => GalleryLocalProvider(database: appLocator<AppDatabase>()),
     );
 
     appLocator.registerLazySingleton<CanvasRemoteProvider>(
-      () => CanvasRemoteProvider(
-        client: appLocator<SupabaseProvider>().client,
-      ),
+      () => CanvasRemoteProvider(client: appLocator<SupabaseProvider>().client),
     );
 
     appLocator.registerLazySingleton<CanvasLocalProvider>(
-      () => CanvasLocalProvider(
-        database: appLocator<AppDatabase>(),
-      ),
+      () => CanvasLocalProvider(database: appLocator<AppDatabase>()),
     );
 
     appLocator.registerLazySingleton<AuthRepository>(
-      () => AuthRepositoryImpl(
-        remoteProvider: appLocator<AuthRemoteProvider>(),
-      ),
+      () =>
+          AuthRepositoryImpl(remoteProvider: appLocator<AuthRemoteProvider>()),
     );
 
     appLocator.registerLazySingleton<GalleryRepository>(
@@ -91,9 +81,8 @@ abstract class DataDI {
     );
 
     appLocator.registerLazySingleton<SettingsRepository>(
-      () => SettingsRepositoryImpl(
-        preferences: appLocator<SharedPreferences>(),
-      ),
+      () =>
+          SettingsRepositoryImpl(preferences: appLocator<SharedPreferences>()),
     );
   }
 }

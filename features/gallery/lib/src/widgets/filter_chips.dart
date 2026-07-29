@@ -125,7 +125,7 @@ class _FilterChip extends StatelessWidget {
       onSelected: (_) => onTap(),
       selectedColor: colors.secondaryBg,
       labelStyle: AppFonts.normal14.copyWith(
-        color: isActive ? colors.primaryBg : colors.primaryText,
+        color: isActive ? colors.gainsboro : colors.primaryBg,
       ),
     );
   }

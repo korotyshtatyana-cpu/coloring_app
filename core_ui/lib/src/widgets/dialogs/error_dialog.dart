@@ -57,11 +57,11 @@ class ErrorDialog extends StatelessWidget {
       backgroundColor: colors.secondaryBg,
       title: Text(
         title,
-        style: AppFonts.semiBold20.copyWith(color: colors.primaryText),
+        style: AppFonts.semiBold20.copyWith(color: colors.primaryBg),
       ),
       content: Text(
         message,
-        style: AppFonts.normal16.copyWith(color: colors.primaryText),
+        style: AppFonts.normal16.copyWith(color: colors.primaryBg),
       ),
       actions: <Widget>[
           PrimaryButton(

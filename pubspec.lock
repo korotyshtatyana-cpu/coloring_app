@@ -144,7 +144,7 @@ packages:
     source: path
     version: "1.0.0"
   core_ui:
-    dependency: "direct overridden"
+    dependency: "direct main"
     description:
       path: core_ui
       relative: true
@@ -183,14 +183,14 @@ packages:
     source: hosted
     version: "3.4.1"
   data:
-    dependency: "direct overridden"
+    dependency: "direct main"
     description:
       path: data
       relative: true
     source: path
     version: "1.0.0"
   domain:
-    dependency: "direct overridden"
+    dependency: "direct main"
     description:
       path: domain
       relative: true
@@ -463,14 +463,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.8.0"
-  image_gallery_saver:
-    dependency: transitive
-    description:
-      name: image_gallery_saver
-      sha256: "0aba74216a4d9b0561510cb968015d56b701ba1bd94aace26aacdd8ae5761816"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.0.3"
   intl:
     dependency: transitive
     description:
@@ -579,10 +571,10 @@ packages:
     dependency: transitive
     description:
       name: mime
-      sha256: "801fd0b26f14a4a58ccb09d5892c3fbdeff209594300a542492cf13fba9d247a"
+      sha256: "41a20518f0cb1256669420fdba0cd90d21561e560ac240f26ef8322e45bb7ed6"
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.6"
+    version: "2.0.0"
   native_toolchain_c:
     dependency: transitive
     description:
@@ -592,7 +584,7 @@ packages:
     source: hosted
     version: "0.19.2"
   navigation:
-    dependency: "direct overridden"
+    dependency: "direct main"
     description:
       path: navigation
       relative: true
@@ -782,6 +774,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.28.0"
+  saver_gallery:
+    dependency: transitive
+    description:
+      name: saver_gallery
+      sha256: c24cfec2d94a0db9a2ae02d6a21847ba49a369c9b6c3a83f3da17d14720c0888
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.1.2"
   screenshot:
     dependency: transitive
     description:
@@ -801,18 +801,18 @@ packages:
     dependency: transitive
     description:
       name: share_plus
-      sha256: "3ef39599b00059db0990ca2e30fca0a29d8b37aae924d60063f8e0184cf20900"
+      sha256: fce43200aa03ea87b91ce4c3ac79f0cecd52e2a7a56c7a4185023c271fbfa6da
       url: "https://pub.dev"
     source: hosted
-    version: "7.2.2"
+    version: "10.1.4"
   share_plus_platform_interface:
     dependency: transitive
     description:
       name: share_plus_platform_interface
-      sha256: "251eb156a8b5fa9ce033747d73535bf53911071f8d3b6f4f0b578505ce0d4496"
+      sha256: cc012a23fc2d479854e6c80150696c4a5f5bb62cb89af4de1c505cf78d0a5d0b
       url: "https://pub.dev"
     source: hosted
-    version: "3.4.0"
+    version: "5.0.2"
   shared_preferences:
     dependency: transitive
     description:
