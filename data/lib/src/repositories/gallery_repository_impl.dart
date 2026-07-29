@@ -20,7 +20,7 @@ class GalleryRepositoryImpl implements GalleryRepository {
   Future<List<ContourEntity>> getContours({
     required int limit,
     required int offset,
-    String? category,
+    ContourCategory? category,
   }) async {
     try {
       final contours = await _remoteProvider.getContours(
@@ -41,12 +41,30 @@ class GalleryRepositoryImpl implements GalleryRepository {
     required List<String> ids,
     required int limit,
     required int offset,
+    ContourCategory? category,
   }) async {
     if (ids.isEmpty) {
       return <ContourEntity>[];
     }
 
     try {
+      if (category != null) {
+        // Load all ids and filter by category to avoid under-filled pages.
+        final List<ContourModel> allContours =
+            await _remoteProvider.getContoursByIds(
+          ids: ids,
+          limit: ids.length,
+          offset: 0,
+        );
+        await _localProvider.cacheContours(allContours);
+        return _filterByCategoryAndPaginate(
+          allContours,
+          category: category,
+          offset: offset,
+          limit: limit,
+        );
+      }
+
       final contours = await _remoteProvider.getContoursByIds(
         ids: ids,
         limit: limit,
@@ -56,11 +74,43 @@ class GalleryRepositoryImpl implements GalleryRepository {
       return contours.map(ContourMapper.toEntity).toList();
     } catch (_) {
       final cached = await _localProvider.getCachedContours();
-      return cached
+      final filtered = cached
           .where((ContourModel contour) => ids.contains(contour.id))
+          .where(
+            (ContourModel contour) =>
+                category == null || contour.category == category,
+          )
+          .toList();
+      return _paginate(filtered, offset: offset, limit: limit)
           .map(ContourMapper.toEntity)
           .toList();
     }
+  }
+
+  List<ContourEntity> _filterByCategoryAndPaginate(
+    List<ContourModel> contours, {
+    required ContourCategory category,
+    required int offset,
+    required int limit,
+  }) {
+    final filtered = contours
+        .where((ContourModel contour) => contour.category == category)
+        .toList();
+    return _paginate(filtered, offset: offset, limit: limit)
+        .map(ContourMapper.toEntity)
+        .toList();
+  }
+
+  List<ContourModel> _paginate(
+    List<ContourModel> contours, {
+    required int offset,
+    required int limit,
+  }) {
+    final end = (offset + limit).clamp(0, contours.length);
+    if (offset >= contours.length) {
+      return <ContourModel>[];
+    }
+    return contours.sublist(offset, end);
   }
 
   @override

@@ -33,10 +33,10 @@ class ChangeFilter extends GalleryEvent {
   List<Object?> get props => <Object?>[filter];
 }
 
-/// Selects a category.
+/// Selects a category. `ContourCategory.all` clears the category filter.
 class SelectCategory extends GalleryEvent {
   /// Selected category.
-  final String category;
+  final ContourCategory category;
 
   /// Creates a [SelectCategory] event.
   const SelectCategory(this.category);

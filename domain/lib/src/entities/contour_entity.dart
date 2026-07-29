@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import 'contour_category.dart';
+
 /// Domain entity representing a coloring contour.
 class ContourEntity extends Equatable {
   /// Unique contour identifier.
@@ -9,7 +11,7 @@ class ContourEntity extends Equatable {
   final String title;
 
   /// Contour category.
-  final String category;
+  final ContourCategory category;
 
   /// SVG data describing the contour shape.
   final String svgData;

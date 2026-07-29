@@ -29,8 +29,8 @@ class GalleryState extends Equatable {
   /// Active filter.
   final FilterType activeFilter;
 
-  /// Selected category.
-  final String? selectedCategory;
+  /// Selected category. `ContourCategory.all` means no category filter.
+  final ContourCategory selectedCategory;
 
   /// Current pagination page.
   final int currentPage;
@@ -50,7 +50,7 @@ class GalleryState extends Equatable {
     this.contours = const <ContourEntity>[],
     this.error,
     this.activeFilter = FilterType.all,
-    this.selectedCategory,
+    this.selectedCategory = ContourCategory.all,
     this.currentPage = 0,
     this.hasReachedMax = false,
     this.favoriteIds = const <String>[],
@@ -59,24 +59,25 @@ class GalleryState extends Equatable {
 
   @override
   List<Object?> get props => <Object?>[
-        status,
-        contours,
-        error,
-        activeFilter,
-        selectedCategory,
-        currentPage,
-        hasReachedMax,
-        favoriteIds,
-        workInProgressIds,
-      ];
+    status,
+    contours,
+    error,
+    activeFilter,
+    selectedCategory,
+    currentPage,
+    hasReachedMax,
+    favoriteIds,
+    workInProgressIds,
+  ];
 
   /// Creates a copy with optional new values.
+  /// Pass [selectedCategory] explicitly to change it; omitting keeps the current value.
   GalleryState copyWith({
     GalleryStatus? status,
     List<ContourEntity>? contours,
     String? error,
     FilterType? activeFilter,
-    String? selectedCategory,
+    ContourCategory? selectedCategory,
     int? currentPage,
     bool? hasReachedMax,
     List<String>? favoriteIds,

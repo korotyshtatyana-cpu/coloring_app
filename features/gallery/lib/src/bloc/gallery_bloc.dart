@@ -71,26 +71,43 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
             : workInProgressIds;
         final offset = event.reset ? 0 : state.currentPage * Constants.pageSize;
 
-        if (offset >= targetIds.length) {
+        if (offset >= targetIds.length &&
+            state.selectedCategory == ContourCategory.all) {
           contours = event.reset ? <ContourEntity>[] : state.contours;
           hasReachedMax = true;
           currentPage = state.currentPage;
         } else {
-          final pageIds = targetIds.sublist(
-            offset,
-            (offset + Constants.pageSize).clamp(0, targetIds.length),
-          );
-          final pageContours = await _getContoursByIdsUseCase.execute(
-            GetContoursByIdsParams(
-              ids: pageIds,
-              limit: Constants.pageSize,
-              offset: 0,
-            ),
-          );
+          final List<ContourEntity> pageContours;
+          if (state.selectedCategory != ContourCategory.all) {
+            // Load all target IDs and let the repository filter and paginate
+            // by category, so pages are not under-filled.
+            pageContours = await _getContoursByIdsUseCase.execute(
+              GetContoursByIdsParams(
+                ids: targetIds,
+                limit: Constants.pageSize,
+                offset: offset,
+                category: state.selectedCategory,
+              ),
+            );
+            hasReachedMax = pageContours.length < Constants.pageSize;
+          } else {
+            final pageIds = targetIds.sublist(
+              offset,
+              (offset + Constants.pageSize).clamp(0, targetIds.length),
+            );
+            pageContours = await _getContoursByIdsUseCase.execute(
+              GetContoursByIdsParams(
+                ids: pageIds,
+                limit: Constants.pageSize,
+                offset: 0,
+              ),
+            );
+            hasReachedMax = offset + Constants.pageSize >= targetIds.length;
+          }
+
           contours = event.reset
               ? pageContours
               : <ContourEntity>[...state.contours, ...pageContours];
-          hasReachedMax = offset + Constants.pageSize >= targetIds.length;
           currentPage = state.currentPage + 1;
         }
       }
@@ -119,7 +136,7 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
   ) async {
     emit(state.copyWith(
       activeFilter: event.filter,
-      selectedCategory: null,
+      selectedCategory: ContourCategory.all,
       currentPage: 0,
       hasReachedMax: false,
     ));
@@ -131,7 +148,7 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
     Emitter<GalleryState> emit,
   ) async {
     emit(state.copyWith(
-      selectedCategory: event.category.isEmpty ? null : event.category,
+      selectedCategory: event.category,
       currentPage: 0,
       hasReachedMax: false,
     ));

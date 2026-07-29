@@ -1,3 +1,4 @@
+import 'package:domain/domain.dart';
 import 'package:drift/drift.dart';
 
 import '../../data.dart';
@@ -43,7 +44,7 @@ class GalleryLocalProvider {
     return ContoursCompanion.insert(
       id: contour.id,
       title: contour.title,
-      category: contour.category,
+      category: contour.category.name,
       svgData: contour.svgData,
       previewUrl: contour.previewUrl,
       createdAt: contour.createdAt ?? DateTime.now(),
@@ -54,7 +55,7 @@ class GalleryLocalProvider {
     return ContourModel(
       id: row.id,
       title: row.title,
-      category: row.category,
+      category: ContourCategory.values.byName(row.category),
       svgData: row.svgData,
       previewUrl: row.previewUrl,
       createdAt: row.createdAt,

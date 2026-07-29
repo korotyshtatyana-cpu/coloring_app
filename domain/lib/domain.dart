@@ -1,5 +1,6 @@
 export 'src/di/domain_di.dart';
 export 'src/entities/brush_type.dart';
+export 'src/entities/contour_category.dart';
 export 'src/entities/contour_entity.dart';
 export 'src/entities/project_entity.dart';
 export 'src/entities/stroke_entity.dart';

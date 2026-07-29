@@ -405,7 +405,7 @@ class ChangeFilter extends GalleryEvent {
 }
 
 class SelectCategory extends GalleryEvent {
-  final String category;
+  final ContourCategory? category;
   const SelectCategory(this.category);
   @override List<Object?> get props => [category];
 }

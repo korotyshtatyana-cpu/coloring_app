@@ -10,7 +10,7 @@ class GetContoursParams {
   final int offset;
 
   /// Optional category filter.
-  final String? category;
+  final ContourCategory? category;
 
   /// Creates parameters for fetching contours.
   const GetContoursParams({
@@ -40,7 +40,7 @@ class GetContoursUseCase
     return _repository.getContours(
       limit: p.limit,
       offset: p.offset,
-      category: p.category,
+      category: p.category == ContourCategory.all ? null : p.category,
     );
   }
 }

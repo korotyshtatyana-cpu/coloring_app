@@ -12,11 +12,15 @@ class GetContoursByIdsParams {
   /// Offset for pagination.
   final int offset;
 
+  /// Optional category filter.
+  final ContourCategory? category;
+
   /// Creates parameters for fetching contours by identifiers.
   const GetContoursByIdsParams({
     required this.ids,
     required this.limit,
     required this.offset,
+    this.category,
   });
 }
 
@@ -42,6 +46,7 @@ class GetContoursByIdsUseCase
       ids: p.ids,
       limit: p.limit,
       offset: p.offset,
+      category: p.category == ContourCategory.all ? null : p.category,
     );
   }
 }

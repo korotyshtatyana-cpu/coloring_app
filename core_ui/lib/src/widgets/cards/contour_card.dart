@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../theme/app_colors.dart';
 import '../../theme/app_dimens.dart';
@@ -104,28 +105,86 @@ class ContourCard extends StatelessWidget {
       return _buildPlaceholder(colors);
     }
 
+    final bool isSvg = _isSvgUrl(url);
+
     if (url.startsWith('http')) {
+      if (isSvg) {
+        return SvgPicture.network(
+          url,
+          fit: BoxFit.cover,
+          placeholderBuilder: (_) => _buildPlaceholder(colors, url: url),
+        );
+      }
       return Image.network(
         url,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _buildPlaceholder(colors),
+        loadingBuilder: (_, Widget child, ImageChunkEvent? loadingProgress) {
+          if (loadingProgress == null) return child;
+          return _buildPlaceholder(colors, url: url);
+        },
+        errorBuilder: (_, __, ___) => _buildPlaceholder(colors, url: url),
+      );
+    }
+
+    if (isSvg) {
+      return SvgPicture.file(
+        File(url),
+        fit: BoxFit.cover,
+        placeholderBuilder: (_) => _buildPlaceholder(colors, url: url),
       );
     }
 
     return Image.file(
       File(url),
       fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => _buildPlaceholder(colors),
+      errorBuilder: (_, __, ___) => _buildPlaceholder(colors, url: url),
     );
   }
 
-  Widget _buildPlaceholder(AppColors colors) {
+  bool _isSvgUrl(String url) {
+    final String lower = url.toLowerCase();
+    if (lower.endsWith('.svg')) return true;
+
+    final String? path = Uri.tryParse(url)?.path.toLowerCase();
+    if (path != null && path.endsWith('.svg')) return true;
+
+    // If the URL has no obvious raster extension, treat it as SVG
+    // (e.g. https://placehold.co/... returns SVG by default).
+    const List<String> rasterExtensions = <String>[
+      '.png',
+      '.jpg',
+      '.jpeg',
+      '.gif',
+      '.webp',
+      '.bmp',
+    ];
+    final bool hasRasterExtension = rasterExtensions.any(lower.endsWith);
+    return !hasRasterExtension;
+  }
+
+  Widget _buildPlaceholder(AppColors colors, {String? url}) {
     return Container(
       color: colors.secondaryBg,
-      child: Icon(
-        Icons.image,
-        color: colors.primaryBg,
-        size: 48,
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          Icon(
+            Icons.image,
+            color: colors.primaryBg,
+            size: 48,
+          ),
+          if (url != null && url.isNotEmpty) ...<Widget>[
+            const SizedBox(height: 8),
+            Text(
+              url,
+              style: AppFonts.normal12.copyWith(color: colors.primaryBg),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ],
       ),
     );
   }

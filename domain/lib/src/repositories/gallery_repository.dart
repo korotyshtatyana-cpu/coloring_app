@@ -1,3 +1,4 @@
+import '../entities/contour_category.dart';
 import '../entities/contour_entity.dart';
 
 /// Repository for gallery and contour operations.
@@ -6,7 +7,7 @@ abstract class GalleryRepository {
   Future<List<ContourEntity>> getContours({
     required int limit,
     required int offset,
-    String? category,
+    ContourCategory? category,
   });
 
   /// Fetches a paginated list of contours by their identifiers.
@@ -14,6 +15,7 @@ abstract class GalleryRepository {
     required List<String> ids,
     required int limit,
     required int offset,
+    ContourCategory? category,
   });
 
   /// Toggles the favorite status of a contour for the current user.

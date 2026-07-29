@@ -20,6 +20,11 @@ CREATE TABLE contours (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
+-- Поле category хранит строковое значение enum ContourCategory.
+-- Допустимые значения: animals, nature, fantasy, mandala, transport,
+-- cities, people, flowers, patterns, abstract.
+-- Значение all не хранится; используется только на UI и преобразуется в null.
+
 CREATE TABLE favorites (
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   contour_id UUID REFERENCES contours(id) ON DELETE CASCADE,
@@ -44,7 +49,7 @@ CREATE TABLE projects (
 
 - `Projects` — id, contourId, userId, data (JSON), lastOpened, createdAt
 - `Strokes` — id, projectId, points (JSON), color, size, opacity, brushType
-- `Contours` — id, title, category, svgData, previewUrl, createdAt
+- `Contours` — id, title, category (`ContourCategory.name`), svgData, previewUrl, createdAt
 
 Таблица `Contours` используется для кэширования контуров.
 
@@ -57,7 +62,7 @@ Query params:
 - limit: 20
 - offset: 0
 - order: created_at.desc
-- category: eq.'animals' (опционально)
+- category: eq.'animals' (опционально, значение из `ContourCategory.name`)
 ```
 
 ### Получение избранного

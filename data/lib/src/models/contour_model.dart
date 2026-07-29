@@ -1,3 +1,5 @@
+import 'package:domain/domain.dart';
+
 /// Data transfer object for a contour.
 class ContourModel {
   /// Contour unique identifier.
@@ -7,7 +9,7 @@ class ContourModel {
   final String title;
 
   /// Contour category.
-  final String category;
+  final ContourCategory category;
 
   /// SVG data describing the contour.
   final String svgData;
@@ -33,7 +35,7 @@ class ContourModel {
     return ContourModel(
       id: json['id'] as String,
       title: json['title'] as String,
-      category: json['category'] as String,
+      category: ContourCategory.values.byName(json['category'] as String),
       svgData: json['svg_data'] as String,
       previewUrl: json['preview_url'] as String,
       createdAt: json['created_at'] == null
@@ -47,7 +49,7 @@ class ContourModel {
     return <String, dynamic>{
       'id': id,
       'title': title,
-      'category': category,
+      'category': category.name,
       'svg_data': svgData,
       'preview_url': previewUrl,
       if (createdAt != null) 'created_at': createdAt!.toIso8601String(),

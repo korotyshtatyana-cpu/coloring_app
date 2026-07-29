@@ -43,12 +43,14 @@ core/lib/
     │   └── error_handler.dart   # Реэкспорт базового ErrorHandler
     ├── localization/
     │   ├── app_localization.dart
+    │   ├── localization.dart    # Реэкспорт локализации
     │   └── generated/
     │       └── locale_keys.g.dart   # Автогенерируемые ключи
     └── utils/
         ├── constants.dart       # Константы приложения
         ├── logger.dart          # AppLogger
-        └── result.dart          # Result тип
+        ├── result.dart          # Result тип
+        └── svg_utils.dart       # Утилиты для SVG
 ```
 
 **Публичный API (core.dart):** экспортирует все публичные компоненты модуля, а также:
@@ -175,6 +177,7 @@ domain/lib/
 **Сущности:**
 - `UserEntity` — пользователь (id, email, name, avatarUrl)
 - `ContourEntity` — контур (id, title, category, svgData, previewUrl)
+- `ContourCategory` — enum категорий контура (all, animals, nature, fantasy, mandala, transport, cities, people, flowers, patterns, abstract). `all` — UI-значение «Все категории», не хранится в базе; use cases конвертируют его в `null` перед репозиторием
 - `ProjectEntity` — проект (id, contourId, userId, data, lastOpened, createdAt)
 - `StrokeEntity` — мазок (points, color, size, opacity, brushType)
 - `BrushType` — enum (circle, square, watercolor, chalk, marker, calligraphy, texture, airbrush)
@@ -279,7 +282,7 @@ data/lib/
 
 **Сервисы:**
 - `ShareService` — статический сервис-обертка над `share_plus` для шаринга файлов/изображений.
-- `GallerySaverService` — статический сервис-обертка над `image_gallery_saver` для сохранения изображений в галерею устройства.
+- `GallerySaverService` — статический сервис-обертка над `saver_gallery` для сохранения изображений в галерею устройства.
 - Платформенные операции (шаринг, запрос пермишенов, работа с файлами) оформляются как сервисы, а не размазываются по провайдерам/репозиториям.
 
 **DataDI:** регистрирует провайдеры, сервисы и репозитории в правильном порядке.

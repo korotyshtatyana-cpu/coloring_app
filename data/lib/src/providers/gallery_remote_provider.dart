@@ -1,3 +1,4 @@
+import 'package:domain/domain.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../data.dart';
@@ -13,14 +14,14 @@ class GalleryRemoteProvider {
   Future<List<ContourModel>> getContours({
     required int limit,
     required int offset,
-    String? category,
+    ContourCategory? category,
   }) async {
     PostgrestFilterBuilder<PostgrestList> query = _client
         .from(RequestConstants.contoursTable)
         .select(RequestConstants.selectAll);
 
-    if (category != null && category.isNotEmpty) {
-      query = query.eq(RequestConstants.categoryColumn, category);
+    if (category != null) {
+      query = query.eq(RequestConstants.categoryColumn, category.name);
     }
 
     final List<Map<String, dynamic>> response = await query
