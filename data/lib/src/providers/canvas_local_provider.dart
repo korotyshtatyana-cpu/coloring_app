@@ -8,8 +8,8 @@ import '../../data.dart';
 class CanvasLocalProvider {
   final AppDatabase _database;
 
-  /// Creates a provider with the given [database].
-  CanvasLocalProvider({required AppDatabase database}) : _database = database;
+  /// Creates a provider with the given [_database].
+  CanvasLocalProvider({required this._database});
 
   /// Saves the project and its strokes locally.
   Future<void> saveProject(

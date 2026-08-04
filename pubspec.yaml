@@ -23,6 +23,7 @@ dependencies:
 
   flutter_native_splash: ^2.4.0
 
+  flutter_bloc: any
 dependency_overrides:
   core:
     path: ./core

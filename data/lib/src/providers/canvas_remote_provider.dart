@@ -6,8 +6,8 @@ import '../../data.dart';
 class CanvasRemoteProvider {
   final SupabaseClient _client;
 
-  /// Creates a provider with the given [client].
-  CanvasRemoteProvider({required SupabaseClient client}) : _client = client;
+  /// Creates a provider with the given [_client].
+  CanvasRemoteProvider({required this._client});
 
   /// Saves the project to Supabase using upsert semantics.
   Future<void> saveProject(ProjectModel project) async {

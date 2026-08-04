@@ -13,7 +13,6 @@ dependencies:
     path: ../core
   get_it: ^7.6.7
   equatable: ^2.0.5
-  flutter_bloc: ^8.1.4
 
 dev_dependencies:
   flutter_test:

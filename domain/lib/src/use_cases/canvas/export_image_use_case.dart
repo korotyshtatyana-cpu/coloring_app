@@ -5,9 +5,8 @@ import '../use_case.dart';
 class ExportImageUseCase implements FutureUseCase<ExportImageParams, String?> {
   final CanvasRepository _repository;
 
-  /// Creates a use case with the given [repository].
-  const ExportImageUseCase({required CanvasRepository repository})
-      : _repository = repository;
+  /// Creates a use case with the given [_repository].
+  const ExportImageUseCase({required this._repository});
 
   @override
   Future<String?> execute([ExportImageParams? params]) {

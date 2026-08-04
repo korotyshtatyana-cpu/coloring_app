@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:core/core.dart';
 import 'package:domain/domain.dart';
 import 'package:equatable/equatable.dart';
@@ -16,13 +15,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   /// Creates an [AuthBloc] with the required use cases.
   AuthBloc({
-    required CheckAuthUseCase checkAuthUseCase,
-    required SignInUseCase signInUseCase,
-    required SignInSilentlyUseCase signInSilentlyUseCase,
-  })  : _checkAuthUseCase = checkAuthUseCase,
-        _signInUseCase = signInUseCase,
-        _signInSilentlyUseCase = signInSilentlyUseCase,
-        super(const AuthState()) {
+    required this._checkAuthUseCase,
+    required this._signInUseCase,
+    required this._signInSilentlyUseCase,
+  })  : super(const AuthState()) {
     on<CheckAuth>(_onCheckAuth);
     on<SignIn>(_onSignIn);
     on<SignInSilently>(_onSignInSilently);

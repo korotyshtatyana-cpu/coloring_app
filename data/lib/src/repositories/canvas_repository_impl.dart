@@ -30,12 +30,10 @@ class CanvasRepositoryImpl implements CanvasRepository {
 
   /// Creates a repository with the given providers.
   CanvasRepositoryImpl({
-    required CanvasRemoteProvider remoteProvider,
-    required CanvasLocalProvider localProvider,
-    required AuthRemoteProvider authRemoteProvider,
-  })  : _remoteProvider = remoteProvider,
-        _localProvider = localProvider,
-        _authRemoteProvider = authRemoteProvider;
+    required this._remoteProvider,
+    required this._localProvider,
+    required this._authRemoteProvider,
+  });
 
   @override
   Future<void> addStroke(String projectId, StrokeEntity stroke) async {

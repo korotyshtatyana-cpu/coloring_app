@@ -1,0 +1,37 @@
+import 'package:core_ui/core_ui.dart';
+import 'package:flutter/material.dart';
+
+/// Internal chip widget for gallery filters.
+class GalleryFilterChip extends StatelessWidget {
+  /// Label to display on the chip.
+  final String label;
+
+  /// Whether the chip is currently active.
+  final bool isActive;
+
+  /// Callback invoked when the chip is tapped.
+  final VoidCallback onTap;
+
+  /// Creates a [GalleryFilterChip].
+  const GalleryFilterChip({
+    required this.label,
+    required this.isActive,
+    required this.onTap,
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final AppColors colors = AppColors.of(context);
+
+    return ChoiceChip(
+      label: Text(label),
+      selected: isActive,
+      onSelected: (_) => onTap(),
+      selectedColor: colors.secondaryBg,
+      labelStyle: AppFonts.normal14.copyWith(
+        color: isActive ? colors.gainsboro : colors.primaryBg,
+      ),
+    );
+  }
+}

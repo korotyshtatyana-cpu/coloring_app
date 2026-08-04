@@ -5,9 +5,8 @@ import '../use_case.dart';
 class ToggleFavoriteUseCase implements FutureUseCase<String, void> {
   final GalleryRepository _repository;
 
-  /// Creates a use case with the given [repository].
-  const ToggleFavoriteUseCase({required GalleryRepository repository})
-      : _repository = repository;
+  /// Creates a use case with the given [_repository].
+  const ToggleFavoriteUseCase({required this._repository});
 
   @override
   Future<void> execute([String? params]) {

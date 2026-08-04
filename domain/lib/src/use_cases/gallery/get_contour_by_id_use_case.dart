@@ -5,9 +5,8 @@ import '../use_case.dart';
 class GetContourByIdUseCase implements FutureUseCase<String, ContourEntity?> {
   final GalleryRepository _repository;
 
-  /// Creates a use case with the given [repository].
-  const GetContourByIdUseCase({required GalleryRepository repository})
-      : _repository = repository;
+  /// Creates a use case with the given [_repository].
+  const GetContourByIdUseCase({required this._repository});
 
   @override
   Future<ContourEntity?> execute([String? params]) {

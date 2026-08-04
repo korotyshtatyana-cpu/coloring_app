@@ -20,9 +20,8 @@ class AddStrokeParams {
 class AddStrokeUseCase implements FutureUseCase<AddStrokeParams, void> {
   final CanvasRepository _repository;
 
-  /// Creates a use case with the given [repository].
-  const AddStrokeUseCase({required CanvasRepository repository})
-      : _repository = repository;
+  /// Creates a use case with the given [_repository].
+  const AddStrokeUseCase({required this._repository});
 
   @override
   Future<void> execute([AddStrokeParams? params]) {

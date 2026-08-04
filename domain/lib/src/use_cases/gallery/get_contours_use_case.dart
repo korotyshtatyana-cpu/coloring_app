@@ -25,9 +25,8 @@ class GetContoursUseCase
     implements FutureUseCase<GetContoursParams, List<ContourEntity>> {
   final GalleryRepository _repository;
 
-  /// Creates a use case with the given [repository].
-  const GetContoursUseCase({required GalleryRepository repository})
-      : _repository = repository;
+  /// Creates a use case with the given [_repository].
+  const GetContoursUseCase({required this._repository});
 
   @override
   Future<List<ContourEntity>> execute([GetContoursParams? params]) {

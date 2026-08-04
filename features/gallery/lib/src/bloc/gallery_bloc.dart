@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:core/core.dart';
 import 'package:domain/domain.dart';
 import 'package:equatable/equatable.dart';
@@ -18,18 +17,16 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
 
   /// Creates a [GalleryBloc] with the required use cases.
   GalleryBloc({
-    required GetContoursUseCase getContoursUseCase,
-    required GetContoursByIdsUseCase getContoursByIdsUseCase,
-    required ToggleFavoriteUseCase toggleFavoriteUseCase,
-    required GetFavoriteIdsUseCase getFavoriteIdsUseCase,
-    required GetWorkInProgressUseCase getWorkInProgressUseCase,
-  })  : _getContoursUseCase = getContoursUseCase,
-        _getContoursByIdsUseCase = getContoursByIdsUseCase,
-        _toggleFavoriteUseCase = toggleFavoriteUseCase,
-        _getFavoriteIdsUseCase = getFavoriteIdsUseCase,
-        _getWorkInProgressUseCase = getWorkInProgressUseCase,
-        super(const GalleryState()) {
-    on<LoadContours>(_onLoadContours);
+    required this._getContoursUseCase,
+    required this._getContoursByIdsUseCase,
+    required this._toggleFavoriteUseCase,
+    required this._getFavoriteIdsUseCase,
+    required this._getWorkInProgressUseCase,
+  })  : super(const GalleryState()) {
+    on<LoadContours>(
+      _onLoadContours,
+      transformer: droppable(),
+    );
     on<ChangeFilter>(_onChangeFilter);
     on<SelectCategory>(_onSelectCategory);
     on<ToggleFavorite>(_onToggleFavorite);
@@ -45,8 +42,14 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
         error: null,
       ));
 
-      final favoriteIds = await _getFavoriteIdsUseCase.execute();
-      final workInProgressIds = await _getWorkInProgressUseCase.execute();
+      // Fetch favorites and WIP IDs only on reset (first load or filter change)
+      List<String> favoriteIds = state.favoriteIds;
+      List<String> workInProgressIds = state.workInProgressIds;
+
+      if (event.reset) {
+        favoriteIds = await _getFavoriteIdsUseCase.execute();
+        workInProgressIds = await _getWorkInProgressUseCase.execute();
+      }
 
       final List<ContourEntity> contours;
       final bool hasReachedMax;
@@ -64,58 +67,40 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
             ? pageContours
             : <ContourEntity>[...state.contours, ...pageContours];
         hasReachedMax = pageContours.length < Constants.pageSize;
-        currentPage = state.currentPage + 1;
+        currentPage = event.reset ? 1 : state.currentPage + 1;
       } else {
         final targetIds = state.activeFilter == FilterType.favorites
             ? favoriteIds
             : workInProgressIds;
         final offset = event.reset ? 0 : state.currentPage * Constants.pageSize;
 
-        if (offset >= targetIds.length &&
-            state.selectedCategory == ContourCategory.all) {
+        if (offset >= targetIds.length) {
           contours = event.reset ? <ContourEntity>[] : state.contours;
           hasReachedMax = true;
           currentPage = state.currentPage;
         } else {
-          final List<ContourEntity> pageContours;
-          if (state.selectedCategory != ContourCategory.all) {
-            // Load all target IDs and let the repository filter and paginate
-            // by category, so pages are not under-filled.
-            pageContours = await _getContoursByIdsUseCase.execute(
-              GetContoursByIdsParams(
-                ids: targetIds,
-                limit: Constants.pageSize,
-                offset: offset,
-                category: state.selectedCategory,
-              ),
-            );
-            hasReachedMax = pageContours.length < Constants.pageSize;
-          } else {
-            final pageIds = targetIds.sublist(
-              offset,
-              (offset + Constants.pageSize).clamp(0, targetIds.length),
-            );
-            pageContours = await _getContoursByIdsUseCase.execute(
-              GetContoursByIdsParams(
-                ids: pageIds,
-                limit: Constants.pageSize,
-                offset: 0,
-              ),
-            );
-            hasReachedMax = offset + Constants.pageSize >= targetIds.length;
-          }
+          final List<ContourEntity> pageContours =
+              await _getContoursByIdsUseCase.execute(
+            GetContoursByIdsParams(
+              ids: targetIds,
+              limit: Constants.pageSize,
+              offset: offset,
+              category: state.selectedCategory,
+            ),
+          );
 
           contours = event.reset
               ? pageContours
               : <ContourEntity>[...state.contours, ...pageContours];
-          currentPage = state.currentPage + 1;
+          hasReachedMax = pageContours.length < Constants.pageSize;
+          currentPage = event.reset ? 1 : state.currentPage + 1;
         }
       }
 
       emit(state.copyWith(
         status: GalleryStatus.success,
         contours: contours,
-        currentPage: event.reset ? 1 : currentPage,
+        currentPage: currentPage,
         hasReachedMax: hasReachedMax,
         error: null,
         favoriteIds: favoriteIds,

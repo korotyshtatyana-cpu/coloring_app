@@ -11,10 +11,9 @@ class GalleryRepositoryImpl implements GalleryRepository {
 
   /// Creates a repository with the given providers.
   GalleryRepositoryImpl({
-    required GalleryRemoteProvider remoteProvider,
-    required GalleryLocalProvider localProvider,
-  })  : _remoteProvider = remoteProvider,
-        _localProvider = localProvider;
+    required this._remoteProvider,
+    required this._localProvider,
+  });
 
   @override
   Future<List<ContourEntity>> getContours({
@@ -32,7 +31,15 @@ class GalleryRepositoryImpl implements GalleryRepository {
       return contours.map(ContourMapper.toEntity).toList();
     } catch (_) {
       final cached = await _localProvider.getCachedContours();
-      return cached.map(ContourMapper.toEntity).toList();
+      final filtered = cached
+          .where(
+            (ContourModel contour) =>
+                category == null || contour.category == category,
+          )
+          .toList();
+      return _paginate(filtered, offset: offset, limit: limit)
+          .map(ContourMapper.toEntity)
+          .toList();
     }
   }
 
@@ -48,27 +55,11 @@ class GalleryRepositoryImpl implements GalleryRepository {
     }
 
     try {
-      if (category != null) {
-        // Load all ids and filter by category to avoid under-filled pages.
-        final List<ContourModel> allContours =
-            await _remoteProvider.getContoursByIds(
-          ids: ids,
-          limit: ids.length,
-          offset: 0,
-        );
-        await _localProvider.cacheContours(allContours);
-        return _filterByCategoryAndPaginate(
-          allContours,
-          category: category,
-          offset: offset,
-          limit: limit,
-        );
-      }
-
       final contours = await _remoteProvider.getContoursByIds(
         ids: ids,
         limit: limit,
         offset: offset,
+        category: category,
       );
       await _localProvider.cacheContours(contours);
       return contours.map(ContourMapper.toEntity).toList();

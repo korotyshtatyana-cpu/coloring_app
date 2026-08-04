@@ -6,9 +6,8 @@ import '../use_case.dart';
 class SignInSilentlyUseCase implements FutureUseCase<NoParams, UserEntity> {
   final AuthRepository _repository;
 
-  /// Creates a use case with the given [repository].
-  const SignInSilentlyUseCase({required AuthRepository repository})
-      : _repository = repository;
+  /// Creates a use case with the given [_repository].
+  const SignInSilentlyUseCase({required this._repository});
 
   @override
   Future<UserEntity> execute([NoParams? params]) {

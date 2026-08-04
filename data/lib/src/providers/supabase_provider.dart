@@ -6,8 +6,8 @@ class SupabaseProvider {
   final AppConfig _config;
   late final SupabaseClient _client;
 
-  /// Creates a provider with the given [config].
-  SupabaseProvider({required AppConfig config}) : _config = config;
+  /// Creates a provider with the given [_config].
+  SupabaseProvider({required this._config});
 
   /// Initializes Supabase with the configured URL and anon key.
   Future<void> initialize() async {

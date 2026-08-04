@@ -7,8 +7,8 @@ import '../../data.dart';
 class GalleryRemoteProvider {
   final SupabaseClient _client;
 
-  /// Creates a provider with the given [client].
-  GalleryRemoteProvider({required SupabaseClient client}) : _client = client;
+  /// Creates a provider with the given [_client].
+  GalleryRemoteProvider({required this._client});
 
   /// Fetches a paginated list of contours from Supabase.
   Future<List<ContourModel>> getContours({
@@ -38,15 +38,22 @@ class GalleryRemoteProvider {
     required List<String> ids,
     required int limit,
     required int offset,
+    ContourCategory? category,
   }) async {
     if (ids.isEmpty) {
       return <ContourModel>[];
     }
 
-    final List<Map<String, dynamic>> response = await _client
+    PostgrestFilterBuilder<PostgrestList> query = _client
         .from(RequestConstants.contoursTable)
         .select(RequestConstants.selectAll)
-        .inFilter(RequestConstants.contourIdColumn, ids)
+        .inFilter(RequestConstants.contourIdColumn, ids);
+
+    if (category != null) {
+      query = query.eq(RequestConstants.categoryColumn, category.name);
+    }
+
+    final List<Map<String, dynamic>> response = await query
         .order(RequestConstants.createdAtColumn, ascending: false)
         .range(offset, offset + limit - 1);
 
@@ -64,7 +71,7 @@ class GalleryRemoteProvider {
 
     final List<Map<String, dynamic>> response = await _client
         .from(RequestConstants.favoritesTable)
-        .select(RequestConstants.selectAll) // Use selectAll to be safe
+        .select(RequestConstants.selectContourId)
         .eq(RequestConstants.userIdColumn, user.id);
 
     return response

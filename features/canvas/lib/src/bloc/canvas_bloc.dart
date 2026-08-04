@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:core/core.dart';
 import 'package:domain/domain.dart';
 import 'package:equatable/equatable.dart';
@@ -25,23 +24,15 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
 
   /// Creates a [CanvasBloc] with required dependencies.
   CanvasBloc({
-    required String contourId,
-    required AddStrokeUseCase addStrokeUseCase,
-    required SaveProjectUseCase saveProjectUseCase,
-    required LoadProjectUseCase loadProjectUseCase,
-    required GetContourByIdUseCase getContourByIdUseCase,
-    required ExportImageUseCase exportImageUseCase,
-    required ShareFileUseCase shareFileUseCase,
-    required SaveImageToGalleryUseCase saveImageToGalleryUseCase,
-  })  : _contourId = contourId,
-        _addStrokeUseCase = addStrokeUseCase,
-        _saveProjectUseCase = saveProjectUseCase,
-        _loadProjectUseCase = loadProjectUseCase,
-        _getContourByIdUseCase = getContourByIdUseCase,
-        _exportImageUseCase = exportImageUseCase,
-        _shareFileUseCase = shareFileUseCase,
-        _saveImageToGalleryUseCase = saveImageToGalleryUseCase,
-        super(CanvasState()) {
+    required this._contourId,
+    required this._addStrokeUseCase,
+    required this._saveProjectUseCase,
+    required this._loadProjectUseCase,
+    required this._getContourByIdUseCase,
+    required this._exportImageUseCase,
+    required this._shareFileUseCase,
+    required this._saveImageToGalleryUseCase,
+  })  : super(CanvasState()) {
     on<LoadProject>(_onLoadProject);
     on<StartDrawing>(_onStartDrawing);
     on<AddPoint>(_onAddPoint);

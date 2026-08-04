@@ -5,9 +5,8 @@ import '../use_case.dart';
 class CheckAuthUseCase implements FutureUseCase<NoParams, bool> {
   final AuthRepository _repository;
 
-  /// Creates a use case with the given [repository].
-  const CheckAuthUseCase({required AuthRepository repository})
-      : _repository = repository;
+  /// Creates a use case with the given [_repository].
+  const CheckAuthUseCase({required this._repository});
 
   @override
   Future<bool> execute([NoParams? params]) {

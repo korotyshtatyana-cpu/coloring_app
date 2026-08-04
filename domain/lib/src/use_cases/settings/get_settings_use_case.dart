@@ -5,9 +5,8 @@ import '../use_case.dart';
 class GetSettingsUseCase implements FutureUseCase<NoParams, String?> {
   final SettingsRepository _repository;
 
-  /// Creates a use case with the given [repository].
-  const GetSettingsUseCase({required SettingsRepository repository})
-      : _repository = repository;
+  /// Creates a use case with the given [_repository].
+  const GetSettingsUseCase({required this._repository});
 
   @override
   Future<String?> execute([NoParams? params]) {

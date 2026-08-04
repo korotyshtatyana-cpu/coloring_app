@@ -5,9 +5,8 @@ import '../use_case.dart';
 class ShareFileUseCase implements FutureUseCase<String, void> {
   final ShareRepository _repository;
 
-  /// Creates a use case with the given [repository].
-  const ShareFileUseCase({required ShareRepository repository})
-      : _repository = repository;
+  /// Creates a use case with the given [_repository].
+  const ShareFileUseCase({required this._repository});
 
   @override
   Future<void> execute([String? params]) {

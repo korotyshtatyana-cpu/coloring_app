@@ -6,9 +6,8 @@ import '../models/user_model.dart';
 class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteProvider _remoteProvider;
 
-  /// Creates a repository with the given [remoteProvider].
-  AuthRepositoryImpl({required AuthRemoteProvider remoteProvider})
-      : _remoteProvider = remoteProvider;
+  /// Creates a repository with the given [_remoteProvider].
+  AuthRepositoryImpl({required this._remoteProvider});
 
   @override
   Future<bool> checkAuth() {

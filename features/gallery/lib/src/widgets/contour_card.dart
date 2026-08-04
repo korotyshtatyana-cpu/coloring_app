@@ -33,10 +33,16 @@ class GalleryContourCard extends StatelessWidget {
       previewUrl: contour.previewUrl,
       isFavorite: isFavorite,
       isInProgress: isInProgress,
-      onTap: () => context.router.push(CanvasRoute(contourId: contour.id)),
-      onFavoriteTap: () => context.read<GalleryBloc>().add(
-            ToggleFavorite(contour.id),
-          ),
+      onTap: () => _onTap(context),
+      onFavoriteTap: () => _onFavoriteTap(context),
     );
+  }
+
+  void _onTap(BuildContext context) {
+    context.router.push(CanvasRoute(contourId: contour.id));
+  }
+
+  void _onFavoriteTap(BuildContext context) {
+    context.read<GalleryBloc>().add(ToggleFavorite(contour.id));
   }
 }

@@ -7,8 +7,8 @@ import '../../data.dart';
 class GalleryLocalProvider {
   final AppDatabase _database;
 
-  /// Creates a provider with the given [database].
-  GalleryLocalProvider({required AppDatabase database}) : _database = database;
+  /// Creates a provider with the given [_database].
+  GalleryLocalProvider({required this._database});
 
   /// Caches a list of contours, replacing existing rows.
   Future<void> cacheContours(List<ContourModel> contours) async {

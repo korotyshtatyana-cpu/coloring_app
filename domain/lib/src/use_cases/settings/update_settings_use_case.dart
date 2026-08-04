@@ -5,9 +5,8 @@ import '../use_case.dart';
 class UpdateSettingsUseCase implements FutureUseCase<String, void> {
   final SettingsRepository _repository;
 
-  /// Creates a use case with the given [repository].
-  const UpdateSettingsUseCase({required SettingsRepository repository})
-      : _repository = repository;
+  /// Creates a use case with the given [_repository].
+  const UpdateSettingsUseCase({required this._repository});
 
   @override
   Future<void> execute([String? params]) {

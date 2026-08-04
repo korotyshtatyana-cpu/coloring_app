@@ -5,9 +5,8 @@ import '../use_case.dart';
 class GetFavoriteIdsUseCase implements FutureUseCase<NoParams, List<String>> {
   final GalleryRepository _repository;
 
-  /// Creates a use case with the given [repository].
-  const GetFavoriteIdsUseCase({required GalleryRepository repository})
-      : _repository = repository;
+  /// Creates a use case with the given [_repository].
+  const GetFavoriteIdsUseCase({required this._repository});
 
   @override
   Future<List<String>> execute([NoParams? params]) {

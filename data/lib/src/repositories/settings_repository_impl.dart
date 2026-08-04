@@ -7,9 +7,8 @@ class SettingsRepositoryImpl implements SettingsRepository {
 
   static const String _languageKey = 'language_code';
 
-  /// Creates a repository with the given [preferences].
-  SettingsRepositoryImpl({required SharedPreferences preferences})
-      : _preferences = preferences;
+  /// Creates a repository with the given [_preferences].
+  SettingsRepositoryImpl({required this._preferences});
 
   @override
   Future<String?> getLanguageCode() async {

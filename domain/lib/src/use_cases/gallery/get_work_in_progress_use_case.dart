@@ -6,9 +6,8 @@ class GetWorkInProgressUseCase
     implements FutureUseCase<NoParams, List<String>> {
   final GalleryRepository _repository;
 
-  /// Creates a use case with the given [repository].
-  const GetWorkInProgressUseCase({required GalleryRepository repository})
-      : _repository = repository;
+  /// Creates a use case with the given [_repository].
+  const GetWorkInProgressUseCase({required this._repository});
 
   @override
   Future<List<String>> execute([NoParams? params]) {

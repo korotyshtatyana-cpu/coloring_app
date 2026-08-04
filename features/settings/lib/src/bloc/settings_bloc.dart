@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:core/core.dart';
 import 'package:domain/domain.dart';
 import 'package:equatable/equatable.dart';
@@ -15,11 +14,9 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
 
   /// Creates a [SettingsBloc] with the required use cases.
   SettingsBloc({
-    required GetSettingsUseCase getSettingsUseCase,
-    required UpdateSettingsUseCase updateSettingsUseCase,
-  })  : _getSettingsUseCase = getSettingsUseCase,
-        _updateSettingsUseCase = updateSettingsUseCase,
-        super(const SettingsState()) {
+    required this._getSettingsUseCase,
+    required this._updateSettingsUseCase,
+  })  : super(const SettingsState()) {
     on<LoadSettings>(_onLoadSettings);
     on<ChangeLanguage>(_onChangeLanguage);
   }

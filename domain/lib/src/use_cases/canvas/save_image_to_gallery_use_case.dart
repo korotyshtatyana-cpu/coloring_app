@@ -5,9 +5,8 @@ import '../use_case.dart';
 class SaveImageToGalleryUseCase implements FutureUseCase<String, void> {
   final CanvasRepository _repository;
 
-  /// Creates a use case with the given [repository].
-  const SaveImageToGalleryUseCase({required CanvasRepository repository})
-      : _repository = repository;
+  /// Creates a use case with the given [_repository].
+  const SaveImageToGalleryUseCase({required this._repository});
 
   @override
   Future<void> execute([String? params]) {

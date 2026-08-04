@@ -5,9 +5,8 @@ import '../use_case.dart';
 class LoadProjectUseCase implements FutureUseCase<String, ProjectEntity?> {
   final CanvasRepository _repository;
 
-  /// Creates a use case with the given [repository].
-  const LoadProjectUseCase({required CanvasRepository repository})
-      : _repository = repository;
+  /// Creates a use case with the given [_repository].
+  const LoadProjectUseCase({required this._repository});
 
   @override
   Future<ProjectEntity?> execute([String? params]) {
