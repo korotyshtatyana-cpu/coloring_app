@@ -65,7 +65,8 @@ class CanvasRepositoryImpl implements CanvasRepository {
     } catch (e, stackTrace) {
       // Remote sync failed (e.g. RLS policy misconfiguration or no network).
       // Local data is already saved, so the user can keep drawing.
-      ErrorHandler.report(e, stackTrace);
+      debugPrint('Remote project sync failed: $e');
+      debugPrint('$stackTrace');
     }
   }
 

@@ -147,7 +147,6 @@ class _CanvasContentState extends State<CanvasContent>
                     buildWhen: (previous, current) =>
                         previous.strokes != current.strokes ||
                         previous.currentStroke != current.currentStroke ||
-                        previous.transform != current.transform ||
                         previous.contour != current.contour ||
                         previous.contourColor != current.contourColor ||
                         previous.contourOpacity != current.contourOpacity ||
@@ -160,7 +159,6 @@ class _CanvasContentState extends State<CanvasContent>
                             painter: CanvasPainter(
                               strokes: state.strokes,
                               currentStroke: state.currentStroke,
-                              transform: state.transform,
                             ),
                           ),
                           if (state.contour != null)

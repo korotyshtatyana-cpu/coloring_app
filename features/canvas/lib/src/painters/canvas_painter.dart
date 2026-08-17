@@ -2,6 +2,9 @@ import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 
 /// CustomPainter that renders the user drawing layer.
+///
+/// The transformation (pan/zoom) is applied by the parent [InteractiveViewer],
+/// so this painter draws strokes in scene coordinates without an extra matrix.
 class CanvasPainter extends CustomPainter {
   /// All committed strokes.
   final List<StrokeEntity> strokes;
@@ -9,21 +12,14 @@ class CanvasPainter extends CustomPainter {
   /// Stroke currently being drawn.
   final StrokeEntity? currentStroke;
 
-  /// Canvas transformation matrix.
-  final Matrix4 transform;
-
   /// Creates a [CanvasPainter].
   CanvasPainter({
     required this.strokes,
     this.currentStroke,
-    Matrix4? transform,
-  }) : transform = transform ?? Matrix4.identity();
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
-    canvas.save();
-    canvas.transform(transform.storage);
-
     _drawBackground(canvas, size);
 
     for (final stroke in strokes) {
@@ -33,8 +29,6 @@ class CanvasPainter extends CustomPainter {
     if (currentStroke != null) {
       _drawStroke(canvas, currentStroke!);
     }
-
-    canvas.restore();
   }
 
   void _drawBackground(Canvas canvas, Size size) {
@@ -68,7 +62,6 @@ class CanvasPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CanvasPainter oldDelegate) {
     return oldDelegate.strokes != strokes ||
-        oldDelegate.currentStroke != currentStroke ||
-        oldDelegate.transform != transform;
+        oldDelegate.currentStroke != currentStroke;
   }
 }
