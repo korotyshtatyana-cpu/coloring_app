@@ -315,15 +315,20 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
       contourId: _contourId,
       userId: '',
       data: <String, dynamic>{
-        'strokes': state.strokes.map((StrokeEntity stroke) => <String, dynamic>{
-              'points': stroke.points
-                  .map((Offset p) => <double>[p.dx, p.dy])
-                  .toList(),
-              'color': stroke.color,
-              'size': stroke.size,
-              'opacity': stroke.opacity,
-              'brushType': stroke.brushType.name,
-            }).toList(),
+        'strokes': state.strokes.asMap().entries.map((MapEntry<int, StrokeEntity> entry) {
+          final StrokeEntity stroke = entry.value;
+          return <String, dynamic>{
+            'id': '${_contourId}_${entry.key}',
+            'project_id': _contourId,
+            'points': stroke.points
+                .map((Offset p) => <double>[p.dx, p.dy])
+                .toList(),
+            'color': stroke.color,
+            'size': stroke.size,
+            'opacity': stroke.opacity,
+            'brushType': stroke.brushType.name,
+          };
+        }).toList(),
         'settings': <String, dynamic>{
           'contourColor': state.contourColor.toARGB32(),
           'contourOpacity': state.contourOpacity,

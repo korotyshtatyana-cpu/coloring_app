@@ -37,8 +37,8 @@ class StrokeModel {
   /// Creates a [StrokeModel] from a JSON map.
   factory StrokeModel.fromJson(Map<String, dynamic> json) {
     return StrokeModel(
-      id: json['id'] as String,
-      projectId: json['project_id'] as String,
+      id: json['id'] as String? ?? '',
+      projectId: json['project_id'] as String? ?? '',
       points: (json['points'] as List<dynamic>)
           .map((dynamic row) => (row as List<dynamic>).cast<double>())
           .toList(),

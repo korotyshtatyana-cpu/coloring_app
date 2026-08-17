@@ -60,7 +60,13 @@ class CanvasRepositoryImpl implements CanvasRepository {
     final strokes = _strokesFromData(mapped.data);
     _strokes[project.id] = strokes;
     await _localProvider.saveProject(model, strokes);
-    await _remoteProvider.saveProject(model);
+    try {
+      await _remoteProvider.saveProject(model);
+    } catch (e, stackTrace) {
+      // Remote sync failed (e.g. RLS policy misconfiguration or no network).
+      // Local data is already saved, so the user can keep drawing.
+      ErrorHandler.report(e, stackTrace);
+    }
   }
 
   @override

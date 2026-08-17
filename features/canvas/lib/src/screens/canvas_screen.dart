@@ -1,13 +1,14 @@
-import 'dart:math';
 import 'dart:ui' as ui;
 
 import 'package:core/core.dart';
 import 'package:core_ui/core_ui.dart';
 import 'package:domain/domain.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:vector_math/vector_math_64.dart' hide Colors;
 
 import '../bloc/canvas_bloc.dart';
 import '../painters/canvas_painter.dart';
@@ -75,7 +76,22 @@ class _CanvasContentState extends State<CanvasContent>
   final GlobalKey _repaintKey = GlobalKey();
 
   bool _isEyedropperActive = false;
-  int _pointerCount = 0;
+
+  /// Active pointers currently on screen (viewport coordinates).
+  final Map<int, Offset> _pointerPositions = <int, Offset>{};
+
+  /// Pointer positions captured when the two-finger gesture started.
+  Map<int, Offset>? _initialPointerPositions;
+
+  /// Transform value when the two-finger gesture started.
+  Matrix4? _initialTransform;
+
+  /// Pointer that is currently drawing, if any.
+  int? _activeDrawPointer;
+
+  static const double _minScale = 0.5;
+  static const double _maxScale = 5.0;
+  static const double _boundaryMargin = 64.0;
 
   @override
   void initState() {
@@ -122,14 +138,11 @@ class _CanvasContentState extends State<CanvasContent>
                 key: _repaintKey,
                 child: InteractiveViewer(
                   transformationController: _transformationController,
-                  boundaryMargin: const EdgeInsets.all(64),
-                  minScale: 0.5,
-                  maxScale: 5.0,
-                  onInteractionUpdate: (ScaleUpdateDetails details) {
-                    context.read<CanvasBloc>().add(
-                          UpdateTransform(_transformationController.value),
-                        );
-                  },
+                  boundaryMargin: const EdgeInsets.all(_boundaryMargin),
+                  minScale: _minScale,
+                  maxScale: _maxScale,
+                  panEnabled: false,
+                  scaleEnabled: false,
                   child: BlocBuilder<CanvasBloc, CanvasState>(
                     buildWhen: (previous, current) =>
                         previous.strokes != current.strokes ||
@@ -169,19 +182,21 @@ class _CanvasContentState extends State<CanvasContent>
                                 ),
                               ),
                             ),
-                          Listener(
-                            behavior: HitTestBehavior.translucent,
-                            onPointerDown: _onPointerDown,
-                            onPointerMove: _onPointerMove,
-                            onPointerUp: _onPointerUp,
-                            onPointerCancel: _onPointerCancel,
-                            child: Container(color: Colors.transparent),
-                          ),
                         ],
                       );
                     },
                   ),
                 ),
+              ),
+            ),
+            Positioned.fill(
+              child: Listener(
+                behavior: HitTestBehavior.translucent,
+                onPointerDown: _onPointerDown,
+                onPointerMove: _onPointerMove,
+                onPointerUp: _onPointerUp,
+                onPointerCancel: _onPointerCancel,
+                child: Container(color: Colors.transparent),
               ),
             ),
             Positioned(
@@ -236,43 +251,162 @@ class _CanvasContentState extends State<CanvasContent>
   }
 
   void _onPointerDown(PointerDownEvent event) {
-    _pointerCount++;
-    if (_isEyedropperActive) {
-      _pickColor(event.localPosition);
-      return;
-    }
-    if (_pointerCount > 1) return;
+    _pointerPositions[event.pointer] = event.localPosition;
 
-    context.read<CanvasBloc>().add(
-          StartDrawing(point: event.localPosition, pressure: event.pressure),
-        );
+    if (_pointerPositions.length == 1 && _canDrawWithPointer(event)) {
+      _activeDrawPointer = event.pointer;
+      if (_isEyedropperActive) {
+        _pickColor(event.localPosition);
+        return;
+      }
+      context.read<CanvasBloc>().add(
+            StartDrawing(
+              point: _viewportToScene(event.localPosition),
+              pressure: event.pressure,
+            ),
+          );
+    } else if (_pointerPositions.length >= 2) {
+      // Multiple pointers: stop drawing and switch to pan/zoom.
+      if (_activeDrawPointer != null) {
+        if (!_isEyedropperActive) {
+          context.read<CanvasBloc>().add(const EndDrawing());
+        }
+        _activeDrawPointer = null;
+      }
+      _resetTwoFingerGesture();
+    }
   }
 
   void _onPointerMove(PointerMoveEvent event) {
-    if (_isEyedropperActive) return;
-    if (_pointerCount != 1) return;
+    if (!_pointerPositions.containsKey(event.pointer)) {
+      return;
+    }
+    _pointerPositions[event.pointer] = event.localPosition;
 
-    context.read<CanvasBloc>().add(
-          AddPoint(point: event.localPosition, pressure: event.pressure),
-        );
+    if (_isEyedropperActive) {
+      return;
+    }
+
+    if (_pointerPositions.length == 2 &&
+        _initialPointerPositions != null &&
+        _initialTransform != null) {
+      _handleTwoFingerGesture();
+    } else if (event.pointer == _activeDrawPointer) {
+      context.read<CanvasBloc>().add(
+            AddPoint(
+              point: _viewportToScene(event.localPosition),
+              pressure: event.pressure,
+            ),
+          );
+    }
   }
 
   void _onPointerUp(PointerUpEvent event) {
-    _pointerCount = max(0, _pointerCount - 1);
-    if (_isEyedropperActive) {
-      _pickColor(event.localPosition);
-      return;
+    _pointerPositions.remove(event.pointer);
+
+    if (event.pointer == _activeDrawPointer) {
+      if (_isEyedropperActive) {
+        _pickColor(event.localPosition);
+      } else {
+        context.read<CanvasBloc>().add(const EndDrawing());
+      }
+      _activeDrawPointer = null;
     }
-    context.read<CanvasBloc>().add(const EndDrawing());
+
+    if (_pointerPositions.length < 2) {
+      _initialPointerPositions = null;
+      _initialTransform = null;
+    } else {
+      _resetTwoFingerGesture();
+    }
   }
 
   void _onPointerCancel(PointerCancelEvent event) {
-    _pointerCount = max(0, _pointerCount - 1);
-    if (_isEyedropperActive) return;
-    context.read<CanvasBloc>().add(const EndDrawing());
+    _pointerPositions.remove(event.pointer);
+
+    if (event.pointer == _activeDrawPointer) {
+      if (!_isEyedropperActive) {
+        context.read<CanvasBloc>().add(const EndDrawing());
+      }
+      _activeDrawPointer = null;
+    }
+
+    if (_pointerPositions.length < 2) {
+      _initialPointerPositions = null;
+      _initialTransform = null;
+    } else {
+      _resetTwoFingerGesture();
+    }
   }
 
-  Future<void> _pickColor(Offset localPosition) async {
+  bool _canDrawWithPointer(PointerEvent event) {
+    return event.kind == PointerDeviceKind.touch ||
+        event.kind == PointerDeviceKind.stylus ||
+        event.kind == PointerDeviceKind.mouse;
+  }
+
+  Offset _viewportToScene(Offset viewportPoint) {
+    final Matrix4 inverse = Matrix4.inverted(_transformationController.value);
+    return MatrixUtils.transformPoint(inverse, viewportPoint);
+  }
+
+  void _resetTwoFingerGesture() {
+    _initialPointerPositions = Map<int, Offset>.from(_pointerPositions);
+    _initialTransform = _transformationController.value;
+  }
+
+  void _handleTwoFingerGesture() {
+    final List<Offset> initialPositions =
+        _initialPointerPositions!.values.toList();
+    final List<Offset> currentPositions = _pointerPositions.values.toList();
+
+    final double initialDistance =
+        (initialPositions[0] - initialPositions[1]).distance;
+    final double currentDistance =
+        (currentPositions[0] - currentPositions[1]).distance;
+    final double scale = initialDistance > 0
+        ? currentDistance / initialDistance
+        : 1.0;
+
+    final Offset initialFocal =
+        (initialPositions[0] + initialPositions[1]) / 2;
+    final Offset currentFocal =
+        (currentPositions[0] + currentPositions[1]) / 2;
+
+    final Matrix4 matrix = Matrix4.identity()
+      ..translateByDouble(currentFocal.dx, currentFocal.dy, 0, 1)
+      ..scaleByDouble(scale, scale, scale, 1)
+      ..translateByDouble(-initialFocal.dx, -initialFocal.dy, 0, 1)
+      ..multiply(_initialTransform!);
+
+    final Matrix4 clampedMatrix = _clampTransform(matrix);
+    _transformationController.value = clampedMatrix;
+    context.read<CanvasBloc>().add(UpdateTransform(clampedMatrix));
+  }
+
+  Matrix4 _clampTransform(Matrix4 matrix) {
+    final Size viewportSize = MediaQuery.sizeOf(context);
+    final double scale = matrix.getMaxScaleOnAxis();
+    final double clampedScale = scale.clamp(_minScale, _maxScale);
+
+    final Vector3 translation = matrix.getTranslation();
+    const double minTranslation = -_boundaryMargin;
+    final double maxTranslationX =
+        viewportSize.width * (1.0 - clampedScale) + _boundaryMargin;
+    final double maxTranslationY =
+        viewportSize.height * (1.0 - clampedScale) + _boundaryMargin;
+
+    final double clampedTranslationX =
+        translation.x.clamp(minTranslation, maxTranslationX);
+    final double clampedTranslationY =
+        translation.y.clamp(minTranslation, maxTranslationY);
+
+    return Matrix4.identity()
+      ..translateByDouble(clampedTranslationX, clampedTranslationY, 0, 1)
+      ..scaleByDouble(clampedScale, clampedScale, clampedScale, 1);
+  }
+
+  Future<void> _pickColor(Offset viewportPoint) async {
     final bloc = context.read<CanvasBloc>();
     try {
       final boundary = _repaintKey.currentContext?.findRenderObject()
@@ -288,15 +422,16 @@ class _CanvasContentState extends State<CanvasContent>
       if (byteData == null) return;
 
       final bytes = byteData.buffer.asUint8List();
-      final width = image.width;
-      final height = image.height;
-      final boxSize = boundary.size;
-      final scaleX = width / boxSize.width;
-      final scaleY = height / boxSize.height;
+      final int width = image.width;
+      final int height = image.height;
+      final Size boxSize = boundary.size;
+      final double scaleX = width / boxSize.width;
+      final double scaleY = height / boxSize.height;
 
-      final x = (localPosition.dx * scaleX).clamp(0, width - 1).toInt();
-      final y = (localPosition.dy * scaleY).clamp(0, height - 1).toInt();
-      final index = (y * width + x) * 4;
+      final Offset scenePoint = _viewportToScene(viewportPoint);
+      final int x = (scenePoint.dx * scaleX).clamp(0, width - 1).toInt();
+      final int y = (scenePoint.dy * scaleY).clamp(0, height - 1).toInt();
+      final int index = (y * width + x) * 4;
 
       final color = Color.fromARGB(
         bytes[index + 3],

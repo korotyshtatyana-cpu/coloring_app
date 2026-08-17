@@ -26,7 +26,7 @@ abstract final class RequestConstants {
   static const String categoryParam = 'category';
   static const String userIdParam = 'user_id';
   static const String contourIdParam = 'contour_id';
-  static const String onConflictUserContour = '(user_id, contour_id)';
+  static const String onConflictUserContour = 'user_id,contour_id';
 
   // RPC functions and parameters
   static const String toggleFavoriteRpc = 'toggle_favorite';
