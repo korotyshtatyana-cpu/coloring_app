@@ -59,7 +59,9 @@ class CanvasRepositoryImpl implements CanvasRepository {
     );
     final strokes = _strokesFromData(mapped.data);
     _strokes[project.id] = strokes;
-    await _localProvider.saveProject(model, strokes);
+    // Pass a copy because the cached list can be modified concurrently
+    // (e.g. addStroke runs while saveProject is awaiting DB writes).
+    await _localProvider.saveProject(model, List<StrokeEntity>.from(strokes));
     try {
       await _remoteProvider.saveProject(model);
     } catch (e, stackTrace) {

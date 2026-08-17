@@ -152,35 +152,37 @@ class _CanvasContentState extends State<CanvasContent>
                         previous.contourOpacity != current.contourOpacity ||
                         previous.contourWidth != current.contourWidth,
                     builder: (context, state) {
-                      return Stack(
-                        fit: StackFit.expand,
-                        children: <Widget>[
-                          CustomPaint(
-                            painter: CanvasPainter(
-                              strokes: state.strokes,
-                              currentStroke: state.currentStroke,
+                      return ClipRect(
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: <Widget>[
+                            CustomPaint(
+                              painter: CanvasPainter(
+                                strokes: state.strokes,
+                                currentStroke: state.currentStroke,
+                              ),
                             ),
-                          ),
-                          if (state.contour != null)
-                            Positioned.fill(
-                              child: IgnorePointer(
-                                child: Opacity(
-                                  opacity: state.contourOpacity,
-                                  child: SvgPicture.string(
-                                    SvgUtils.applyStrokeWidth(
-                                      state.contour!.svgData,
-                                      state.contourWidth,
+                            if (state.contour != null)
+                              Positioned.fill(
+                                child: IgnorePointer(
+                                  child: Opacity(
+                                    opacity: state.contourOpacity,
+                                    child: SvgPicture.string(
+                                      SvgUtils.applyStrokeWidth(
+                                        state.contour!.svgData,
+                                        state.contourWidth,
+                                      ),
+                                      colorFilter: ColorFilter.mode(
+                                        state.contourColor,
+                                        BlendMode.srcIn,
+                                      ),
+                                      fit: BoxFit.contain,
                                     ),
-                                    colorFilter: ColorFilter.mode(
-                                      state.contourColor,
-                                      BlendMode.srcIn,
-                                    ),
-                                    fit: BoxFit.contain,
                                   ),
                                 ),
                               ),
-                            ),
-                        ],
+                          ],
+                        ),
                       );
                     },
                   ),
@@ -254,15 +256,19 @@ class _CanvasContentState extends State<CanvasContent>
     if (_pointerPositions.length == 1 && _canDrawWithPointer(event)) {
       _activeDrawPointer = event.pointer;
       if (_isEyedropperActive) {
-        _pickColor(event.localPosition);
+        if (_isPointerOnCanvas(event.localPosition)) {
+          _pickColor(event.localPosition);
+        }
         return;
       }
-      context.read<CanvasBloc>().add(
-            StartDrawing(
-              point: _viewportToScene(event.localPosition),
-              pressure: event.pressure,
-            ),
-          );
+      if (_isPointerOnCanvas(event.localPosition)) {
+        context.read<CanvasBloc>().add(
+              StartDrawing(
+                point: _viewportToScene(event.localPosition),
+                pressure: event.pressure,
+              ),
+            );
+      }
     } else if (_pointerPositions.length >= 2) {
       // Multiple pointers: stop drawing and switch to pan/zoom.
       if (_activeDrawPointer != null) {
@@ -290,8 +296,27 @@ class _CanvasContentState extends State<CanvasContent>
         _initialTransform != null) {
       _handleTwoFingerGesture();
     } else if (event.pointer == _activeDrawPointer) {
+      if (_isPointerOnCanvas(event.localPosition)) {
+        context.read<CanvasBloc>().add(
+              AddPoint(
+                point: _viewportToScene(event.localPosition),
+                pressure: event.pressure,
+              ),
+            );
+      } else {
+        // Pointer left the canvas: end the stroke so we don't draw a
+        // connecting line along the border when it comes back.
+        context.read<CanvasBloc>().add(const EndDrawing());
+        _activeDrawPointer = null;
+      }
+    } else if (_pointerPositions.length == 1 &&
+        _activeDrawPointer == null &&
+        _canDrawWithPointer(event) &&
+        _isPointerOnCanvas(event.localPosition)) {
+      // Pointer re-entered the canvas after leaving: start a new stroke.
+      _activeDrawPointer = event.pointer;
       context.read<CanvasBloc>().add(
-            AddPoint(
+            StartDrawing(
               point: _viewportToScene(event.localPosition),
               pressure: event.pressure,
             ),
@@ -346,6 +371,23 @@ class _CanvasContentState extends State<CanvasContent>
   Offset _viewportToScene(Offset viewportPoint) {
     final Matrix4 inverse = Matrix4.inverted(_transformationController.value);
     return MatrixUtils.transformPoint(inverse, viewportPoint);
+  }
+
+  bool _isPointerOnCanvas(Offset viewportPoint) {
+    final Size viewportSize = MediaQuery.sizeOf(context);
+    final Matrix4 matrix = _transformationController.value;
+    final double scale = matrix.getMaxScaleOnAxis();
+    final Vector3 translation = matrix.getTranslation();
+
+    final double left = translation.x;
+    final double top = translation.y;
+    final double right = left + scale * viewportSize.width;
+    final double bottom = top + scale * viewportSize.height;
+
+    return viewportPoint.dx >= left &&
+        viewportPoint.dx <= right &&
+        viewportPoint.dy >= top &&
+        viewportPoint.dy <= bottom;
   }
 
   void _resetTwoFingerGesture() {
