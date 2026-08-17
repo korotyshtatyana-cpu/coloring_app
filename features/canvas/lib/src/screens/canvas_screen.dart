@@ -89,8 +89,8 @@ class _CanvasContentState extends State<CanvasContent>
   /// Pointer that is currently drawing, if any.
   int? _activeDrawPointer;
 
-  static const double _minScale = 0.5;
-  static const double _maxScale = 5.0;
+  static const double _minScale = 0.5; // 50% (zoom out limit)
+  static const double _maxScale = 5.0; // 500% (zoom in limit)
   static const double _boundaryMargin = 64.0;
 
   @override
@@ -390,16 +390,27 @@ class _CanvasContentState extends State<CanvasContent>
     final double clampedScale = scale.clamp(_minScale, _maxScale);
 
     final Vector3 translation = matrix.getTranslation();
-    const double minTranslation = -_boundaryMargin;
-    final double maxTranslationX =
-        viewportSize.width * (1.0 - clampedScale) + _boundaryMargin;
-    final double maxTranslationY =
-        viewportSize.height * (1.0 - clampedScale) + _boundaryMargin;
+    final double clampedTranslationX;
+    final double clampedTranslationY;
 
-    final double clampedTranslationX =
-        translation.x.clamp(minTranslation, maxTranslationX);
-    final double clampedTranslationY =
-        translation.y.clamp(minTranslation, maxTranslationY);
+    if (clampedScale < 1.0) {
+      // When the canvas is smaller than the viewport, keep it centered.
+      clampedTranslationX = viewportSize.width * (1.0 - clampedScale) / 2.0;
+      clampedTranslationY = viewportSize.height * (1.0 - clampedScale) / 2.0;
+    } else {
+      // When the canvas is larger than or equal to the viewport, allow panning
+      // within the boundary margin.
+      clampedTranslationX = translation.x.clamp(
+        viewportSize.width -
+            clampedScale * (viewportSize.width + _boundaryMargin),
+        clampedScale * _boundaryMargin,
+      );
+      clampedTranslationY = translation.y.clamp(
+        viewportSize.height -
+            clampedScale * (viewportSize.height + _boundaryMargin),
+        clampedScale * _boundaryMargin,
+      );
+    }
 
     return Matrix4.identity()
       ..translateByDouble(clampedTranslationX, clampedTranslationY, 0, 1)
