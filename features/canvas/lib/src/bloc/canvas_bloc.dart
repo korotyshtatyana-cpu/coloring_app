@@ -93,9 +93,17 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
       opacity: state.isEraser ? 1.0 : state.opacity,
       brushType: state.isEraser ? BrushType.circle : state.brushType,
     );
+    final strokes = <StrokeEntity>[...state.strokes, stroke];
+    final undoStack = <StrokeEntity>[...state.undoStack, stroke];
+    if (undoStack.length > Constants.maxUndoSteps) {
+      undoStack.removeAt(0);
+    }
     emit(state.copyWith(
       status: CanvasStatus.drawing,
+      strokes: strokes,
       currentStroke: stroke,
+      undoStack: undoStack,
+      redoStack: const <StrokeEntity>[],
     ));
   }
 
@@ -103,14 +111,19 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     AddPoint event,
     Emitter<CanvasState> emit,
   ) {
-    if (state.currentStroke == null) return;
+    if (state.currentStroke == null || state.strokes.isEmpty) return;
 
     final effectiveSize = _effectiveSize(event.pressure);
     final updated = state.currentStroke!.copyWith(
       points: <Offset>[...state.currentStroke!.points, event.point],
       size: effectiveSize,
     );
-    emit(state.copyWith(currentStroke: updated));
+    final strokes = List<StrokeEntity>.from(state.strokes);
+    strokes[strokes.length - 1] = updated;
+    emit(state.copyWith(
+      strokes: strokes,
+      currentStroke: updated,
+    ));
   }
 
   Future<void> _onEndDrawing(
@@ -119,28 +132,22 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
   ) async {
     if (state.currentStroke == null) return;
 
-    final strokes = <StrokeEntity>[...state.strokes, state.currentStroke!];
-    final undoStack = <StrokeEntity>[
-      ...state.undoStack,
-      state.currentStroke!,
-    ];
-    if (undoStack.length > Constants.maxUndoSteps) {
-      undoStack.removeAt(0);
-    }
+    final strokeToSave = state.currentStroke!;
+    final shouldSave = state.strokes.isNotEmpty && state.strokes.last == strokeToSave;
 
     emit(state.copyWith(
       status: CanvasStatus.ready,
-      strokes: strokes,
       currentStroke: null,
-      undoStack: undoStack,
       redoStack: const <StrokeEntity>[],
     ));
+
+    if (!shouldSave) return;
 
     try {
       await _addStrokeUseCase.execute(
         AddStrokeParams(
           projectId: _contourId,
-          stroke: state.strokes.last,
+          stroke: strokeToSave,
         ),
       );
       _scheduleAutosave();
@@ -153,14 +160,18 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     if (state.undoStack.isEmpty) return;
 
     final removed = state.undoStack.last;
+    final isCurrentStroke =
+        state.currentStroke != null && state.currentStroke == removed;
     final undoStack = List<StrokeEntity>.from(state.undoStack)..removeLast();
     final strokes = List<StrokeEntity>.from(state.strokes)..removeLast();
     final redoStack = <StrokeEntity>[removed, ...state.redoStack];
 
     emit(state.copyWith(
+      status: isCurrentStroke ? CanvasStatus.ready : state.status,
       strokes: strokes,
       undoStack: undoStack,
       redoStack: redoStack,
+      currentStroke: isCurrentStroke ? null : state.currentStroke,
     ));
 
     _scheduleAutosave();

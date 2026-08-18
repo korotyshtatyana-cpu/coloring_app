@@ -156,12 +156,11 @@ class _CanvasContentState extends State<CanvasContent>
                         child: Stack(
                           fit: StackFit.expand,
                           children: <Widget>[
-                            CustomPaint(
-                              painter: CanvasPainter(
-                                strokes: state.strokes,
-                                currentStroke: state.currentStroke,
-                              ),
+                          CustomPaint(
+                            painter: CanvasPainter(
+                              strokes: state.strokes,
                             ),
+                          ),
                             if (state.contour != null)
                               Positioned.fill(
                                 child: IgnorePointer(

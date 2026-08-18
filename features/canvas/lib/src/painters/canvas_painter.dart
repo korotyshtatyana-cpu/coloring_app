@@ -5,17 +5,16 @@ import 'package:flutter/material.dart';
 ///
 /// The transformation (pan/zoom) is applied by the parent [InteractiveViewer],
 /// so this painter draws strokes in scene coordinates without an extra matrix.
+///
+/// The stroke currently being drawn is already included in [strokes], so there
+/// is no separate "active" rendering path and opacity stays consistent.
 class CanvasPainter extends CustomPainter {
-  /// All committed strokes.
+  /// All strokes, including the one currently being drawn.
   final List<StrokeEntity> strokes;
-
-  /// Stroke currently being drawn.
-  final StrokeEntity? currentStroke;
 
   /// Creates a [CanvasPainter].
   CanvasPainter({
     required this.strokes,
-    this.currentStroke,
   });
 
   @override
@@ -24,10 +23,6 @@ class CanvasPainter extends CustomPainter {
 
     for (final stroke in strokes) {
       _drawStroke(canvas, stroke);
-    }
-
-    if (currentStroke != null) {
-      _drawStroke(canvas, currentStroke!);
     }
   }
 
@@ -61,7 +56,6 @@ class CanvasPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CanvasPainter oldDelegate) {
-    return oldDelegate.strokes != strokes ||
-        oldDelegate.currentStroke != currentStroke;
+    return oldDelegate.strokes != strokes;
   }
 }
