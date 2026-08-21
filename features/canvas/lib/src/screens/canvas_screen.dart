@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:core/core.dart';
@@ -12,6 +13,7 @@ import 'package:vector_math/vector_math_64.dart' hide Colors;
 
 import '../bloc/canvas_bloc.dart';
 import '../painters/canvas_painter.dart';
+import '../widgets/eyedropper_overlay.dart';
 import '../widgets/export_menu.dart';
 import '../widgets/toolbars/bottom_toolbar.dart';
 import '../widgets/toolbars/left_controls.dart';
@@ -77,6 +79,24 @@ class _CanvasContentState extends State<CanvasContent>
 
   bool _isEyedropperActive = false;
 
+  /// Pointer currently being used by the eyedropper, if any.
+  int? _eyedropperPointer;
+
+  /// Current viewport position of the eyedropper pointer.
+  Offset? _eyedropperPosition;
+
+  /// Color currently previewed by the eyedropper.
+  Color? _previewColor;
+
+  /// Cached canvas image used while dragging the eyedropper.
+  ui.Image? _eyedropperImage;
+
+  /// Byte data of [_eyedropperImage] for fast pixel reads.
+  ByteData? _eyedropperByteData;
+
+  /// Future for the in-progress eyedropper image capture, if any.
+  Future<void>? _eyedropperCaptureFuture;
+
   /// Active pointers currently on screen (viewport coordinates).
   final Map<int, Offset> _pointerPositions = <int, Offset>{};
 
@@ -103,6 +123,7 @@ class _CanvasContentState extends State<CanvasContent>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _transformationController.dispose();
+    _disposeEyedropperImage();
     super.dispose();
   }
 
@@ -220,28 +241,18 @@ class _CanvasContentState extends State<CanvasContent>
                 onEyedropper: widget.onEyedropper,
               ),
             ),
-            if (_isEyedropperActive)
-              Positioned.fill(
-                child: Container(
-                  color: Colors.black12,
-                  alignment: Alignment.topCenter,
-                  child: SafeArea(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Text(
-                        LocaleKeys.eyedropper.tr(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          shadows: <Shadow>[
-                            Shadow(blurRadius: 4, color: Colors.black),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+            if (_eyedropperPosition != null && _previewColor != null)
+              BlocBuilder<CanvasBloc, CanvasState>(
+                buildWhen: (CanvasState previous, CanvasState current) =>
+                    previous.color != current.color,
+                builder: (BuildContext context, CanvasState state) {
+                  return EyedropperOverlay(
+                    position: _eyedropperPosition!,
+                    previewColor: _previewColor!,
+                    selectedColor: state.color,
+                    image: _eyedropperImage,
+                  );
+                },
               ),
           ],
         ),
@@ -253,13 +264,12 @@ class _CanvasContentState extends State<CanvasContent>
     _pointerPositions[event.pointer] = event.localPosition;
 
     if (_pointerPositions.length == 1 && _canDrawWithPointer(event)) {
-      _activeDrawPointer = event.pointer;
       if (_isEyedropperActive) {
-        if (_isPointerOnCanvas(event.localPosition)) {
-          _pickColor(event.localPosition);
-        }
+        _startEyedropperDrag(event.pointer, event.localPosition);
         return;
       }
+
+      _activeDrawPointer = event.pointer;
       if (_isPointerOnCanvas(event.localPosition)) {
         context.read<CanvasBloc>().add(
               StartDrawing(
@@ -287,6 +297,9 @@ class _CanvasContentState extends State<CanvasContent>
     _pointerPositions[event.pointer] = event.localPosition;
 
     if (_isEyedropperActive) {
+      if (event.pointer == _eyedropperPointer) {
+        _updateEyedropperPosition(event.localPosition);
+      }
       return;
     }
 
@@ -326,12 +339,13 @@ class _CanvasContentState extends State<CanvasContent>
   void _onPointerUp(PointerUpEvent event) {
     _pointerPositions.remove(event.pointer);
 
+    if (_isEyedropperActive && event.pointer == _eyedropperPointer) {
+      _commitEyedropperColor();
+      return;
+    }
+
     if (event.pointer == _activeDrawPointer) {
-      if (_isEyedropperActive) {
-        _pickColor(event.localPosition);
-      } else {
-        context.read<CanvasBloc>().add(const EndDrawing());
-      }
+      context.read<CanvasBloc>().add(const EndDrawing());
       _activeDrawPointer = null;
     }
 
@@ -346,10 +360,13 @@ class _CanvasContentState extends State<CanvasContent>
   void _onPointerCancel(PointerCancelEvent event) {
     _pointerPositions.remove(event.pointer);
 
+    if (_isEyedropperActive && event.pointer == _eyedropperPointer) {
+      _cancelEyedropper();
+      return;
+    }
+
     if (event.pointer == _activeDrawPointer) {
-      if (!_isEyedropperActive) {
-        context.read<CanvasBloc>().add(const EndDrawing());
-      }
+      context.read<CanvasBloc>().add(const EndDrawing());
       _activeDrawPointer = null;
     }
 
@@ -456,56 +473,134 @@ class _CanvasContentState extends State<CanvasContent>
       ..scaleByDouble(clampedScale, clampedScale, clampedScale, 1);
   }
 
-  Future<void> _pickColor(Offset viewportPoint) async {
-    final bloc = context.read<CanvasBloc>();
-    try {
-      final boundary = _repaintKey.currentContext?.findRenderObject()
-          as RenderRepaintBoundary?;
-      if (boundary == null) return;
+  Future<void> _captureEyedropperImage() async {
+    final RenderRepaintBoundary? boundary = _repaintKey.currentContext
+        ?.findRenderObject() as RenderRepaintBoundary?;
+    if (boundary == null) return;
 
-      final image = await boundary.toImage(
-        pixelRatio: View.of(context).devicePixelRatio,
-      );
-      final byteData = await image.toByteData(
-        format: ui.ImageByteFormat.rawRgba,
-      );
-      if (byteData == null) return;
+    _eyedropperImage?.dispose();
+    _eyedropperImage = await boundary.toImage(
+      pixelRatio: View.of(context).devicePixelRatio,
+    );
+    _eyedropperByteData = await _eyedropperImage!.toByteData(
+      format: ui.ImageByteFormat.rawRgba,
+    );
+  }
 
-      final bytes = byteData.buffer.asUint8List();
-      final int width = image.width;
-      final int height = image.height;
-      final Size boxSize = boundary.size;
-      final double scaleX = width / boxSize.width;
-      final double scaleY = height / boxSize.height;
+  Color? _readColorAt(Offset viewportPoint) {
+    final ui.Image? image = _eyedropperImage;
+    final ByteData? byteData = _eyedropperByteData;
+    if (image == null || byteData == null) return null;
 
-      final Offset scenePoint = _viewportToScene(viewportPoint);
-      final int x = (scenePoint.dx * scaleX).clamp(0, width - 1).toInt();
-      final int y = (scenePoint.dy * scaleY).clamp(0, height - 1).toInt();
-      final int index = (y * width + x) * 4;
+    final Uint8List bytes = byteData.buffer.asUint8List();
+    final int width = image.width;
+    final int height = image.height;
+    final RenderRepaintBoundary? boundary = _repaintKey.currentContext
+        ?.findRenderObject() as RenderRepaintBoundary?;
+    final Size boxSize = boundary?.size ?? Size(width.toDouble(), height.toDouble());
+    final double scaleX = width / boxSize.width;
+    final double scaleY = height / boxSize.height;
 
-      final color = Color.fromARGB(
-        bytes[index + 3],
-        bytes[index],
-        bytes[index + 1],
-        bytes[index + 2],
-      );
+    final int x = (viewportPoint.dx * scaleX).clamp(0, width - 1).toInt();
+    final int y = (viewportPoint.dy * scaleY).clamp(0, height - 1).toInt();
+    final int index = (y * width + x) * 4;
 
-      setState(() {
-        _isEyedropperActive = false;
-      });
-      bloc.add(ChangeColor(color));
-    } catch (e, stackTrace) {
-      ErrorHandler.handleError(e, stackTrace);
-      setState(() {
-        _isEyedropperActive = false;
-      });
+    return Color.fromARGB(
+      bytes[index + 3],
+      bytes[index],
+      bytes[index + 1],
+      bytes[index + 2],
+    );
+  }
+
+  void _initializeEyedropperAt(Offset position) {
+    setState(() {
+      _eyedropperPosition = position;
+    });
+    _refreshEyedropperColor(position);
+  }
+
+  void _startEyedropperDrag(int pointer, Offset position) {
+    setState(() {
+      _eyedropperPointer = pointer;
+      _eyedropperPosition = position;
+    });
+    _refreshEyedropperColor(position);
+  }
+
+  void _updateEyedropperPosition(Offset position) {
+    setState(() {
+      _eyedropperPosition = position;
+    });
+    _refreshEyedropperColor(position);
+  }
+
+  Future<void> _refreshEyedropperColor(Offset position) async {
+    if (_eyedropperCaptureFuture != null) {
+      await _eyedropperCaptureFuture;
     }
+    if (!mounted) return;
+    final Color? color = _readColorAt(position);
+    setState(() {
+      _previewColor = color;
+    });
+  }
+
+  Future<void> _commitEyedropperColor() async {
+    if (_eyedropperCaptureFuture != null) {
+      await _eyedropperCaptureFuture;
+    }
+    if (!mounted) return;
+    final Color? color = _previewColor ??
+        (_eyedropperPosition != null ? _readColorAt(_eyedropperPosition!) : null);
+    if (color != null) {
+      context.read<CanvasBloc>().add(ChangeColor(color));
+    }
+    _disposeEyedropperImage();
+    setState(() {
+      _isEyedropperActive = false;
+      _eyedropperPointer = null;
+      _eyedropperPosition = null;
+      _previewColor = null;
+    });
+  }
+
+  Future<void> _cancelEyedropper() async {
+    if (_eyedropperCaptureFuture != null) {
+      await _eyedropperCaptureFuture;
+    }
+    if (!mounted) return;
+    _disposeEyedropperImage();
+    setState(() {
+      _isEyedropperActive = false;
+      _eyedropperPointer = null;
+      _eyedropperPosition = null;
+      _previewColor = null;
+    });
+  }
+
+  void _disposeEyedropperImage() {
+    _eyedropperImage?.dispose();
+    _eyedropperImage = null;
+    _eyedropperByteData = null;
   }
 
   void enterEyedropperMode() {
     setState(() {
       _isEyedropperActive = true;
     });
+
+    _eyedropperCaptureFuture = _captureEyedropperImage();
+    _eyedropperCaptureFuture!.whenComplete(() {
+      _eyedropperCaptureFuture = null;
+    });
+
+    final Size viewportSize = MediaQuery.sizeOf(context);
+    final Offset center = Offset(
+      viewportSize.width / 2,
+      viewportSize.height / 2,
+    );
+    _initializeEyedropperAt(center);
   }
 
   void showExportMenu() {
