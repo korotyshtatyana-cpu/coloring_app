@@ -48,6 +48,7 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     on<ResetView>(_onResetView);
     on<UpdateTransform>(_onUpdateTransform);
     on<ToggleEraser>(_onToggleEraser);
+    on<SelectTool>(_onSelectTool);
     on<ExportImage>(_onExportImage);
     on<ExportImageFinished>(_onExportImageFinished);
   }
@@ -265,6 +266,10 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
 
   void _onToggleEraser(ToggleEraser event, Emitter<CanvasState> emit) {
     emit(state.copyWith(isEraser: !state.isEraser));
+  }
+
+  void _onSelectTool(SelectTool event, Emitter<CanvasState> emit) {
+    emit(state.copyWith(isEraser: event.tool == CanvasTool.eraser));
   }
 
   Future<void> _onExportImage(

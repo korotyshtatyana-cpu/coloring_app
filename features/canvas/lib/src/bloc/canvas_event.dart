@@ -191,3 +191,24 @@ class ToggleEraser extends CanvasEvent {
   /// Creates a [ToggleEraser] event.
   const ToggleEraser();
 }
+
+/// Available canvas tools.
+enum CanvasTool {
+  /// Standard brush for drawing.
+  brush,
+
+  /// Eraser for removing strokes.
+  eraser,
+}
+
+/// Selects a drawing tool.
+class SelectTool extends CanvasEvent {
+  /// The tool to select.
+  final CanvasTool tool;
+
+  /// Creates a [SelectTool] event.
+  const SelectTool(this.tool);
+
+  @override
+  List<Object?> get props => <Object?>[tool];
+}

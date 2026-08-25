@@ -228,15 +228,13 @@ class _CanvasContentState extends State<CanvasContent>
               ),
             ),
             const Positioned(
-              left: 0,
-              top: 100,
-              bottom: 100,
+              left: 8,
+              top: 120,
               child: LeftControls(),
             ),
             Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
+              right: 8,
+              bottom: 8,
               child: BottomToolbar(
                 onEyedropper: widget.onEyedropper,
               ),

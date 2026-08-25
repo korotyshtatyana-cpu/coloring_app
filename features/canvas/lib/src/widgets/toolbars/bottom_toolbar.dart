@@ -3,7 +3,6 @@ import 'package:core_ui/core_ui.dart';
 import 'package:flutter/material.dart';
 
 import '../../bloc/canvas_bloc.dart';
-import '../brush_picker.dart';
 import '../color_picker.dart';
 import '../contour_settings.dart';
 
@@ -13,61 +12,51 @@ class BottomToolbar extends StatelessWidget {
   final VoidCallback onEyedropper;
 
   /// Creates a [BottomToolbar].
-  const BottomToolbar({
-    required this.onEyedropper,
-    super.key,
-  });
+  const BottomToolbar({required this.onEyedropper, super.key});
 
   @override
   Widget build(BuildContext context) {
-    final AppColors colors = AppColors.of(context);
-    final state = context.watch<CanvasBloc>().state;
+    final colors = AppColors.of(context);
 
-    return SafeArea(
-      child: Container(
-        color: colors.primaryBg.withValues(alpha: 0.9),
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: <Widget>[
-            _ToolButton(
-              icon: Icons.color_lens,
-              label: LocaleKeys.color.tr(),
-              isActive: false,
-              onTap: () => _showColorPicker(context),
-            ),
-            _ToolButton(
-              icon: Icons.brush,
-              label: LocaleKeys.brushes.tr(),
-              isActive: false,
-              onTap: () => _showBrushPicker(context),
-            ),
-            _ToolButton(
-              icon: Icons.auto_fix_normal,
-              label: LocaleKeys.eraser.tr(),
-              isActive: state.isEraser,
-              onTap: () => context.read<CanvasBloc>().add(const ToggleEraser()),
-            ),
-            _ToolButton(
-              icon: Icons.undo,
-              label: LocaleKeys.undo.tr(),
-              isActive: false,
-              onTap: () => context.read<CanvasBloc>().add(const Undo()),
-            ),
-            _ToolButton(
-              icon: Icons.redo,
-              label: LocaleKeys.redo.tr(),
-              isActive: false,
-              onTap: () => context.read<CanvasBloc>().add(const Redo()),
-            ),
-            _ToolButton(
-              icon: Icons.format_shapes,
-              label: LocaleKeys.contour.tr(),
-              isActive: false,
-              onTap: () => _showContourSettings(context),
-            ),
-          ],
-        ),
+    return Container(
+      decoration: BoxDecoration(
+        color: colors.metallicBlue,
+        borderRadius: BorderRadius.circular(32),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: <Widget>[
+          AppIconButton(
+            size: 32,
+            iconSize: 24,
+            backgroundColor: colors.metallicBlue,
+            icon: const Icon(Icons.color_lens),
+            onPressed: () => _showColorPicker(context),
+          ),
+          AppIconButton(
+            size: 32,
+            iconSize: 24,
+            backgroundColor: colors.metallicBlue,
+            icon: const Icon(Icons.undo),
+            onPressed: () => context.read<CanvasBloc>().add(const Undo()),
+          ),
+          AppIconButton(
+            size: 32,
+            iconSize: 24,
+            backgroundColor: colors.metallicBlue,
+            icon: const Icon(Icons.redo),
+            onPressed: () => context.read<CanvasBloc>().add(const Redo()),
+          ),
+          AppIconButton(
+            size: 32,
+            iconSize: 24,
+            backgroundColor: colors.metallicBlue,
+            icon: const Icon(Icons.format_shapes),
+            onPressed: () => _showContourSettings(context),
+          ),
+        ],
       ),
     );
   }
@@ -82,62 +71,12 @@ class BottomToolbar extends StatelessWidget {
     );
   }
 
-  void _showBrushPicker(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (_) => BlocProvider<CanvasBloc>.value(
-        value: context.read<CanvasBloc>(),
-        child: const BrushPicker(),
-      ),
-    );
-  }
-
   void _showContourSettings(BuildContext context) {
     showModalBottomSheet(
       context: context,
       builder: (_) => BlocProvider<CanvasBloc>.value(
         value: context.read<CanvasBloc>(),
         child: const ContourSettings(),
-      ),
-    );
-  }
-}
-
-class _ToolButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool isActive;
-  final VoidCallback onTap;
-
-  const _ToolButton({
-    required this.icon,
-    required this.label,
-    required this.isActive,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final AppColors colors = AppColors.of(context);
-
-    return InkWell(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Icon(
-            icon,
-            color: isActive ? colors.yellow : colors.primaryText,
-            size: 24,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: AppFonts.normal12.copyWith(
-              color: isActive ? colors.yellow : colors.primaryText,
-            ),
-          ),
-        ],
       ),
     );
   }

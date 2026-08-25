@@ -30,6 +30,7 @@ class TopToolbar extends StatelessWidget {
           children: <Widget>[
             AppIconButton(
               icon: Icon(Icons.arrow_back, color: colors.primaryText),
+              backgroundColor: colors.metallicBlue,
               onPressed: () async {
                 context.read<CanvasBloc>().add(const SaveProject());
                 context.router.maybePop();
@@ -43,6 +44,7 @@ class TopToolbar extends StatelessWidget {
               ),
             AppIconButton(
               icon: Icon(Icons.share, color: colors.primaryText),
+              backgroundColor: colors.metallicBlue,
               onPressed: onExport,
             ),
           ],

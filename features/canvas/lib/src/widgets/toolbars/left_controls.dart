@@ -12,16 +12,42 @@ class LeftControls extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = context.watch<CanvasBloc>().state;
+    final colors = AppColors.of(context);
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+    return Container(
+      decoration: BoxDecoration(
+        color: colors.metallicBlue,
+        borderRadius: BorderRadius.circular(32),
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
+          AppIconButton(
+            size: 32,
+            iconSize: 24,
+            backgroundColor: colors.metallicBlue,
+            icon: const Icon(Icons.brush),
+            isActive: !state.isEraser,
+            onPressed: () => context.read<CanvasBloc>().add(
+              const SelectTool(CanvasTool.brush),
+            ),
+          ),
+          const SizedBox(height: 8),
+          AppIconButton(
+            size: 32,
+            iconSize: 24,
+            backgroundColor: colors.metallicBlue,
+            icon: const Icon(Icons.auto_fix_normal),
+            isActive: state.isEraser,
+            onPressed: () => context.read<CanvasBloc>().add(
+              const SelectTool(CanvasTool.eraser),
+            ),
+          ),
+          const SizedBox(height: 8),
           RotatedBox(
             quarterTurns: 3,
             child: CustomSlider(
-              label: LocaleKeys.brush_size.tr(),
               value: state.brushSize,
               min: Constants.minBrushSize,
               max: Constants.maxBrushSize,
@@ -30,11 +56,9 @@ class LeftControls extends StatelessWidget {
               },
             ),
           ),
-          const SizedBox(height: 24),
           RotatedBox(
             quarterTurns: 3,
             child: CustomSlider(
-              label: LocaleKeys.opacity.tr(),
               value: state.opacity,
               min: 0.0,
               max: 1.0,
@@ -43,8 +67,11 @@ class LeftControls extends StatelessWidget {
               },
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
           AppIconButton(
+            size: 32,
+            iconSize: 24,
+            backgroundColor: colors.metallicBlue,
             icon: const Icon(Icons.refresh),
             onPressed: () => context.read<CanvasBloc>().add(const ResetView()),
           ),
