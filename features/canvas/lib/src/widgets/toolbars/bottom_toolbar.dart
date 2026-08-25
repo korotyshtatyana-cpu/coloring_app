@@ -17,6 +17,9 @@ class BottomToolbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
+    final state = context.watch<CanvasBloc>().state;
+    final bool canUndo = state.undoStack.isNotEmpty;
+    final bool canRedo = state.redoStack.isNotEmpty;
 
     return Container(
       decoration: BoxDecoration(
@@ -40,14 +43,14 @@ class BottomToolbar extends StatelessWidget {
             iconSize: 24,
             backgroundColor: colors.metallicBlue,
             icon: const Icon(Icons.undo),
-            onPressed: () => context.read<CanvasBloc>().add(const Undo()),
+            onPressed: canUndo ? () => context.read<CanvasBloc>().add(const Undo()) : null,
           ),
           AppIconButton(
             size: 32,
             iconSize: 24,
             backgroundColor: colors.metallicBlue,
             icon: const Icon(Icons.redo),
-            onPressed: () => context.read<CanvasBloc>().add(const Redo()),
+            onPressed: canRedo ? () => context.read<CanvasBloc>().add(const Redo()) : null,
           ),
           AppIconButton(
             size: 32,

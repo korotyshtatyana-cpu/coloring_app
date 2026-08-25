@@ -121,8 +121,12 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     );
     final strokes = List<StrokeEntity>.from(state.strokes);
     strokes[strokes.length - 1] = updated;
+    final undoStack = List<StrokeEntity>.from(state.undoStack);
+    undoStack[undoStack.length - 1] = updated;
+
     emit(state.copyWith(
       strokes: strokes,
+      undoStack: undoStack,
       currentStroke: updated,
     ));
   }
@@ -136,10 +140,15 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     final strokeToSave = state.currentStroke!;
     final shouldSave = state.strokes.isNotEmpty && state.strokes.last == strokeToSave;
 
+    final undoStack = List<StrokeEntity>.from(state.undoStack);
+    if (undoStack.isNotEmpty) {
+      undoStack[undoStack.length - 1] = strokeToSave;
+    }
+
     emit(state.copyWith(
       status: CanvasStatus.ready,
       currentStroke: null,
-      redoStack: const <StrokeEntity>[],
+      undoStack: undoStack,
     ));
 
     if (!shouldSave) return;

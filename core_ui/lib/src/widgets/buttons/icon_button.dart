@@ -45,7 +45,11 @@ class AppIconButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppColors colors = AppColors.of(context);
-    final Color effectiveColor = isActive ? colors.yellow : colors.primaryText;
+    final bool isDisabled = onPressed == null;
+
+    final Color effectiveColor = isDisabled
+        ? colors.primaryText.withValues(alpha: 0.3)
+        : (isActive ? colors.yellow : colors.primaryText);
     final double effectiveIconSize = iconSize ?? size * 0.5;
 
     Widget content = IconButton(
