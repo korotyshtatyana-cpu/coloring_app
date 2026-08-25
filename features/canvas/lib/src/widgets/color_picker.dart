@@ -12,19 +12,17 @@ class ColorPickerDialog extends StatefulWidget {
   final VoidCallback? onEyedropper;
 
   /// Creates a [ColorPickerDialog].
-  const ColorPickerDialog({
-    this.onEyedropper,
-    super.key,
-  });
+  const ColorPickerDialog({this.onEyedropper, super.key});
 
   @override
   State<ColorPickerDialog> createState() => _ColorPickerDialogState();
 }
 
 class _ColorPickerDialogState extends State<ColorPickerDialog> {
-  ColorLabelType _selectedFormat = ColorLabelType.hex;
+  final ColorLabelType _selectedFormat = ColorLabelType.hex;
   final TextEditingController _textController = TextEditingController();
   final FocusNode _textFocusNode = FocusNode();
+  HSVColor? _hsvColor;
 
   @override
   void dispose() {
@@ -121,13 +119,6 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
     _textController.text = _colorToString(color, _selectedFormat);
   }
 
-  void _onFormatChanged(ColorLabelType format, Color currentColor) {
-    setState(() {
-      _selectedFormat = format;
-      _textController.text = _colorToString(currentColor, format);
-    });
-  }
-
   void _onTextChanged(String value, BuildContext context) {
     final Color? color = _parseColor(value, _selectedFormat);
     if (color != null) {
@@ -157,6 +148,14 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
       (CanvasBloc bloc) => bloc.state.color,
     );
 
+    if (_hsvColor == null ||
+        (_hsvColor!.toColor().toARGB32() != currentColor.toARGB32() &&
+            currentColor.toARGB32() != 0xFF000000)) {
+      _hsvColor = HSVColor.fromColor(currentColor);
+    } else if (currentColor.toARGB32() == 0xFF000000 && _hsvColor != null) {
+      _hsvColor = _hsvColor!.withValue(0);
+    }
+
     _updateTextFromColor(currentColor);
 
     return AlertDialog(
@@ -179,45 +178,56 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 ColorPicker(
-                  pickerColor: currentColor,
+                  pickerColor: _hsvColor!.toColor(),
+                  pickerHsvColor: _hsvColor,
                   enableAlpha: false,
                   labelTypes: const <ColorLabelType>[],
-                  onColorChanged: (Color color) {
-                    context.read<CanvasBloc>().add(ChangeColor(color));
+                  onColorChanged: (Color color) {},
+                  onHsvColorChanged: (HSVColor color) {
+                    setState(() => _hsvColor = color);
+                    context.read<CanvasBloc>().add(
+                      ChangeColor(color.toColor()),
+                    );
                   },
+                ),
+                SizedBox(
+                  height: 40,
+                  width: double.maxFinite,
+                  child: ColorPickerSlider(TrackType.saturation, _hsvColor!, (
+                    HSVColor color,
+                  ) {
+                    setState(() => _hsvColor = color);
+                    context.read<CanvasBloc>().add(
+                      ChangeColor(color.toColor()),
+                    );
+                  }, displayThumbColor: true),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  height: 40,
+                  width: double.maxFinite,
+                  child: ColorPickerSlider(TrackType.value, _hsvColor!, (
+                    HSVColor color,
+                  ) {
+                    setState(() => _hsvColor = color);
+                    context.read<CanvasBloc>().add(
+                      ChangeColor(color.toColor()),
+                    );
+                  }, displayThumbColor: true),
                 ),
                 const SizedBox(height: 16),
                 Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
-                    DropdownButton<ColorLabelType>(
-                      value: _selectedFormat,
-                      dropdownColor: colors.secondaryBg,
-                      style: AppFonts.normal16.copyWith(color: Colors.black),
-                      underline: Container(
-                        height: 1,
-                        color: Colors.black,
-                      ),
-                      icon: const Icon(
-                        Icons.arrow_drop_down,
-                        color: Colors.black,
-                      ),
-                      items: ColorLabelType.values.map((ColorLabelType type) {
-                        return DropdownMenuItem<ColorLabelType>(
-                          value: type,
-                          child: Text(
-                            type.name.toUpperCase(),
-                            style: AppFonts.normal16
-                                .copyWith(color: Colors.black),
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (ColorLabelType? type) {
-                        if (type != null) {
-                          _onFormatChanged(type, currentColor);
-                        }
+                    IconButton(
+                      icon: const Icon(Icons.colorize, color: Colors.black),
+                      tooltip: 'Pipe',
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        widget.onEyedropper?.call();
                       },
                     ),
-                    const SizedBox(width: 8),
+                    const Spacer(),
                     Expanded(
                       child: TextField(
                         controller: _textController,
@@ -253,36 +263,6 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
           ),
         ),
       ),
-      actions: <Widget>[
-        TextButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-            widget.onEyedropper?.call();
-          },
-          child: Text(
-            LocaleKeys.eyedropper.tr(),
-            style: AppFonts.normal16.copyWith(color: Colors.black),
-          ),
-        ),
-        ElevatedButton(
-          onPressed: () => Navigator.of(context).pop(),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: colors.secondaryBg,
-            foregroundColor: Colors.black,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppDimens.defaultBorder),
-            ),
-            padding: const EdgeInsets.symmetric(
-              vertical: 12,
-              horizontal: 24,
-            ),
-          ),
-          child: Text(
-            LocaleKeys.save.tr(),
-            style: AppFonts.semiBold20.copyWith(color: Colors.black),
-          ),
-        ),
-      ],
     );
   }
 }
