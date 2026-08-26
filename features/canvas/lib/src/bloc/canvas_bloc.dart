@@ -66,12 +66,22 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
           ? <StrokeEntity>[]
           : _strokesFromData(project.data);
 
+      final settings = project?.data['settings'] as Map<String, dynamic>?;
+      final Color? loadedColor = settings?['contourColor'] != null
+          ? Color(settings!['contourColor'] as int)
+          : null;
+      final double? loadedOpacity = settings?['contourOpacity']?.toDouble();
+      final double? loadedWidth = settings?['contourWidth']?.toDouble();
+
       emit(state.copyWith(
         status: CanvasStatus.ready,
         contour: contour,
         strokes: strokes,
         undoStack: strokes,
         redoStack: const <StrokeEntity>[],
+        contourColor: loadedColor ?? state.contourColor,
+        contourOpacity: loadedOpacity ?? state.contourOpacity,
+        contourWidth: loadedWidth ?? state.contourWidth,
       ));
     } catch (e, stackTrace) {
       ErrorHandler.report(e, stackTrace);
@@ -260,6 +270,7 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
       contourOpacity: event.opacity ?? state.contourOpacity,
       contourWidth: event.width ?? state.contourWidth,
     ));
+    _scheduleAutosave();
   }
 
   void _onResetView(ResetView event, Emitter<CanvasState> emit) {

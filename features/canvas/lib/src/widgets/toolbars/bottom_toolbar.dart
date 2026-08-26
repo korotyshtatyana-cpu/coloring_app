@@ -65,22 +65,58 @@ class BottomToolbar extends StatelessWidget {
   }
 
   void _showColorPicker(BuildContext context) {
-    showDialog(
+    final bloc = context.read<CanvasBloc>();
+    showGeneralDialog(
       context: context,
-      builder: (_) => BlocProvider<CanvasBloc>.value(
-        value: context.read<CanvasBloc>(),
-        child: ColorPickerDialog(onEyedropper: onEyedropper),
-      ),
+      barrierDismissible: true,
+      barrierLabel: '',
+      barrierColor: Colors.transparent,
+      pageBuilder: (dialogContext, anim1, anim2) {
+        return Align(
+          alignment: Alignment.bottomCenter,
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
+            child: Material(
+              color: Colors.white,
+              elevation: 8,
+              borderRadius: BorderRadius.circular(24),
+              child: SingleChildScrollView(
+                child: BlocProvider<CanvasBloc>.value(
+                  value: bloc,
+                  child: ColorPickerDialog(onEyedropper: onEyedropper),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
   void _showContourSettings(BuildContext context) {
-    showModalBottomSheet(
+    final CanvasBloc bloc = context.read<CanvasBloc>();
+    showGeneralDialog(
       context: context,
-      builder: (_) => BlocProvider<CanvasBloc>.value(
-        value: context.read<CanvasBloc>(),
-        child: const ContourSettings(),
-      ),
+      barrierDismissible: true,
+      barrierLabel: '',
+      barrierColor: Colors.transparent,
+      pageBuilder: (dialogContext, anim1, anim2) {
+        return Align(
+          alignment: Alignment.bottomCenter,
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
+            child: Material(
+              color: Colors.white,
+              elevation: 8,
+              borderRadius: BorderRadius.circular(24),
+              child: BlocProvider<CanvasBloc>.value(
+                value: bloc,
+                child: const ContourSettings(),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

@@ -1,9 +1,9 @@
 import 'package:core/core.dart';
 import 'package:core_ui/core_ui.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
 import '../bloc/canvas_bloc.dart';
+import 'color_picker.dart';
 
 /// Settings panel for contour appearance.
 class ContourSettings extends StatelessWidget {
@@ -12,11 +12,9 @@ class ContourSettings extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final AppColors colors = AppColors.of(context);
     final state = context.watch<CanvasBloc>().state;
 
     return Container(
-      color: colors.secondaryBg,
       padding: const EdgeInsets.all(16),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -24,25 +22,56 @@ class ContourSettings extends StatelessWidget {
         children: <Widget>[
           Text(
             LocaleKeys.contour.tr(),
-            style: AppFonts.semiBold20.copyWith(color: colors.primaryText),
+            style: AppFonts.semiBold20.copyWith(color: Colors.black),
           ),
           const SizedBox(height: 16),
           Row(
             children: <Widget>[
               Text(
                 LocaleKeys.contour_color.tr(),
-                style: AppFonts.normal16.copyWith(color: colors.primaryText),
+                style: AppFonts.normal16.copyWith(color: Colors.black),
               ),
               const SizedBox(width: 16),
               InkWell(
-                onTap: () => _showContourColorPicker(context, state.contourColor),
-                child: Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: state.contourColor,
-                    border: Border.all(color: colors.primaryText),
-                    borderRadius: BorderRadius.circular(8),
+                onTap: () {
+                  final bloc = context.read<CanvasBloc>();
+                  showGeneralDialog(
+                    context: context,
+                    barrierDismissible: true,
+                    barrierLabel: '',
+                    barrierColor: Colors.transparent,
+                    pageBuilder: (dialogContext, anim1, anim2) {
+                      return Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Padding(
+                          padding: const EdgeInsets.only(
+                            bottom: 80,
+                            left: 16,
+                            right: 16,
+                          ),
+                          child: Material(
+                            color: Colors.white,
+                            elevation: 8,
+                            borderRadius: BorderRadius.circular(24),
+                            child: SingleChildScrollView(
+                              child: BlocProvider<CanvasBloc>.value(
+                                value: bloc,
+                                child: const ColorPickerDialog(isContour: true),
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+                child: ClipOval(
+                  child: SizedBox(
+                    width: 48,
+                    height: 48,
+                    child: ColoredBox(
+                      color: state.contourColor,
+                    ),
                   ),
                 ),
               ),
@@ -51,70 +80,26 @@ class ContourSettings extends StatelessWidget {
           const SizedBox(height: 16),
           CustomSlider(
             label: LocaleKeys.opacity.tr(),
+            labelColor: Colors.black,
+            activeColor: Colors.black,
+            inactiveColor: Colors.black12,
+            gradient: LinearGradient(
+              colors: [
+                state.contourColor.withValues(alpha: 0),
+                state.contourColor.withValues(alpha: 1),
+              ],
+            ),
             value: state.contourOpacity,
             min: 0.0,
             max: 1.0,
             onChanged: (double value) {
               context.read<CanvasBloc>().add(
-                    ChangeContourSettings(opacity: value),
-                  );
+                ChangeContourSettings(opacity: value),
+              );
             },
-          ),
-          CustomSlider(
-            label: LocaleKeys.brush_size.tr(),
-            value: state.contourWidth,
-            min: Constants.minContourWidth,
-            max: Constants.maxContourWidth,
-            onChanged: (double value) {
-              context.read<CanvasBloc>().add(
-                    ChangeContourSettings(width: value),
-                  );
-            },
-          ),
-          const SizedBox(height: 16),
-          PrimaryButton(
-            text: LocaleKeys.save.tr(),
-            onPressed: () => Navigator.of(context).pop(),
           ),
         ],
       ),
-    );
-  }
-
-  void _showContourColorPicker(BuildContext context, Color currentColor) {
-    Color selectedColor = currentColor;
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: AppColors.of(context).secondaryBg,
-          title: Text(
-            LocaleKeys.contour_color.tr(),
-            style: AppFonts.semiBold20.copyWith(
-              color: AppColors.of(context).primaryText,
-            ),
-          ),
-          content: SingleChildScrollView(
-            child: ColorPicker(
-              pickerColor: selectedColor,
-              onColorChanged: (Color color) {
-                selectedColor = color;
-              },
-            ),
-          ),
-          actions: <Widget>[
-            PrimaryButton(
-              text: LocaleKeys.save.tr(),
-              onPressed: () {
-                context.read<CanvasBloc>().add(
-                      ChangeContourSettings(color: selectedColor),
-                    );
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
     );
   }
 }

@@ -11,8 +11,15 @@ class ColorPickerDialog extends StatefulWidget {
   /// Callback invoked when the eyedropper mode is requested.
   final VoidCallback? onEyedropper;
 
+  /// Whether the picker is being used for contour color.
+  final bool isContour;
+
   /// Creates a [ColorPickerDialog].
-  const ColorPickerDialog({this.onEyedropper, super.key});
+  const ColorPickerDialog({
+    this.isContour = false,
+    this.onEyedropper,
+    super.key,
+  });
 
   @override
   State<ColorPickerDialog> createState() => _ColorPickerDialogState();
@@ -122,7 +129,12 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
   void _onTextChanged(String value, BuildContext context) {
     final Color? color = _parseColor(value, _selectedFormat);
     if (color != null) {
-      context.read<CanvasBloc>().add(ChangeColor(color));
+      final bloc = context.read<CanvasBloc>();
+      if (widget.isContour) {
+        bloc.add(ChangeContourSettings(color: color));
+      } else {
+        bloc.add(ChangeColor(color));
+      }
     }
   }
 
@@ -144,9 +156,10 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
   @override
   Widget build(BuildContext context) {
     final AppColors colors = AppColors.of(context);
-    final Color currentColor = context.select(
-      (CanvasBloc bloc) => bloc.state.color,
-    );
+    final state = context.watch<CanvasBloc>().state;
+    final Color currentColor = widget.isContour
+        ? state.contourColor
+        : state.color;
 
     if (_hsvColor == null ||
         (_hsvColor!.toColor().toARGB32() != currentColor.toARGB32() &&
@@ -158,110 +171,126 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
 
     _updateTextFromColor(currentColor);
 
-    return AlertDialog(
-      backgroundColor: colors.secondaryBg,
-      title: Text(
-        LocaleKeys.color.tr(),
-        style: AppFonts.semiBold20.copyWith(color: Colors.black),
-      ),
-      content: SingleChildScrollView(
-        child: Theme(
-          data: Theme.of(context).copyWith(
-            textTheme: Theme.of(context).textTheme.apply(
-              bodyColor: Colors.black,
-              displayColor: Colors.black,
-            ),
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Text(
+            LocaleKeys.color.tr(),
+            style: AppFonts.semiBold20.copyWith(color: Colors.black),
           ),
-          child: DefaultTextStyle(
-            style: AppFonts.normal16.copyWith(color: Colors.black),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                ColorPicker(
-                  pickerColor: _hsvColor!.toColor(),
-                  pickerHsvColor: _hsvColor,
-                  enableAlpha: false,
-                  labelTypes: const <ColorLabelType>[],
-                  onColorChanged: (Color color) {},
-                  onHsvColorChanged: (HSVColor color) {
-                    setState(() => _hsvColor = color);
-                    context.read<CanvasBloc>().add(
-                      ChangeColor(color.toColor()),
-                    );
-                  },
-                ),
-                SizedBox(
-                  height: 40,
-                  width: double.maxFinite,
-                  child: ColorPickerSlider(TrackType.saturation, _hsvColor!, (
-                    HSVColor color,
-                  ) {
-                    setState(() => _hsvColor = color);
-                    context.read<CanvasBloc>().add(
-                      ChangeColor(color.toColor()),
-                    );
-                  }, displayThumbColor: true),
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  height: 40,
-                  width: double.maxFinite,
-                  child: ColorPickerSlider(TrackType.value, _hsvColor!, (
-                    HSVColor color,
-                  ) {
-                    setState(() => _hsvColor = color);
-                    context.read<CanvasBloc>().add(
-                      ChangeColor(color.toColor()),
-                    );
-                  }, displayThumbColor: true),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    IconButton(
-                      icon: const Icon(Icons.colorize, color: Colors.black),
-                      tooltip: 'Pipe',
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        widget.onEyedropper?.call();
-                      },
-                    ),
-                    const Spacer(),
-                    Expanded(
-                      child: TextField(
-                        controller: _textController,
-                        focusNode: _textFocusNode,
-                        cursorColor: Colors.blue,
-                        style: AppFonts.normal16.copyWith(color: Colors.black),
-                        decoration: InputDecoration(
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          enabledBorder: UnderlineInputBorder(
-                            borderSide: BorderSide(color: colors.primaryText),
-                          ),
-                          focusedBorder: const UnderlineInputBorder(
-                            borderSide: BorderSide(color: Colors.black),
-                          ),
-                        ),
-                        onChanged: (String value) {
-                          _onTextChanged(value, context);
+          const SizedBox(height: 16),
+          Theme(
+            data: Theme.of(context).copyWith(
+              textTheme: Theme.of(context).textTheme.apply(
+                bodyColor: Colors.black,
+                displayColor: Colors.black,
+              ),
+            ),
+            child: DefaultTextStyle(
+              style: AppFonts.normal16.copyWith(color: Colors.black),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  ColorPicker(
+                    pickerColor: _hsvColor!.toColor(),
+                    pickerHsvColor: _hsvColor,
+                    enableAlpha: false,
+                    labelTypes: const <ColorLabelType>[],
+                    onColorChanged: (Color color) {},
+                    onHsvColorChanged: (HSVColor color) {
+                      setState(() => _hsvColor = color);
+                      final bloc = context.read<CanvasBloc>();
+                      if (widget.isContour) {
+                        bloc.add(ChangeContourSettings(color: color.toColor()));
+                      } else {
+                        bloc.add(ChangeColor(color.toColor()));
+                      }
+                    },
+                  ),
+                  SizedBox(
+                    height: 40,
+                    width: double.maxFinite,
+                    child: ColorPickerSlider(TrackType.saturation, _hsvColor!, (
+                      HSVColor color,
+                    ) {
+                      setState(() => _hsvColor = color);
+                      final bloc = context.read<CanvasBloc>();
+                      if (widget.isContour) {
+                        bloc.add(ChangeContourSettings(color: color.toColor()));
+                      } else {
+                        bloc.add(ChangeColor(color.toColor()));
+                      }
+                    }, displayThumbColor: true),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    height: 40,
+                    width: double.maxFinite,
+                    child: ColorPickerSlider(TrackType.value, _hsvColor!, (
+                      HSVColor color,
+                    ) {
+                      setState(() => _hsvColor = color);
+                      final bloc = context.read<CanvasBloc>();
+                      if (widget.isContour) {
+                        bloc.add(ChangeContourSettings(color: color.toColor()));
+                      } else {
+                        bloc.add(ChangeColor(color.toColor()));
+                      }
+                    }, displayThumbColor: true),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      IconButton(
+                        icon: const Icon(Icons.colorize, color: Colors.black),
+                        tooltip: 'Pipe',
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          widget.onEyedropper?.call();
                         },
                       ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.copy, color: Colors.black),
-                      tooltip: 'Copy',
-                      onPressed: _copyValueToClipboard,
-                    ),
-                  ],
-                ),
-              ],
+                      const Spacer(),
+                      Expanded(
+                        child: TextField(
+                          controller: _textController,
+                          focusNode: _textFocusNode,
+                          cursorColor: Colors.blue,
+                          style: AppFonts.normal16.copyWith(
+                            color: Colors.black,
+                          ),
+                          decoration: InputDecoration(
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            enabledBorder: UnderlineInputBorder(
+                              borderSide: BorderSide(color: colors.primaryText),
+                            ),
+                            focusedBorder: const UnderlineInputBorder(
+                              borderSide: BorderSide(color: Colors.black),
+                            ),
+                          ),
+                          onChanged: (String value) {
+                            _onTextChanged(value, context);
+                          },
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.copy, color: Colors.black),
+                        tooltip: 'Copy',
+                        onPressed: _copyValueToClipboard,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
+          const SizedBox(height: 16),
+        ],
       ),
     );
   }
