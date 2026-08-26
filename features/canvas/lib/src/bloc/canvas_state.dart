@@ -74,6 +74,9 @@ class CanvasState extends Equatable {
   /// Path to the most recently exported image file.
   final String? exportedFilePath;
 
+  /// Destination of the most recent export.
+  final ExportType? lastExportType;
+
   /// Error message, if any.
   final String? error;
 
@@ -95,6 +98,7 @@ class CanvasState extends Equatable {
     this.contourWidth = Constants.contourDefaultWidth,
     Matrix4? transform,
     this.exportedFilePath,
+    this.lastExportType,
     this.error,
   }) : transform = transform ?? Matrix4.identity();
 
@@ -116,6 +120,7 @@ class CanvasState extends Equatable {
         contourWidth,
         transform,
         exportedFilePath,
+        lastExportType,
         error,
       ];
 
@@ -137,6 +142,7 @@ class CanvasState extends Equatable {
     double? contourWidth,
     Matrix4? transform,
     String? exportedFilePath,
+    ExportType? lastExportType,
     String? error,
   }) {
     return CanvasState(
@@ -156,6 +162,7 @@ class CanvasState extends Equatable {
       contourWidth: contourWidth ?? this.contourWidth,
       transform: transform ?? this.transform,
       exportedFilePath: exportedFilePath ?? this.exportedFilePath,
+      lastExportType: lastExportType ?? this.lastExportType,
       error: error ?? this.error,
     );
   }

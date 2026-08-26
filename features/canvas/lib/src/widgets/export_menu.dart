@@ -21,31 +21,33 @@ class ExportMenu extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppColors colors = AppColors.of(context);
 
-    return SafeArea(
-      child: Container(
-        color: colors.secondaryBg,
+    return Material(
+      color: Colors.white,
+      elevation: 8,
+      borderRadius: BorderRadius.circular(24),
+      child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             Text(
               LocaleKeys.export.tr(),
-              style: AppFonts.semiBold20.copyWith(color: colors.primaryText),
+              style: AppFonts.semiBold20.copyWith(color: colors.black),
             ),
             const SizedBox(height: 16),
             ListTile(
-              leading: Icon(Icons.share, color: colors.primaryText),
+              leading: Icon(Icons.share, color: colors.black),
               title: Text(
                 LocaleKeys.share.tr(),
-                style: AppFonts.normal16.copyWith(color: colors.primaryText),
+                style: AppFonts.normal16.copyWith(color: colors.black),
               ),
               onTap: onShare,
             ),
             ListTile(
-              leading: Icon(Icons.photo_library, color: colors.primaryText),
+              leading: Icon(Icons.photo_library, color: colors.black),
               title: Text(
                 LocaleKeys.save_to_gallery.tr(),
-                style: AppFonts.normal16.copyWith(color: colors.primaryText),
+                style: AppFonts.normal16.copyWith(color: colors.black),
               ),
               onTap: onSaveToGallery,
             ),

@@ -39,6 +39,7 @@ abstract class  LocaleKeys {
   static const patterns = 'patterns';
   static const abstract = 'abstract';
   static const save_to_gallery = 'save_to_gallery';
+  static const saved_to_gallery = 'saved_to_gallery';
   static const contour_color = 'contour_color';
   static const eyedropper = 'eyedropper';
 

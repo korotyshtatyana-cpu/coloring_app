@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
@@ -9,6 +10,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:vector_math/vector_math_64.dart' hide Colors;
 
 import '../bloc/canvas_bloc.dart';
@@ -140,6 +142,21 @@ class _CanvasContentState extends State<CanvasContent>
     return Scaffold(
       body: BlocListener<CanvasBloc, CanvasState>(
         listenWhen: (CanvasState previous, CanvasState current) =>
+            previous.exportedFilePath != current.exportedFilePath &&
+            current.lastExportType == ExportType.gallery,
+        listener: (context, state) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                LocaleKeys.saved_to_gallery.tr(),
+                style: AppFonts.normal16.copyWith(color: Colors.white),
+              ),
+              duration: const Duration(seconds: 1),
+            ),
+          );
+        },
+        child: BlocListener<CanvasBloc, CanvasState>(
+        listenWhen: (CanvasState previous, CanvasState current) =>
             previous.status != current.status ||
             previous.transform != current.transform,
         listener: (context, state) {
@@ -254,6 +271,7 @@ class _CanvasContentState extends State<CanvasContent>
               ),
           ],
         ),
+      ),
       ),
     );
   }
@@ -602,23 +620,69 @@ class _CanvasContentState extends State<CanvasContent>
   }
 
   void showExportMenu() {
-    final state = context.read<CanvasBloc>().state;
-    if (state.contour == null) return;
+    final CanvasBloc bloc = context.read<CanvasBloc>();
+    if (bloc.state.contour == null) return;
 
-    showModalBottomSheet<void>(
+    showGeneralDialog<void>(
       context: context,
-      builder: (BuildContext context) {
-        return ExportMenu(
-          onShare: () {
-            Navigator.of(context).pop();
-            context.read<CanvasBloc>().add(const ExportImage(ExportType.share));
-          },
-          onSaveToGallery: () {
-            Navigator.of(context).pop();
-            context.read<CanvasBloc>().add(const ExportImage(ExportType.gallery));
-          },
+      barrierDismissible: true,
+      barrierLabel: '',
+      barrierColor: Colors.transparent,
+      pageBuilder: (dialogContext, anim1, anim2) {
+        return Align(
+          alignment: Alignment.topRight,
+          child: Padding(
+            padding: const EdgeInsets.only(top: 120, left: 16, right: 16),
+            child: ExportMenu(
+              onShare: () {
+                Navigator.of(dialogContext).pop();
+                _onExportSelected(bloc, ExportType.share);
+              },
+              onSaveToGallery: () {
+                Navigator.of(dialogContext).pop();
+                _onExportSelected(bloc, ExportType.gallery);
+              },
+            ),
+          ),
         );
       },
     );
+  }
+
+  Future<void> _onExportSelected(
+    CanvasBloc bloc,
+    ExportType exportType,
+  ) async {
+    final String? filePath = await _captureCanvasImage();
+    bloc.add(ExportImage(exportType, filePath: filePath));
+  }
+
+  /// Captures the whole canvas widget (strokes + contour with the current
+  /// zoom/pan applied) into a PNG file and returns its path.
+  Future<String?> _captureCanvasImage() async {
+    try {
+      final RenderRepaintBoundary? boundary = _repaintKey.currentContext
+          ?.findRenderObject() as RenderRepaintBoundary?;
+      if (boundary == null) return null;
+
+      final ui.Image image = await boundary.toImage(
+        pixelRatio: View.of(context).devicePixelRatio,
+      );
+      final ByteData? byteData = await image.toByteData(
+        format: ui.ImageByteFormat.png,
+      );
+      image.dispose();
+      if (byteData == null) return null;
+
+      final Directory directory = await getTemporaryDirectory();
+      final File file = File(
+        '${directory.path}/canvas_${DateTime.now().millisecondsSinceEpoch}.png',
+      );
+      await file.writeAsBytes(byteData.buffer.asUint8List());
+      return file.path;
+    } catch (e, stackTrace) {
+      ErrorHandler.report(e, stackTrace);
+      return null;
+    }
   }
 }

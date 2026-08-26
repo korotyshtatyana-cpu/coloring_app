@@ -83,11 +83,15 @@ class ExportImage extends CanvasEvent {
   /// Export destination.
   final ExportType exportType;
 
+  /// Path to a pre-captured canvas image. When null, the image is
+  /// rendered from strokes and contour data.
+  final String? filePath;
+
   /// Creates an [ExportImage] event for the given [exportType].
-  const ExportImage(this.exportType);
+  const ExportImage(this.exportType, {this.filePath});
 
   @override
-  List<Object?> get props => <Object?>[exportType];
+  List<Object?> get props => <Object?>[exportType, filePath];
 }
 
 /// Notifies that the export operation has finished.
@@ -95,11 +99,14 @@ class ExportImageFinished extends CanvasEvent {
   /// Path to the exported image file, or null if export failed.
   final String? filePath;
 
+  /// Export destination that was used.
+  final ExportType? exportType;
+
   /// Creates an [ExportImageFinished] event.
-  const ExportImageFinished({this.filePath});
+  const ExportImageFinished({this.filePath, this.exportType});
 
   @override
-  List<Object?> get props => <Object?>[filePath];
+  List<Object?> get props => <Object?>[filePath, exportType];
 }
 
 /// Changes the brush size.
