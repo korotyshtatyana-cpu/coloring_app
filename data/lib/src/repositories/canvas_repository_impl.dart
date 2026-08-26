@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
@@ -27,6 +28,9 @@ class CanvasRepositoryImpl implements CanvasRepository {
   final AuthRemoteProvider _authRemoteProvider;
 
   final Map<String, List<StrokeEntity>> _strokes = <String, List<StrokeEntity>>{};
+
+  /// Longest side of the exported image in pixels.
+  static const double _exportTargetSize = 1024;
 
   /// Creates a repository with the given providers.
   CanvasRepositoryImpl({
@@ -100,13 +104,26 @@ class CanvasRepositoryImpl implements CanvasRepository {
   @override
   Future<String?> exportImage(ExportImageParams params) async {
     final strokes = await _loadStrokesForProject(params.projectId);
-    const size = Size(1024, 1024);
+
+    // Strokes live in canvas (viewBox) coordinates; scale them to fit the
+    // output while keeping the canvas aspect ratio.
+    final Size canvasSize =
+        SvgUtils.parseViewBoxSize(params.contourSvg) ?? const Size(1024, 1024);
+    final double scale = min(
+      _exportTargetSize / canvasSize.width,
+      _exportTargetSize / canvasSize.height,
+    );
+    final Size outputSize = Size(
+      canvasSize.width * scale,
+      canvasSize.height * scale,
+    );
 
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder);
 
     final backgroundPaint = Paint()..color = Colors.white;
-    canvas.drawRect(Offset.zero & size, backgroundPaint);
+    canvas.drawRect(Offset.zero & outputSize, backgroundPaint);
+    canvas.scale(scale);
 
     for (final stroke in strokes) {
       _drawStroke(canvas, stroke);
@@ -118,13 +135,13 @@ class CanvasRepositoryImpl implements CanvasRepository {
       color: params.contourColor,
       opacity: params.contourOpacity,
       width: params.contourWidth,
-      size: size,
+      size: canvasSize,
     );
 
     final picture = recorder.endRecording();
     final ui.Image image = await picture.toImage(
-      size.width.toInt(),
-      size.height.toInt(),
+      outputSize.width.round(),
+      outputSize.height.round(),
     );
     final ByteData? byteData = await image.toByteData(
       format: ui.ImageByteFormat.png,
