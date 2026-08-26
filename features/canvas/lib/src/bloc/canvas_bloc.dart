@@ -37,6 +37,7 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     on<StartDrawing>(_onStartDrawing);
     on<AddPoint>(_onAddPoint);
     on<EndDrawing>(_onEndDrawing);
+    on<CancelDrawing>(_onCancelDrawing);
     on<Undo>(_onUndo);
     on<Redo>(_onRedo);
     on<SaveProject>(_onSaveProject);
@@ -174,6 +175,30 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     } catch (e, stackTrace) {
       ErrorHandler.report(e, stackTrace);
     }
+  }
+
+  void _onCancelDrawing(
+    CancelDrawing event,
+    Emitter<CanvasState> emit,
+  ) {
+    final StrokeEntity? current = state.currentStroke;
+    if (current == null) return;
+
+    final strokes = List<StrokeEntity>.from(state.strokes);
+    if (strokes.isNotEmpty && strokes.last == current) {
+      strokes.removeLast();
+    }
+    final undoStack = List<StrokeEntity>.from(state.undoStack);
+    if (undoStack.isNotEmpty && undoStack.last == current) {
+      undoStack.removeLast();
+    }
+
+    emit(state.copyWith(
+      status: CanvasStatus.ready,
+      strokes: strokes,
+      undoStack: undoStack,
+      clearCurrentStroke: true,
+    ));
   }
 
   Future<void> _onUndo(Undo event, Emitter<CanvasState> emit) async {

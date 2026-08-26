@@ -111,6 +111,10 @@ class _CanvasContentState extends State<CanvasContent>
   /// Pointer that is currently drawing, if any.
   int? _activeDrawPointer;
 
+  /// Whether a multi-touch (pinch) gesture is in progress or just finished.
+  /// While true, drawing is suppressed until all fingers are lifted.
+  bool _drawingLocked = false;
+
   static const double _minScale = 0.5; // 50% (zoom out limit)
   static const double _maxScale = 5.0; // 500% (zoom in limit)
   static const double _boundaryMargin = 64.0;
@@ -279,7 +283,28 @@ class _CanvasContentState extends State<CanvasContent>
   void _onPointerDown(PointerDownEvent event) {
     _pointerPositions[event.pointer] = event.localPosition;
 
-    if (_pointerPositions.length == 1 && _canDrawWithPointer(event)) {
+    if (_pointerPositions.length >= 2) {
+      // Multiple pointers: stop drawing and switch to pan/zoom. If the
+      // first finger already started a stroke that is just a dot, discard
+      // it so scaling doesn't leave stray marks.
+      _drawingLocked = true;
+      if (_activeDrawPointer != null) {
+        if (!_isEyedropperActive) {
+          final CanvasBloc bloc = context.read<CanvasBloc>();
+          final StrokeEntity? stroke = bloc.state.currentStroke;
+          if (stroke != null && _isDotStroke(stroke)) {
+            bloc.add(const CancelDrawing());
+          } else {
+            bloc.add(const EndDrawing());
+          }
+        }
+        _activeDrawPointer = null;
+      }
+      _resetTwoFingerGesture();
+      return;
+    }
+
+    if (_canDrawWithPointer(event) && !_drawingLocked) {
       if (_isEyedropperActive) {
         _startEyedropperDrag(event.pointer, event.localPosition);
         return;
@@ -294,15 +319,6 @@ class _CanvasContentState extends State<CanvasContent>
               ),
             );
       }
-    } else if (_pointerPositions.length >= 2) {
-      // Multiple pointers: stop drawing and switch to pan/zoom.
-      if (_activeDrawPointer != null) {
-        if (!_isEyedropperActive) {
-          context.read<CanvasBloc>().add(const EndDrawing());
-        }
-        _activeDrawPointer = null;
-      }
-      _resetTwoFingerGesture();
     }
   }
 
@@ -339,6 +355,7 @@ class _CanvasContentState extends State<CanvasContent>
       }
     } else if (_pointerPositions.length == 1 &&
         _activeDrawPointer == null &&
+        !_drawingLocked &&
         _canDrawWithPointer(event) &&
         _isPointerOnCanvas(event.localPosition)) {
       // Pointer re-entered the canvas after leaving: start a new stroke.
@@ -354,6 +371,7 @@ class _CanvasContentState extends State<CanvasContent>
 
   void _onPointerUp(PointerUpEvent event) {
     _pointerPositions.remove(event.pointer);
+    if (_pointerPositions.isEmpty) _drawingLocked = false;
 
     if (_isEyedropperActive && event.pointer == _eyedropperPointer) {
       _commitEyedropperColor();
@@ -375,6 +393,7 @@ class _CanvasContentState extends State<CanvasContent>
 
   void _onPointerCancel(PointerCancelEvent event) {
     _pointerPositions.remove(event.pointer);
+    if (_pointerPositions.isEmpty) _drawingLocked = false;
 
     if (_isEyedropperActive && event.pointer == _eyedropperPointer) {
       _cancelEyedropper();
@@ -398,6 +417,28 @@ class _CanvasContentState extends State<CanvasContent>
     return event.kind == PointerDeviceKind.touch ||
         event.kind == PointerDeviceKind.stylus ||
         event.kind == PointerDeviceKind.mouse;
+  }
+
+  /// Whether the [stroke] covers less than a few screen pixels — i.e. it was
+  /// created by the first finger of a pinch gesture rather than deliberately.
+  bool _isDotStroke(StrokeEntity stroke) {
+    if (stroke.points.length < 2) return true;
+
+    double minX = stroke.points.first.dx;
+    double minY = stroke.points.first.dy;
+    double maxX = stroke.points.first.dx;
+    double maxY = stroke.points.first.dy;
+    for (final Offset point in stroke.points) {
+      if (point.dx < minX) minX = point.dx;
+      if (point.dy < minY) minY = point.dy;
+      if (point.dx > maxX) maxX = point.dx;
+      if (point.dy > maxY) maxY = point.dy;
+    }
+
+    final double scale = _transformationController.value.getMaxScaleOnAxis();
+    const double threshold = 8.0; // screen pixels
+    return (maxX - minX) * scale < threshold &&
+        (maxY - minY) * scale < threshold;
   }
 
   Offset _viewportToScene(Offset viewportPoint) {

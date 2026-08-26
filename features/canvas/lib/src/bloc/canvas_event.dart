@@ -51,6 +51,12 @@ class EndDrawing extends CanvasEvent {
   const EndDrawing();
 }
 
+/// Cancels the current stroke and removes it without saving.
+class CancelDrawing extends CanvasEvent {
+  /// Creates a [CancelDrawing] event.
+  const CancelDrawing();
+}
+
 /// Undoes the last stroke.
 class Undo extends CanvasEvent {
   /// Creates an [Undo] event.

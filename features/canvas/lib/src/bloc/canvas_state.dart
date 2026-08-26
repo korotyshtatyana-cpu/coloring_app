@@ -129,6 +129,7 @@ class CanvasState extends Equatable {
     CanvasStatus? status,
     List<StrokeEntity>? strokes,
     StrokeEntity? currentStroke,
+    bool clearCurrentStroke = false,
     ContourEntity? contour,
     List<StrokeEntity>? undoStack,
     List<StrokeEntity>? redoStack,
@@ -148,7 +149,7 @@ class CanvasState extends Equatable {
     return CanvasState(
       status: status ?? this.status,
       strokes: strokes ?? this.strokes,
-      currentStroke: currentStroke ?? this.currentStroke,
+      currentStroke: clearCurrentStroke ? null : currentStroke ?? this.currentStroke,
       contour: contour ?? this.contour,
       undoStack: undoStack ?? this.undoStack,
       redoStack: redoStack ?? this.redoStack,
