@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -11,7 +10,6 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:path_provider/path_provider.dart';
 
 import '../bloc/canvas_bloc.dart';
 import '../painters/canvas_painter.dart';
@@ -773,38 +771,7 @@ class _CanvasContentState extends State<CanvasContent>
     );
   }
 
-  Future<void> _onExportSelected(CanvasBloc bloc, ExportType exportType) async {
-    final String? filePath = await _captureCanvasImage();
-    bloc.add(ExportImage(exportType, filePath: filePath));
-  }
-
-  /// Captures the whole canvas widget (strokes + contour with the current
-  /// zoom/pan applied) into a PNG file and returns its path.
-  Future<String?> _captureCanvasImage() async {
-    try {
-      final RenderRepaintBoundary? boundary =
-          _repaintKey.currentContext?.findRenderObject()
-              as RenderRepaintBoundary?;
-      if (boundary == null) return null;
-
-      final ui.Image image = await boundary.toImage(
-        pixelRatio: View.of(context).devicePixelRatio,
-      );
-      final ByteData? byteData = await image.toByteData(
-        format: ui.ImageByteFormat.png,
-      );
-      image.dispose();
-      if (byteData == null) return null;
-
-      final Directory directory = await getTemporaryDirectory();
-      final File file = File(
-        '${directory.path}/canvas_${DateTime.now().millisecondsSinceEpoch}.png',
-      );
-      await file.writeAsBytes(byteData.buffer.asUint8List());
-      return file.path;
-    } catch (e, stackTrace) {
-      ErrorHandler.report(e, stackTrace);
-      return null;
-    }
+  void _onExportSelected(CanvasBloc bloc, ExportType exportType) {
+    bloc.add(ExportImage(exportType));
   }
 }

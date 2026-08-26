@@ -89,15 +89,11 @@ class ExportImage extends CanvasEvent {
   /// Export destination.
   final ExportType exportType;
 
-  /// Path to a pre-captured canvas image. When null, the image is
-  /// rendered from strokes and contour data.
-  final String? filePath;
-
   /// Creates an [ExportImage] event for the given [exportType].
-  const ExportImage(this.exportType, {this.filePath});
+  const ExportImage(this.exportType);
 
   @override
-  List<Object?> get props => <Object?>[exportType, filePath];
+  List<Object?> get props => <Object?>[exportType];
 }
 
 /// Notifies that the export operation has finished.

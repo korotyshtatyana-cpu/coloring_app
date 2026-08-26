@@ -321,21 +321,20 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     ExportImage event,
     Emitter<CanvasState> emit,
   ) async {
-    if (event.filePath == null && state.contour == null) return;
+    if (state.contour == null) return;
 
     try {
       emit(state.copyWith(status: CanvasStatus.exporting, error: null));
 
-      final filePath = event.filePath ??
-          await _exportImageUseCase.execute(
-            ExportImageParams(
-              projectId: state.contour!.id,
-              contourSvg: state.contour!.svgData,
-              contourColor: state.contourColor,
-              contourOpacity: state.contourOpacity,
-              contourWidth: state.contourWidth,
-            ),
-          );
+      final filePath = await _exportImageUseCase.execute(
+        ExportImageParams(
+          projectId: state.contour!.id,
+          contourSvg: state.contour!.svgData,
+          contourColor: state.contourColor,
+          contourOpacity: state.contourOpacity,
+          contourWidth: state.contourWidth,
+        ),
+      );
 
       if (filePath == null) {
         emit(state.copyWith(status: CanvasStatus.error, error: 'Export failed'));
