@@ -27,6 +27,6 @@ class GalleryScreen extends StatelessWidget {
       toggleFavoriteUseCase: appLocator<ToggleFavoriteUseCase>(),
       getFavoriteIdsUseCase: appLocator<GetFavoriteIdsUseCase>(),
       getWorkInProgressUseCase: appLocator<GetWorkInProgressUseCase>(),
-    )..add(const LoadContours());
+    )..add(const LoadContours(reset: true));
   }
 }
