@@ -250,11 +250,29 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     SaveProject event,
     Emitter<CanvasState> emit,
   ) async {
+    await saveProject(withThumbnail: event.withThumbnail, emit: emit);
+  }
+
+  /// Saves the project, optionally re-rendering its thumbnail.
+  ///
+  /// Public so callers that must await completion (e.g. before popping the
+  /// route) can invoke it directly. When [emit] is omitted (external
+  /// callers), no status states are emitted.
+  Future<void> saveProject({
+    bool withThumbnail = true,
+    Emitter<CanvasState>? emit,
+  }) async {
+    if (state.status == CanvasStatus.initial ||
+        state.status == CanvasStatus.loading) {
+      // Project not loaded yet: saving would clobber stored strokes.
+      return;
+    }
+
     try {
-      emit(state.copyWith(status: CanvasStatus.saving));
+      if (!isClosed) emit?.call(state.copyWith(status: CanvasStatus.saving));
 
       String? thumbnailPath = state.thumbnailPath;
-      if (event.withThumbnail && state.contour != null) {
+      if (withThumbnail && state.contour != null) {
         thumbnailPath = await _renderProjectThumbnailUseCase.execute(
               ExportImageParams(
                 projectId: _contourId,
@@ -271,16 +289,20 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
       await _saveProjectUseCase.execute(
         _projectEntity(thumbnailPath: thumbnailPath),
       );
-      emit(state.copyWith(
-        status: CanvasStatus.ready,
-        thumbnailPath: thumbnailPath,
-      ));
+      if (!isClosed) {
+        emit?.call(state.copyWith(
+          status: CanvasStatus.ready,
+          thumbnailPath: thumbnailPath,
+        ));
+      }
     } catch (e, stackTrace) {
       ErrorHandler.report(e, stackTrace);
-      emit(state.copyWith(
-        status: CanvasStatus.error,
-        error: e.toString(),
-      ));
+      if (!isClosed) {
+        emit?.call(state.copyWith(
+          status: CanvasStatus.error,
+          error: e.toString(),
+        ));
+      }
     }
   }
 

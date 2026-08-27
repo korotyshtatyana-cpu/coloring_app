@@ -132,6 +132,10 @@ class CanvasRepositoryImpl implements CanvasRepository {
     final file = File('${thumbnailsDir.path}/${params.projectId}.png');
     await file.writeAsBytes(byteData.buffer.asUint8List());
 
+    // The file path never changes, so drop the stale decoded image from the
+    // framework cache; otherwise the gallery keeps showing the old render.
+    imageCache.evict(FileImage(file));
+
     return file.path;
   }
 

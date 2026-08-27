@@ -43,7 +43,9 @@ class CanvasRemoteProvider {
     }
 
     return ProjectModel(
-      id: '${user.id}_$contourId',
+      // Use the local id convention (contour id) so caching this project
+      // locally doesn't create a duplicate row for the same contour.
+      id: contourId,
       contourId: contourId,
       userId: user.id,
       data: response.first[RequestConstants.dataColumn] as Map<String, dynamic>,
