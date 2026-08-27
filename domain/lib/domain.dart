@@ -17,6 +17,7 @@ export 'src/use_cases/canvas/add_stroke_use_case.dart';
 export 'src/use_cases/canvas/export_image_params.dart';
 export 'src/use_cases/canvas/export_image_use_case.dart';
 export 'src/use_cases/canvas/load_project_use_case.dart';
+export 'src/use_cases/canvas/render_project_thumbnail_use_case.dart';
 export 'src/use_cases/canvas/save_project_use_case.dart';
 export 'src/use_cases/canvas/save_image_to_gallery_use_case.dart';
 export 'src/use_cases/canvas/share_file_use_case.dart';

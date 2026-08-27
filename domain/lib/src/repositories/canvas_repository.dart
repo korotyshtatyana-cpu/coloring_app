@@ -16,6 +16,10 @@ abstract class CanvasRepository {
   /// Exports the project as an image and returns the file path.
   Future<String?> exportImage(ExportImageParams params);
 
+  /// Renders a project thumbnail into persistent storage and returns its
+  /// file path.
+  Future<String?> renderProjectThumbnail(ExportImageParams params);
+
   /// Saves the exported image at [filePath] to the device gallery.
   Future<void> saveImageToGallery(String filePath);
 }

@@ -15,6 +15,10 @@ class ContourCard extends StatelessWidget {
   /// Contour preview URL or local file path.
   final String? previewUrl;
 
+  /// SVG data of the contour, rendered as the preview when [previewUrl] is
+  /// not a local file.
+  final String? svgData;
+
   /// Whether the contour is marked as favorite.
   final bool isFavorite;
 
@@ -31,6 +35,7 @@ class ContourCard extends StatelessWidget {
   const ContourCard({
     required this.title,
     this.previewUrl,
+    this.svgData,
     this.isFavorite = false,
     this.isInProgress = false,
     this.onTap,
@@ -50,47 +55,30 @@ class ContourCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppDimens.defaultBorder),
         ),
         clipBehavior: Clip.antiAlias,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: Stack(
+          fit: StackFit.expand,
           children: <Widget>[
-            Expanded(
-              child: Stack(
-                fit: StackFit.expand,
-                children: <Widget>[
-                  _buildPreview(colors),
-                  if (isInProgress)
-                    Positioned(
-                      top: 8,
-                      left: 8,
-                      child: Icon(
-                        Icons.folder,
-                        color: colors.yellow,
-                        size: 20,
-                      ),
-                    ),
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: GestureDetector(
-                      onTap: onFavoriteTap,
-                      child: Icon(
-                        isFavorite ? Icons.star : Icons.star_border,
-                        color: isFavorite ? colors.yellow : colors.primaryText,
-                        size: 24,
-                      ),
-                    ),
-                  ),
-                ],
+            _buildPreview(colors),
+            if (isInProgress)
+              Positioned(
+                top: 8,
+                left: 8,
+                child: Icon(
+                  Icons.folder,
+                  color: colors.yellow,
+                  size: 20,
+                ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8),
-              child: Text(
-                title,
-                style: AppFonts.normal14.copyWith(color: colors.primaryText),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
+            Positioned(
+              top: 8,
+              right: 8,
+              child: GestureDetector(
+                onTap: onFavoriteTap,
+                child: Icon(
+                  isFavorite ? Icons.star : Icons.star_border,
+                  color: isFavorite ? colors.yellow : colors.primaryText,
+                  size: 24,
+                ),
               ),
             ),
           ],
@@ -101,13 +89,38 @@ class ContourCard extends StatelessWidget {
 
   Widget _buildPreview(AppColors colors) {
     final String? url = previewUrl;
-    if (url == null || url.isEmpty) {
-      return _buildPlaceholder(colors);
+
+    // Local file previews (e.g. rendered project thumbnails) take priority.
+    if (url != null && url.isNotEmpty && !url.startsWith('http')) {
+      if (_isSvgUrl(url)) {
+        return SvgPicture.file(
+          File(url),
+          fit: BoxFit.cover,
+          placeholderBuilder: (_) => _buildVectorOrPlaceholder(colors),
+        );
+      }
+      return Image.file(
+        File(url),
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _buildVectorOrPlaceholder(colors),
+      );
     }
 
-    final bool isSvg = _isSvgUrl(url);
+    // The contour SVG is always available locally: render it instead of
+    // relying on a remote preview.
+    final String? svg = svgData;
+    if (svg != null && svg.isNotEmpty) {
+      return Padding(
+        padding: const EdgeInsets.all(8),
+        child: SvgPicture.string(
+          svg,
+          fit: BoxFit.contain,
+        ),
+      );
+    }
 
-    if (url.startsWith('http')) {
+    if (url != null && url.isNotEmpty) {
+      final bool isSvg = _isSvgUrl(url);
       if (isSvg) {
         return SvgPicture.network(
           url,
@@ -126,19 +139,21 @@ class ContourCard extends StatelessWidget {
       );
     }
 
-    if (isSvg) {
-      return SvgPicture.file(
-        File(url),
-        fit: BoxFit.cover,
-        placeholderBuilder: (_) => _buildPlaceholder(colors, url: url),
+    return _buildPlaceholder(colors);
+  }
+
+  Widget _buildVectorOrPlaceholder(AppColors colors) {
+    final String? svg = svgData;
+    if (svg != null && svg.isNotEmpty) {
+      return Padding(
+        padding: const EdgeInsets.all(8),
+        child: SvgPicture.string(
+          svg,
+          fit: BoxFit.contain,
+        ),
       );
     }
-
-    return Image.file(
-      File(url),
-      fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => _buildPlaceholder(colors, url: url),
-    );
+    return _buildPlaceholder(colors);
   }
 
   bool _isSvgUrl(String url) {

@@ -71,8 +71,15 @@ class Redo extends CanvasEvent {
 
 /// Saves the project.
 class SaveProject extends CanvasEvent {
+  /// Whether to also re-render the project thumbnail. Skipped for frequent
+  /// autosaves to avoid redundant rendering work.
+  final bool withThumbnail;
+
   /// Creates a [SaveProject] event.
-  const SaveProject();
+  const SaveProject({this.withThumbnail = true});
+
+  @override
+  List<Object?> get props => <Object?>[withThumbnail];
 }
 
 /// Export destination type.

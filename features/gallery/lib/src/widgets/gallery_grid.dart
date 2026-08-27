@@ -37,6 +37,7 @@ class GalleryGrid extends StatelessWidget {
           contour: contour,
           isFavorite: isFavorite,
           isInProgress: isInProgress,
+          thumbnailPath: state.workInProgressThumbnails[contour.id],
         );
       },
     );

@@ -24,8 +24,9 @@ abstract class GalleryRepository {
   /// Returns favorite contour identifiers for the current user.
   Future<List<String>> getFavoriteIds();
 
-  /// Returns contour identifiers with started projects.
-  Future<List<String>> getWorkInProgress();
+  /// Returns contour identifiers with started projects mapped to the
+  /// project's thumbnail path, if any.
+  Future<Map<String, String?>> getWorkInProgressThumbnails();
 
   /// Loads a single cached contour by its identifier.
   Future<ContourEntity?> getContourById(String id);

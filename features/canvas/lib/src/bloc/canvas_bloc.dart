@@ -19,6 +19,7 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
   final ExportImageUseCase _exportImageUseCase;
   final ShareFileUseCase _shareFileUseCase;
   final SaveImageToGalleryUseCase _saveImageToGalleryUseCase;
+  final RenderProjectThumbnailUseCase _renderProjectThumbnailUseCase;
 
   Timer? _autosaveTimer;
 
@@ -32,6 +33,7 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     required this._exportImageUseCase,
     required this._shareFileUseCase,
     required this._saveImageToGalleryUseCase,
+    required this._renderProjectThumbnailUseCase,
   })  : super(CanvasState()) {
     on<LoadProject>(_onLoadProject);
     on<StartDrawing>(_onStartDrawing);
@@ -73,6 +75,7 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
           : null;
       final double? loadedOpacity = settings?['contourOpacity']?.toDouble();
       final double? loadedWidth = settings?['contourWidth']?.toDouble();
+      final String? thumbnailPath = project?.data['thumbnailPath'] as String?;
 
       emit(state.copyWith(
         status: CanvasStatus.ready,
@@ -83,6 +86,7 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
         contourColor: loadedColor ?? state.contourColor,
         contourOpacity: loadedOpacity ?? state.contourOpacity,
         contourWidth: loadedWidth ?? state.contourWidth,
+        thumbnailPath: thumbnailPath,
       ));
     } catch (e, stackTrace) {
       ErrorHandler.report(e, stackTrace);
@@ -248,8 +252,29 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
   ) async {
     try {
       emit(state.copyWith(status: CanvasStatus.saving));
-      await _saveProjectUseCase.execute(_projectEntity());
-      emit(state.copyWith(status: CanvasStatus.ready));
+
+      String? thumbnailPath = state.thumbnailPath;
+      if (event.withThumbnail && state.contour != null) {
+        thumbnailPath = await _renderProjectThumbnailUseCase.execute(
+              ExportImageParams(
+                projectId: _contourId,
+                contourSvg: state.contour!.svgData,
+                contourColor: state.contourColor,
+                contourOpacity: state.contourOpacity,
+                contourWidth: state.contourWidth,
+                strokes: state.strokes,
+              ),
+            ) ??
+            thumbnailPath;
+      }
+
+      await _saveProjectUseCase.execute(
+        _projectEntity(thumbnailPath: thumbnailPath),
+      );
+      emit(state.copyWith(
+        status: CanvasStatus.ready,
+        thumbnailPath: thumbnailPath,
+      ));
     } catch (e, stackTrace) {
       ErrorHandler.report(e, stackTrace);
       emit(state.copyWith(
@@ -371,7 +396,7 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     return max(Constants.minBrushSize, state.brushSize * clamped);
   }
 
-  ProjectEntity _projectEntity() {
+  ProjectEntity _projectEntity({String? thumbnailPath}) {
     return ProjectEntity(
       id: _contourId,
       contourId: _contourId,
@@ -396,6 +421,7 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
           'contourOpacity': state.contourOpacity,
           'contourWidth': state.contourWidth,
         },
+        if (thumbnailPath != null) 'thumbnailPath': thumbnailPath,
       },
       lastOpened: DateTime.now(),
       createdAt: DateTime.now(),
@@ -426,7 +452,7 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
   void _scheduleAutosave() {
     _autosaveTimer?.cancel();
     _autosaveTimer = Timer(Constants.autosaveDebounce, () {
-      add(const SaveProject());
+      add(const SaveProject(withThumbnail: false));
     });
   }
 

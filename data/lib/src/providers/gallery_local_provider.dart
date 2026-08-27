@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:domain/domain.dart';
 import 'package:drift/drift.dart';
 
@@ -34,10 +36,17 @@ class GalleryLocalProvider {
     return rows.map((Contour row) => _fromRow(row)).toList();
   }
 
-  /// Returns contour identifiers that have a started local project.
-  Future<List<String>> getWorkInProgressIds() async {
+  /// Returns contour identifiers that have a started local project mapped to
+  /// the project's thumbnail path, if any.
+  Future<Map<String, String?>> getWorkInProgressThumbnails() async {
     final List<Project> rows = await _database.select(_database.projects).get();
-    return rows.map((Project row) => row.contourId).toSet().toList();
+    final Map<String, String?> result = <String, String?>{};
+    for (final Project row in rows) {
+      final Map<String, dynamic> data =
+          jsonDecode(row.data) as Map<String, dynamic>;
+      result[row.contourId] = data['thumbnailPath'] as String?;
+    }
+    return result;
   }
 
   ContoursCompanion _toCompanion(ContourModel contour) {

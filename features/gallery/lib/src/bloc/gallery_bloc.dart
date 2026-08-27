@@ -45,10 +45,13 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
       // Fetch favorites and WIP IDs only on reset (first load or filter change)
       List<String> favoriteIds = state.favoriteIds;
       List<String> workInProgressIds = state.workInProgressIds;
+      Map<String, String?> workInProgressThumbnails =
+          state.workInProgressThumbnails;
 
       if (event.reset) {
         favoriteIds = await _getFavoriteIdsUseCase.execute();
-        workInProgressIds = await _getWorkInProgressUseCase.execute();
+        workInProgressThumbnails = await _getWorkInProgressUseCase.execute();
+        workInProgressIds = workInProgressThumbnails.keys.toList();
       }
 
       final List<ContourEntity> contours;
@@ -105,6 +108,7 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
         error: null,
         favoriteIds: favoriteIds,
         workInProgressIds: workInProgressIds,
+        workInProgressThumbnails: workInProgressThumbnails,
       ));
     } catch (e, stackTrace) {
       ErrorHandler.report(e, stackTrace);

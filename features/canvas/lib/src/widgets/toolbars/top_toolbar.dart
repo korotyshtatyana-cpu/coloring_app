@@ -31,8 +31,8 @@ class TopToolbar extends StatelessWidget {
             AppIconButton(
               icon: Icon(Icons.arrow_back, color: colors.primaryText),
               backgroundColor: colors.metallicBlue,
-              onPressed: () async {
-                context.read<CanvasBloc>().add(const SaveProject());
+              onPressed: () {
+                // Saving happens in the PopScope handler of CanvasScreen.
                 context.router.maybePop();
               },
             ),

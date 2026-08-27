@@ -88,6 +88,12 @@ abstract class DomainDI {
       ),
     );
 
+    appLocator.registerLazySingleton<RenderProjectThumbnailUseCase>(
+      () => RenderProjectThumbnailUseCase(
+        repository: appLocator<CanvasRepository>(),
+      ),
+    );
+
     appLocator.registerLazySingleton<ShareFileUseCase>(
       () => ShareFileUseCase(
         repository: appLocator<ShareRepository>(),

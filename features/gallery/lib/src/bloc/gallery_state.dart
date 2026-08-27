@@ -44,6 +44,9 @@ class GalleryState extends Equatable {
   /// Contour identifiers with started projects.
   final List<String> workInProgressIds;
 
+  /// Started projects mapped to their thumbnail file paths, if any.
+  final Map<String, String?> workInProgressThumbnails;
+
   /// Creates a [GalleryState].
   const GalleryState({
     this.status = GalleryStatus.initial,
@@ -55,6 +58,7 @@ class GalleryState extends Equatable {
     this.hasReachedMax = false,
     this.favoriteIds = const <String>[],
     this.workInProgressIds = const <String>[],
+    this.workInProgressThumbnails = const <String, String?>{},
   });
 
   @override
@@ -68,6 +72,7 @@ class GalleryState extends Equatable {
     hasReachedMax,
     favoriteIds,
     workInProgressIds,
+    workInProgressThumbnails,
   ];
 
   /// Creates a copy with optional new values.
@@ -82,6 +87,7 @@ class GalleryState extends Equatable {
     bool? hasReachedMax,
     List<String>? favoriteIds,
     List<String>? workInProgressIds,
+    Map<String, String?>? workInProgressThumbnails,
   }) {
     return GalleryState(
       status: status ?? this.status,
@@ -93,6 +99,8 @@ class GalleryState extends Equatable {
       hasReachedMax: hasReachedMax ?? this.hasReachedMax,
       favoriteIds: favoriteIds ?? this.favoriteIds,
       workInProgressIds: workInProgressIds ?? this.workInProgressIds,
+      workInProgressThumbnails:
+          workInProgressThumbnails ?? this.workInProgressThumbnails,
     );
   }
 }

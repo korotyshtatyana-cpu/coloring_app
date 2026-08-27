@@ -32,6 +32,9 @@ class CanvasRepositoryImpl implements CanvasRepository {
   /// Longest side of the exported image in pixels.
   static const double _exportTargetSize = 1024;
 
+  /// Longest side of a project thumbnail in pixels.
+  static const double _thumbnailTargetSize = 512;
+
   /// Creates a repository with the given providers.
   CanvasRepositoryImpl({
     required this._remoteProvider,
@@ -103,15 +106,51 @@ class CanvasRepositoryImpl implements CanvasRepository {
 
   @override
   Future<String?> exportImage(ExportImageParams params) async {
-    final strokes = await _loadStrokesForProject(params.projectId);
+    final ByteData? byteData = await _renderCanvasPng(params, _exportTargetSize);
+    if (byteData == null) return null;
+
+    final directory = await getTemporaryDirectory();
+    final fileName =
+        '${RequestConstants.exportFilePrefix}_${DateTime.now().millisecondsSinceEpoch}.png';
+    final file = File('${directory.path}/$fileName');
+    await file.writeAsBytes(byteData.buffer.asUint8List());
+
+    return file.path;
+  }
+
+  @override
+  Future<String?> renderProjectThumbnail(ExportImageParams params) async {
+    final ByteData? byteData =
+        await _renderCanvasPng(params, _thumbnailTargetSize);
+    if (byteData == null) return null;
+
+    final directory = await getApplicationDocumentsDirectory();
+    final thumbnailsDir = Directory('${directory.path}/thumbnails');
+    if (!thumbnailsDir.existsSync()) {
+      thumbnailsDir.createSync(recursive: true);
+    }
+    final file = File('${thumbnailsDir.path}/${params.projectId}.png');
+    await file.writeAsBytes(byteData.buffer.asUint8List());
+
+    return file.path;
+  }
+
+  /// Renders the whole canvas (white background, strokes and contour) into
+  /// PNG bytes with the longest side equal to [targetSize].
+  Future<ByteData?> _renderCanvasPng(
+    ExportImageParams params,
+    double targetSize,
+  ) async {
+    final strokes =
+        params.strokes ?? await _loadStrokesForProject(params.projectId);
 
     // Strokes live in canvas (viewBox) coordinates; scale them to fit the
     // output while keeping the canvas aspect ratio.
-    final Size canvasSize =
-        SvgUtils.parseViewBoxSize(params.contourSvg) ?? const Size(1024, 1024);
+    final Size canvasSize = SvgUtils.parseViewBoxSize(params.contourSvg) ??
+        Size(targetSize, targetSize);
     final double scale = min(
-      _exportTargetSize / canvasSize.width,
-      _exportTargetSize / canvasSize.height,
+      targetSize / canvasSize.width,
+      targetSize / canvasSize.height,
     );
     final Size outputSize = Size(
       canvasSize.width * scale,
@@ -146,17 +185,8 @@ class CanvasRepositoryImpl implements CanvasRepository {
     final ByteData? byteData = await image.toByteData(
       format: ui.ImageByteFormat.png,
     );
-    if (byteData == null) {
-      return null;
-    }
-
-    final directory = await getTemporaryDirectory();
-    final fileName =
-        '${RequestConstants.exportFilePrefix}_${DateTime.now().millisecondsSinceEpoch}.png';
-    final file = File('${directory.path}/$fileName');
-    await file.writeAsBytes(byteData.buffer.asUint8List());
-
-    return file.path;
+    image.dispose();
+    return byteData;
   }
 
   void _drawStroke(Canvas canvas, StrokeEntity stroke) {

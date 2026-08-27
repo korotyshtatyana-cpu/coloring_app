@@ -77,6 +77,9 @@ class CanvasState extends Equatable {
   /// Destination of the most recent export.
   final ExportType? lastExportType;
 
+  /// Path to the rendered project thumbnail, if any.
+  final String? thumbnailPath;
+
   /// Error message, if any.
   final String? error;
 
@@ -99,6 +102,7 @@ class CanvasState extends Equatable {
     Matrix4? transform,
     this.exportedFilePath,
     this.lastExportType,
+    this.thumbnailPath,
     this.error,
   }) : transform = transform ?? Matrix4.identity();
 
@@ -121,6 +125,7 @@ class CanvasState extends Equatable {
         transform,
         exportedFilePath,
         lastExportType,
+        thumbnailPath,
         error,
       ];
 
@@ -144,6 +149,7 @@ class CanvasState extends Equatable {
     Matrix4? transform,
     String? exportedFilePath,
     ExportType? lastExportType,
+    String? thumbnailPath,
     String? error,
   }) {
     return CanvasState(
@@ -164,6 +170,7 @@ class CanvasState extends Equatable {
       transform: transform ?? this.transform,
       exportedFilePath: exportedFilePath ?? this.exportedFilePath,
       lastExportType: lastExportType ?? this.lastExportType,
+      thumbnailPath: thumbnailPath ?? this.thumbnailPath,
       error: error ?? this.error,
     );
   }

@@ -18,11 +18,15 @@ class GalleryContourCard extends StatelessWidget {
   /// Whether the contour has a started project.
   final bool isInProgress;
 
+  /// Path to the rendered project thumbnail, if the project was started.
+  final String? thumbnailPath;
+
   /// Creates a [GalleryContourCard].
   const GalleryContourCard({
     required this.contour,
     required this.isFavorite,
     required this.isInProgress,
+    this.thumbnailPath,
     super.key,
   });
 
@@ -30,7 +34,8 @@ class GalleryContourCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return ContourCard(
       title: contour.title,
-      previewUrl: contour.previewUrl,
+      previewUrl: thumbnailPath,
+      svgData: contour.svgData,
       isFavorite: isFavorite,
       isInProgress: isInProgress,
       onTap: () => _onTap(context),

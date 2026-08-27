@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../entities/stroke_entity.dart';
+
 /// Parameters for exporting a project as an image.
 class ExportImageParams {
   /// Project identifier (matches the contour id).
@@ -17,6 +19,9 @@ class ExportImageParams {
   /// Stroke width of the contour.
   final double contourWidth;
 
+  /// Explicit strokes to render. When null, strokes are loaded from storage.
+  final List<StrokeEntity>? strokes;
+
   /// Creates [ExportImageParams].
   const ExportImageParams({
     required this.projectId,
@@ -24,5 +29,6 @@ class ExportImageParams {
     required this.contourColor,
     required this.contourOpacity,
     required this.contourWidth,
+    this.strokes,
   });
 }

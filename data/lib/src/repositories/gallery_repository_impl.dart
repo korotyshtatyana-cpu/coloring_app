@@ -78,20 +78,6 @@ class GalleryRepositoryImpl implements GalleryRepository {
     }
   }
 
-  List<ContourEntity> _filterByCategoryAndPaginate(
-    List<ContourModel> contours, {
-    required ContourCategory category,
-    required int offset,
-    required int limit,
-  }) {
-    final filtered = contours
-        .where((ContourModel contour) => contour.category == category)
-        .toList();
-    return _paginate(filtered, offset: offset, limit: limit)
-        .map(ContourMapper.toEntity)
-        .toList();
-  }
-
   List<ContourModel> _paginate(
     List<ContourModel> contours, {
     required int offset,
@@ -115,8 +101,8 @@ class GalleryRepositoryImpl implements GalleryRepository {
   }
 
   @override
-  Future<List<String>> getWorkInProgress() {
-    return _localProvider.getWorkInProgressIds();
+  Future<Map<String, String?>> getWorkInProgressThumbnails() {
+    return _localProvider.getWorkInProgressThumbnails();
   }
 
   @override

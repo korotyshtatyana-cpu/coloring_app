@@ -43,6 +43,8 @@ class CanvasScreen extends StatelessWidget {
         exportImageUseCase: appLocator<ExportImageUseCase>(),
         shareFileUseCase: appLocator<ShareFileUseCase>(),
         saveImageToGalleryUseCase: appLocator<SaveImageToGalleryUseCase>(),
+        renderProjectThumbnailUseCase:
+            appLocator<RenderProjectThumbnailUseCase>(),
       )..add(const LoadProject()),
       child: CanvasContent(
         key: _canvasKey,
@@ -173,8 +175,16 @@ class _CanvasContentState extends State<CanvasContent>
         viewportSize;
     _fitScale = _fitScaleFor(viewportSize, _canvasSize);
 
-    return Scaffold(
-      body: BlocListener<CanvasBloc, CanvasState>(
+    return PopScope(
+      onPopInvokedWithResult: (bool didPop, Object? result) {
+        if (didPop) {
+          // Save the project (and render its thumbnail) no matter how the
+          // route was popped: toolbar button, system back or swipe gesture.
+          context.read<CanvasBloc>().add(const SaveProject());
+        }
+      },
+      child: Scaffold(
+        body: BlocListener<CanvasBloc, CanvasState>(
         listenWhen: (CanvasState previous, CanvasState current) =>
             previous.exportedFilePath != current.exportedFilePath &&
             current.lastExportType == ExportType.gallery,
@@ -300,6 +310,7 @@ class _CanvasContentState extends State<CanvasContent>
             ],
           ),
         ),
+      ),
       ),
     );
   }
