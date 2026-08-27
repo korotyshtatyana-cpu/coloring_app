@@ -1,0 +1,19 @@
+name: domain
+description: Domain module with business logic
+version: 1.0.0
+publish_to: 'none'
+
+environment:
+  sdk: ">=3.12.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  core:
+    path: ../core
+  get_it: ^7.6.7
+  equatable: ^2.0.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
