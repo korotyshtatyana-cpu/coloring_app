@@ -1,5 +1,8 @@
+import 'dart:math';
+
 import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart' show PictureInfo;
 
 /// CustomPainter that renders the user drawing layer.
 ///
@@ -57,5 +60,59 @@ class CanvasPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CanvasPainter oldDelegate) {
     return oldDelegate.strokes != strokes;
+  }
+}
+
+/// CustomPainter that renders the contour SVG as vector graphics, tinted
+/// with [color] at [opacity].
+///
+/// Unlike `SvgPicture` (which pre-rasterizes the SVG to a bitmap of the
+/// intrinsic size), drawing the compiled picture directly keeps the contour
+/// smooth at any zoom level.
+class ContourPainter extends CustomPainter {
+  /// Compiled SVG picture to draw.
+  final PictureInfo pictureInfo;
+
+  /// Tint color applied to the whole contour.
+  final Color color;
+
+  /// Contour opacity.
+  final double opacity;
+
+  /// Creates a [ContourPainter].
+  ContourPainter({
+    required this.pictureInfo,
+    required this.color,
+    required this.opacity,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Size svgSize = pictureInfo.size;
+    final double scale = min(
+      size.width / svgSize.width,
+      size.height / svgSize.height,
+    );
+    final double dx = (size.width - svgSize.width * scale) / 2;
+    final double dy = (size.height - svgSize.height * scale) / 2;
+
+    final Paint layerPaint = Paint()
+      ..colorFilter = ColorFilter.mode(
+        color.withValues(alpha: opacity),
+        BlendMode.srcIn,
+      );
+
+    canvas.saveLayer(Offset.zero & size, layerPaint);
+    canvas.translate(dx, dy);
+    canvas.scale(scale);
+    canvas.drawPicture(pictureInfo.picture);
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant ContourPainter oldDelegate) {
+    return oldDelegate.pictureInfo != pictureInfo ||
+        oldDelegate.color != color ||
+        oldDelegate.opacity != opacity;
   }
 }

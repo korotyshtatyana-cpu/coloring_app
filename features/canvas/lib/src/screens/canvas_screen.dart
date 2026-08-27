@@ -131,6 +131,13 @@ class _CanvasContentState extends State<CanvasContent>
   /// Scale at which the canvas sheet fits the viewport.
   double _fitScale = 1.0;
 
+  /// Compiled contour picture drawn by [ContourPainter].
+  PictureInfo? _contourPicture;
+
+  /// Key of the contour picture currently loaded/loading
+  /// (`contourId:contourWidth`).
+  String? _loadedContourKey;
+
   @override
   void initState() {
     super.initState();
@@ -142,6 +149,7 @@ class _CanvasContentState extends State<CanvasContent>
     WidgetsBinding.instance.removeObserver(this);
     _transformationController.dispose();
     _disposeEyedropperImage();
+    _contourPicture?.picture.dispose();
     super.dispose();
   }
 
@@ -243,22 +251,7 @@ class _CanvasContentState extends State<CanvasContent>
                                 ),
                                 if (state.contour != null)
                                   Positioned.fill(
-                                    child: IgnorePointer(
-                                      child: Opacity(
-                                        opacity: state.contourOpacity,
-                                        child: SvgPicture.string(
-                                          SvgUtils.applyStrokeWidth(
-                                            state.contour!.svgData,
-                                            state.contourWidth,
-                                          ),
-                                          colorFilter: ColorFilter.mode(
-                                            state.contourColor,
-                                            BlendMode.srcIn,
-                                          ),
-                                          fit: BoxFit.contain,
-                                        ),
-                                      ),
-                                    ),
+                                    child: _buildContour(state),
                                   ),
                               ],
                             ),
@@ -603,6 +596,52 @@ class _CanvasContentState extends State<CanvasContent>
       if (point.dy > bottom) bottom = point.dy;
     }
     return Rect.fromLTRB(left, top, right, bottom);
+  }
+
+  /// Builds the contour layer, loading the compiled SVG picture when the
+  /// contour or its stroke width changes.
+  Widget _buildContour(CanvasState state) {
+    final ContourEntity contour = state.contour!;
+    final String key = '${contour.id}:${state.contourWidth}';
+    if (_loadedContourKey != key) {
+      _loadedContourKey = key;
+      final String svgData =
+          SvgUtils.applyStrokeWidth(contour.svgData, state.contourWidth);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadContourPicture(svgData, key);
+      });
+    }
+
+    final PictureInfo? pictureInfo = _contourPicture;
+    if (pictureInfo == null) {
+      return const SizedBox.shrink();
+    }
+    return CustomPaint(
+      painter: ContourPainter(
+        pictureInfo: pictureInfo,
+        color: state.contourColor,
+        opacity: state.contourOpacity,
+      ),
+    );
+  }
+
+  Future<void> _loadContourPicture(String svgData, String key) async {
+    try {
+      final PictureInfo info = await vg.loadPicture(
+        SvgStringLoader(svgData),
+        null,
+      );
+      if (!mounted || _loadedContourKey != key) {
+        info.picture.dispose();
+        return;
+      }
+      setState(() {
+        _contourPicture?.picture.dispose();
+        _contourPicture = info;
+      });
+    } catch (e, stackTrace) {
+      ErrorHandler.report(e, stackTrace);
+    }
   }
 
   Future<void> _captureEyedropperImage() async {
