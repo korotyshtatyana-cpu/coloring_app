@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:drift/drift.dart';
@@ -19,7 +20,7 @@ class Projects extends Table {
   TextColumn get userId => text()();
 
   /// Serialized project data (strokes and settings).
-  TextColumn get data => text()();
+  TextColumn get data => text().map(const MapConverter())();
 
   /// Last opened timestamp.
   DateTimeColumn get lastOpened => dateTime()();
@@ -29,6 +30,11 @@ class Projects extends Table {
 
   @override
   Set<Column> get primaryKey => {id};
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+        {contourId, userId}
+      ];
 }
 
 /// Local strokes table.
@@ -40,7 +46,7 @@ class Strokes extends Table {
   TextColumn get projectId => text()();
 
   /// Serialized list of points.
-  TextColumn get points => text()();
+  TextColumn get points => text().map(const PointsConverter())();
 
   /// Stroke color as a 32-bit ARGB integer.
   IntColumn get color => integer()();
@@ -80,6 +86,40 @@ class Contours extends Table {
 
   @override
   Set<Column> get primaryKey => {id};
+}
+
+/// Converts a JSON string to a Map<String, dynamic> and back.
+class MapConverter extends TypeConverter<Map<String, dynamic>, String> {
+  /// Creates a [MapConverter].
+  const MapConverter();
+
+  @override
+  Map<String, dynamic> fromSql(String fromDb) {
+    return jsonDecode(fromDb) as Map<String, dynamic>;
+  }
+
+  @override
+  String toSql(Map<String, dynamic> value) {
+    return jsonEncode(value);
+  }
+}
+
+/// Converts a JSON string to a List<List<double>> and back.
+class PointsConverter extends TypeConverter<List<List<double>>, String> {
+  /// Creates a [PointsConverter].
+  const PointsConverter();
+
+  @override
+  List<List<double>> fromSql(String fromDb) {
+    return (jsonDecode(fromDb) as List<dynamic>)
+        .map((dynamic e) => (e as List<dynamic>).cast<double>())
+        .toList();
+  }
+
+  @override
+  String toSql(List<List<double>> value) {
+    return jsonEncode(value);
+  }
 }
 
 /// Drift database for local project, stroke and contour storage.

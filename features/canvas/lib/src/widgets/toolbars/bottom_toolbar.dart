@@ -16,10 +16,11 @@ class BottomToolbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool canUndo = context.select((CanvasBloc bloc) => bloc.state.undoStack.isNotEmpty);
+    final bool canRedo = context.select((CanvasBloc bloc) => bloc.state.redoStack.isNotEmpty);
+    
     final colors = AppColors.of(context);
-    final state = context.watch<CanvasBloc>().state;
-    final bool canUndo = state.undoStack.isNotEmpty;
-    final bool canRedo = state.redoStack.isNotEmpty;
+    final bloc = context.read<CanvasBloc>();
 
     return Container(
       decoration: BoxDecoration(
@@ -43,14 +44,14 @@ class BottomToolbar extends StatelessWidget {
             iconSize: 24,
             backgroundColor: colors.metallicBlue,
             icon: const Icon(Icons.undo),
-            onPressed: canUndo ? () => context.read<CanvasBloc>().add(const Undo()) : null,
+            onPressed: canUndo ? () => _onUndo(bloc) : null,
           ),
           AppIconButton(
             size: 32,
             iconSize: 24,
             backgroundColor: colors.metallicBlue,
             icon: const Icon(Icons.redo),
-            onPressed: canRedo ? () => context.read<CanvasBloc>().add(const Redo()) : null,
+            onPressed: canRedo ? () => _onRedo(bloc) : null,
           ),
           AppIconButton(
             size: 32,
@@ -62,6 +63,14 @@ class BottomToolbar extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  void _onUndo(CanvasBloc bloc) {
+    bloc.add(const Undo());
+  }
+
+  void _onRedo(CanvasBloc bloc) {
+    bloc.add(const Redo());
   }
 
   void _showColorPicker(BuildContext context) {

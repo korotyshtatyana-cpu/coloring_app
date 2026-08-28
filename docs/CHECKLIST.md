@@ -92,21 +92,18 @@
 - [x] Создан CanvasBloc (события, состояния)
 - [x] `CanvasState` содержит статусы initial, loading, ready, drawing, saving, exporting, error
 - [x] Создан CanvasScreen (Screen + Content)
-- [x] Создан CanvasPainter — рисует белый фон и мазки
+- [x] Создан CanvasPainter — рисует белый фон и мазки (полная история точек)
 - [x] Контур отображается через `SvgPicture.string` (с применением толщины)
-- [x] Обработка касаний через `Listener` с `event.pressure`
-- [x] Автосохранение с `autosaveDebounce` и при сворачивании
-- [x] Undo/redo через `undoStack`/`redoStack`, ограничены `maxUndoSteps`
+- [x] Реализовано сглаживание контура (Smooth Contour)
+- [x] Реализована поддержка поворота холста
+- [x] Обработка касаний через `Listener` с `event.pressure` и коррекцией масштаба
+- [x] Автосохранение с `autosaveDebounce` и при сворачивании (включая настройки контура)
+- [x] Интеллектуальный Undo/redo через `undoStack`/`redoStack`
 - [x] Экспорт: `ExportImageUseCase` + `ShareFileUseCase` / `SaveImageToGalleryUseCase` через `CanvasBloc`
 - [x] Созданы виджеты:
-    - [x] BrushPicker (иконки-заглушки)
-    - [x] ColorPickerDialog (flutter_colorpicker + пипетка)
-    - [x] ContourSettings
-    - [x] EyedropperOverlay
-    - [x] TopToolbar
-    - [x] BottomToolbar
-    - [x] LeftControls
-    - [x] ExportMenu
+    - [x] Стандартизированный `AppIconButton` (24/18px)
+    - [x] ColorPicker (Overlay + Hue slider + Black-fix)
+    - [x] ContourSettings (Overlay + Gradient Opacity Slider)
 - [x] Создан публичный API (`canvas.dart`) — только `CanvasRouter` и `CanvasRoute`
 
 ## ✅ Settings Feature

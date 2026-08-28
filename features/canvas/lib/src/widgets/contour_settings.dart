@@ -12,7 +12,10 @@ class ContourSettings extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final state = context.watch<CanvasBloc>().state;
+    final Color contourColor = context.select((CanvasBloc bloc) => bloc.state.contourColor);
+    final double contourOpacity = context.select((CanvasBloc bloc) => bloc.state.contourOpacity);
+    
+    final CanvasBloc bloc = context.read<CanvasBloc>();
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -70,7 +73,7 @@ class ContourSettings extends StatelessWidget {
                     width: 48,
                     height: 48,
                     child: ColoredBox(
-                      color: state.contourColor,
+                      color: contourColor,
                     ),
                   ),
                 ),
@@ -85,21 +88,21 @@ class ContourSettings extends StatelessWidget {
             inactiveColor: Colors.black12,
             gradient: LinearGradient(
               colors: [
-                state.contourColor.withValues(alpha: 0),
-                state.contourColor.withValues(alpha: 1),
+                contourColor.withValues(alpha: 0),
+                contourColor.withValues(alpha: 1),
               ],
             ),
-            value: state.contourOpacity,
+            value: contourOpacity,
             min: 0.0,
             max: 1.0,
-            onChanged: (double value) {
-              context.read<CanvasBloc>().add(
-                ChangeContourSettings(opacity: value),
-              );
-            },
+            onChanged: (double value) => _onOpacityChanged(bloc, value),
           ),
         ],
       ),
     );
+  }
+
+  void _onOpacityChanged(CanvasBloc bloc, double value) {
+    bloc.add(ChangeContourSettings(opacity: value));
   }
 }
