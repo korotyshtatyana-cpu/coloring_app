@@ -32,26 +32,11 @@ class CanvasLocalProvider {
 
   /// Loads a project for the given contour.
   Future<ProjectModel?> loadProject(String contourId) async {
-    final List<Project> rows = await (_database.select(_database.projects)
+    final Project? row = await (_database.select(_database.projects)
           ..where(($ProjectsTable row) => row.contourId.equals(contourId)))
-        .get();
+        .getSingleOrNull();
 
-    if (rows.isEmpty) {
-      return null;
-    }
-
-    // Legacy duplicates with different id formats may exist for the same
-    // contour: keep the most recently opened row and remove the rest.
-    if (rows.length > 1) {
-      rows.sort((a, b) => b.lastOpened.compareTo(a.lastOpened));
-      for (final Project row in rows.skip(1)) {
-        await (_database.delete(_database.projects)
-              ..where(($ProjectsTable r) => r.id.equals(row.id)))
-            .go();
-      }
-    }
-
-    return _projectFromCompanion(rows.first);
+    return row == null ? null : _projectFromCompanion(row);
   }
 
   /// Loads strokes for the given project.

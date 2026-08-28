@@ -21,6 +21,7 @@
 
 - [Архитектура](docs/ARCHITECTURE.md)
 - [Обзор проекта](docs/PROJECT_OVERVIEW.md)
+- [Чистый код и лучшие практики](docs/GOOD_PRACTICES.md)
 - [UI спецификация](docs/UI_SPEC.md)
 - [API спецификация](docs/API_SPEC.md)
 - [Чеклист](docs/CHECKLIST.md)

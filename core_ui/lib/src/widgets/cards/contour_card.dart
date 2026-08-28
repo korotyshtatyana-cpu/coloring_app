@@ -58,7 +58,10 @@ class ContourCard extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: <Widget>[
-            _buildPreview(colors),
+            _ContourPreview(
+              previewUrl: previewUrl,
+              svgData: svgData,
+            ),
             if (isInProgress)
               Positioned(
                 top: 8,
@@ -86,98 +89,115 @@ class ContourCard extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildPreview(AppColors colors) {
+class _ContourPreview extends StatelessWidget {
+  final String? previewUrl;
+  final String? svgData;
+
+  const _ContourPreview({
+    this.previewUrl,
+    this.svgData,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final String? url = previewUrl;
 
-    // Local file previews (e.g. rendered project thumbnails) take priority.
     if (url != null && url.isNotEmpty && !url.startsWith('http')) {
       if (_isSvgUrl(url)) {
-        return SvgPicture.file(
-          File(url),
-          fit: BoxFit.cover,
-          placeholderBuilder: (_) => _buildVectorOrPlaceholder(colors),
+        return _FadeIn(
+          child: SvgPicture.file(
+            File(url),
+            fit: BoxFit.cover,
+            placeholderBuilder: (_) => _VectorOrPlaceholder(svgData: svgData),
+          ),
         );
       }
-      return Image.file(
-        File(url),
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _buildVectorOrPlaceholder(colors),
+      return _FadeIn(
+        child: Image.file(
+          File(url),
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _VectorOrPlaceholder(svgData: svgData),
+        ),
       );
     }
 
-    // The contour SVG is always available locally: render it instead of
-    // relying on a remote preview.
-    final String? svg = svgData;
-    if (svg != null && svg.isNotEmpty) {
+    if (svgData != null && svgData!.isNotEmpty) {
       return Padding(
         padding: const EdgeInsets.all(8),
-        child: SvgPicture.string(
-          svg,
-          fit: BoxFit.contain,
+        child: _FadeIn(
+          child: SvgPicture.string(
+            svgData!,
+            fit: BoxFit.contain,
+          ),
         ),
       );
     }
 
     if (url != null && url.isNotEmpty) {
-      final bool isSvg = _isSvgUrl(url);
-      if (isSvg) {
-        return SvgPicture.network(
-          url,
-          fit: BoxFit.cover,
-          placeholderBuilder: (_) => _buildPlaceholder(colors, url: url),
+      if (_isSvgUrl(url)) {
+        return _FadeIn(
+          child: SvgPicture.network(
+            url,
+            fit: BoxFit.cover,
+            placeholderBuilder: (_) => _ContourPlaceholder(url: url),
+          ),
         );
       }
-      return Image.network(
-        url,
-        fit: BoxFit.cover,
-        loadingBuilder: (_, Widget child, ImageChunkEvent? loadingProgress) {
-          if (loadingProgress == null) return child;
-          return _buildPlaceholder(colors, url: url);
-        },
-        errorBuilder: (_, __, ___) => _buildPlaceholder(colors, url: url),
-      );
-    }
-
-    return _buildPlaceholder(colors);
-  }
-
-  Widget _buildVectorOrPlaceholder(AppColors colors) {
-    final String? svg = svgData;
-    if (svg != null && svg.isNotEmpty) {
-      return Padding(
-        padding: const EdgeInsets.all(8),
-        child: SvgPicture.string(
-          svg,
-          fit: BoxFit.contain,
+      return _FadeIn(
+        child: Image.network(
+          url,
+          fit: BoxFit.cover,
+          loadingBuilder: (_, Widget child, ImageChunkEvent? loadingProgress) {
+            if (loadingProgress == null) return child;
+            return _ContourPlaceholder(url: url);
+          },
+          errorBuilder: (_, __, ___) => _ContourPlaceholder(url: url),
         ),
       );
     }
-    return _buildPlaceholder(colors);
+
+    return const _ContourPlaceholder();
   }
 
   bool _isSvgUrl(String url) {
     final String lower = url.toLowerCase();
     if (lower.endsWith('.svg')) return true;
-
     final String? path = Uri.tryParse(url)?.path.toLowerCase();
-    if (path != null && path.endsWith('.svg')) return true;
-
-    // If the URL has no obvious raster extension, treat it as SVG
-    // (e.g. https://placehold.co/... returns SVG by default).
-    const List<String> rasterExtensions = <String>[
-      '.png',
-      '.jpg',
-      '.jpeg',
-      '.gif',
-      '.webp',
-      '.bmp',
-    ];
-    final bool hasRasterExtension = rasterExtensions.any(lower.endsWith);
-    return !hasRasterExtension;
+    return path != null && path.endsWith('.svg');
   }
+}
 
-  Widget _buildPlaceholder(AppColors colors, {String? url}) {
+class _VectorOrPlaceholder extends StatelessWidget {
+  final String? svgData;
+
+  const _VectorOrPlaceholder({this.svgData});
+
+  @override
+  Widget build(BuildContext context) {
+    if (svgData != null && svgData!.isNotEmpty) {
+      return Padding(
+        padding: const EdgeInsets.all(8),
+        child: SvgPicture.string(
+          svgData!,
+          fit: BoxFit.contain,
+        ),
+      );
+    }
+    return const _ContourPlaceholder();
+  }
+}
+
+class _ContourPlaceholder extends StatelessWidget {
+  final String? url;
+
+  const _ContourPlaceholder({this.url});
+
+  @override
+  Widget build(BuildContext context) {
+    final AppColors colors = AppColors.of(context);
+
     return Container(
       color: colors.secondaryBg,
       padding: const EdgeInsets.all(12),
@@ -189,10 +209,10 @@ class ContourCard extends StatelessWidget {
             color: colors.primaryBg,
             size: 48,
           ),
-          if (url != null && url.isNotEmpty) ...<Widget>[
+          if (url != null && url!.isNotEmpty) ...<Widget>[
             const SizedBox(height: 8),
             Text(
-              url,
+              url!,
               style: AppFonts.normal12.copyWith(color: colors.primaryBg),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -201,6 +221,48 @@ class ContourCard extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+class _FadeIn extends StatefulWidget {
+  final Widget child;
+
+  const _FadeIn({required this.child});
+
+  @override
+  State<_FadeIn> createState() => _FadeInState();
+}
+
+class _FadeInState extends State<_FadeIn> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _animation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeIn,
+    );
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _animation,
+      child: widget.child,
     );
   }
 }

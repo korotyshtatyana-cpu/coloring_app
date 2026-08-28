@@ -1,5 +1,9 @@
 # Архитектура приложения
 
+## Общие принципы
+
+Приложение следует принципам **Clean Architecture** и **SOLID**. Все технические решения и стандарты написания кода подробно описаны в документе **[Flutter Good Practices](GOOD_PRACTICES.md)**.
+
 ## Общая архитектура (Clean Architecture)
 
 Приложение разделено на Dart/Flutter модули (package), каждый со своим `pubspec.yaml`:

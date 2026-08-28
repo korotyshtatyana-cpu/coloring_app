@@ -9,10 +9,10 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 import '../bloc/canvas_bloc.dart';
 import '../painters/canvas_painter.dart';
+import '../widgets/canvas/contour_layer.dart';
 import '../widgets/eyedropper_overlay.dart';
 import '../widgets/export_menu.dart';
 import '../widgets/toolbars/bottom_toolbar.dart';
@@ -127,19 +127,6 @@ class _CanvasContentState extends State<CanvasContent>
     left: 16,
   );
 
-  /// Logical size of the drawing zone, derived from the contour SVG viewBox.
-  Size _canvasSize = Size.zero;
-
-  /// Scale at which the canvas sheet fits the viewport.
-  double _fitScale = 1.0;
-
-  /// Compiled contour picture drawn by [ContourPainter].
-  PictureInfo? _contourPicture;
-
-  /// Key of the contour picture currently loaded/loading
-  /// (`contourId:contourWidth`).
-  String? _loadedContourKey;
-
   /// Whether a save-before-exit is currently running.
   bool _exitSaveInProgress = false;
 
@@ -157,7 +144,6 @@ class _CanvasContentState extends State<CanvasContent>
     WidgetsBinding.instance.removeObserver(this);
     _transformationController.dispose();
     _disposeEyedropperImage();
-    _contourPicture?.picture.dispose();
     super.dispose();
   }
 
@@ -172,19 +158,18 @@ class _CanvasContentState extends State<CanvasContent>
   @override
   Widget build(BuildContext context) {
     final Size viewportSize = MediaQuery.sizeOf(context);
-    final ContourEntity? contour = context.select(
-      (CanvasBloc bloc) => bloc.state.contour,
-    );
-    final CanvasStatus status = context.select(
-      (CanvasBloc bloc) => bloc.state.status,
-    );
+    final state = context.watch<CanvasBloc>().state;
+    final contour = state.contour;
+    final status = state.status;
+    
     final bool isLoading =
         status == CanvasStatus.initial || status == CanvasStatus.loading;
     final AppColors colors = AppColors.of(context);
-    _canvasSize =
+
+    final Size canvasSize =
         (contour == null ? null : SvgUtils.parseViewBoxSize(contour.svgData)) ??
         viewportSize;
-    _fitScale = _fitScaleFor(viewportSize, _canvasSize);
+    final double fitScale = _fitScaleFor(viewportSize, canvasSize);
 
     return PopScope(
       canPop: _popEnabled,
@@ -253,8 +238,8 @@ class _CanvasContentState extends State<CanvasContent>
                             boundaryMargin: const EdgeInsets.all(
                               _boundaryMargin,
                             ),
-                            minScale: _fitScale * _minScaleFactor,
-                            maxScale: _fitScale * _maxScaleFactor,
+                            minScale: fitScale * _minScaleFactor,
+                            maxScale: fitScale * _maxScaleFactor,
                             panEnabled: false,
                             scaleEnabled: false,
                             child: BlocBuilder<CanvasBloc, CanvasState>(
@@ -270,21 +255,22 @@ class _CanvasContentState extends State<CanvasContent>
                                   previous.contourWidth != current.contourWidth,
                               builder: (context, state) {
                                 return SizedBox(
-                                  width: _canvasSize.width,
-                                  height: _canvasSize.height,
+                                  width: canvasSize.width,
+                                  height: canvasSize.height,
                                   child: ClipRect(
                                     child: Stack(
                                       fit: StackFit.expand,
                                       children: <Widget>[
-                                        CustomPaint(
-                                          painter: CanvasPainter(
-                                            strokes: state.strokes,
+                                        RepaintBoundary(
+                                          child: CustomPaint(
+                                            painter: CanvasPainter(
+                                              strokes: state.strokes,
+                                            ),
                                           ),
                                         ),
-                                        if (state.contour != null)
-                                          Positioned.fill(
-                                            child: _buildContour(state),
-                                          ),
+                                        const Positioned.fill(
+                                          child: ContourLayer(),
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -297,8 +283,8 @@ class _CanvasContentState extends State<CanvasContent>
                 Positioned.fill(
                   child: Listener(
                     behavior: HitTestBehavior.translucent,
-                    onPointerDown: _onPointerDown,
-                    onPointerMove: _onPointerMove,
+                    onPointerDown: (event) => _onPointerDown(event, canvasSize),
+                    onPointerMove: (event) => _onPointerMove(event, canvasSize),
                     onPointerUp: _onPointerUp,
                     onPointerCancel: _onPointerCancel,
                     child: Container(color: Colors.transparent),
@@ -353,7 +339,7 @@ class _CanvasContentState extends State<CanvasContent>
     context.router.maybePop();
   }
 
-  void _onPointerDown(PointerDownEvent event) {
+  void _onPointerDown(PointerDownEvent event, Size canvasSize) {
     _pointerPositions[event.pointer] = event.localPosition;
 
     if (_pointerPositions.length >= 2) {
@@ -384,7 +370,7 @@ class _CanvasContentState extends State<CanvasContent>
       }
 
       _activeDrawPointer = event.pointer;
-      if (_isPointerOnCanvas(event.localPosition)) {
+      if (_isPointerOnCanvas(event.localPosition, canvasSize)) {
         context.read<CanvasBloc>().add(
           StartDrawing(
             point: _viewportToScene(event.localPosition),
@@ -395,7 +381,7 @@ class _CanvasContentState extends State<CanvasContent>
     }
   }
 
-  void _onPointerMove(PointerMoveEvent event) {
+  void _onPointerMove(PointerMoveEvent event, Size canvasSize) {
     if (!_pointerPositions.containsKey(event.pointer)) {
       return;
     }
@@ -411,9 +397,9 @@ class _CanvasContentState extends State<CanvasContent>
     if (_pointerPositions.length == 2 &&
         _initialPointerPositions != null &&
         _initialTransform != null) {
-      _handleTwoFingerGesture();
+      _handleTwoFingerGesture(canvasSize);
     } else if (event.pointer == _activeDrawPointer) {
-      if (_isPointerOnCanvas(event.localPosition)) {
+      if (_isPointerOnCanvas(event.localPosition, canvasSize)) {
         context.read<CanvasBloc>().add(
           AddPoint(
             point: _viewportToScene(event.localPosition),
@@ -430,7 +416,7 @@ class _CanvasContentState extends State<CanvasContent>
         _activeDrawPointer == null &&
         !_drawingLocked &&
         _canDrawWithPointer(event) &&
-        _isPointerOnCanvas(event.localPosition)) {
+        _isPointerOnCanvas(event.localPosition, canvasSize)) {
       // Pointer re-entered the canvas after leaving: start a new stroke.
       _activeDrawPointer = event.pointer;
       context.read<CanvasBloc>().add(
@@ -519,12 +505,12 @@ class _CanvasContentState extends State<CanvasContent>
     return MatrixUtils.transformPoint(inverse, viewportPoint);
   }
 
-  bool _isPointerOnCanvas(Offset viewportPoint) {
+  bool _isPointerOnCanvas(Offset viewportPoint, Size canvasSize) {
     final Offset scene = _viewportToScene(viewportPoint);
     return scene.dx >= 0 &&
-        scene.dx <= _canvasSize.width &&
+        scene.dx <= canvasSize.width &&
         scene.dy >= 0 &&
-        scene.dy <= _canvasSize.height;
+        scene.dy <= canvasSize.height;
   }
 
   /// Scale at which [canvas] fits into [viewport] minus [_canvasPadding].
@@ -549,7 +535,7 @@ class _CanvasContentState extends State<CanvasContent>
     _initialTransform = _transformationController.value;
   }
 
-  void _handleTwoFingerGesture() {
+  void _handleTwoFingerGesture(Size canvasSize) {
     final List<Offset> initialPositions = _initialPointerPositions!.values
         .toList();
     final List<Offset> currentPositions = _pointerPositions.values.toList();
@@ -576,17 +562,19 @@ class _CanvasContentState extends State<CanvasContent>
       ..translateByDouble(-initialFocal.dx, -initialFocal.dy, 0, 1)
       ..multiply(_initialTransform!);
 
-    final Matrix4 clampedMatrix = _clampTransform(matrix);
+    final Matrix4 clampedMatrix = _clampTransform(matrix, canvasSize);
     _transformationController.value = clampedMatrix;
     context.read<CanvasBloc>().add(UpdateTransform(clampedMatrix));
   }
 
-  Matrix4 _clampTransform(Matrix4 matrix) {
+  Matrix4 _clampTransform(Matrix4 matrix, Size canvasSize) {
     final Size viewportSize = MediaQuery.sizeOf(context);
+    final double fitScale = _fitScaleFor(viewportSize, canvasSize);
+
     final double scale = matrix.getMaxScaleOnAxis();
     final double clampedScale = scale.clamp(
-      _fitScale * _minScaleFactor,
-      _fitScale * _maxScaleFactor,
+      fitScale * _minScaleFactor,
+      fitScale * _maxScaleFactor,
     );
 
     // Adjust the scale while preserving rotation, anchored at the viewport
@@ -604,7 +592,7 @@ class _CanvasContentState extends State<CanvasContent>
 
     // Free panning: allow moving the canvas anywhere, but keep at least
     // [_boundaryMargin] of it visible on each axis so it can't get lost.
-    final Rect bounds = _canvasBoundsOnScreen(result);
+    final Rect bounds = _canvasBoundsOnScreen(result, canvasSize);
     double dx = 0;
     double dy = 0;
     if (bounds.right < _boundaryMargin) {
@@ -626,12 +614,12 @@ class _CanvasContentState extends State<CanvasContent>
   }
 
   /// Screen-space bounding box of the canvas sheet under [matrix].
-  Rect _canvasBoundsOnScreen(Matrix4 matrix) {
+  Rect _canvasBoundsOnScreen(Matrix4 matrix, Size canvasSize) {
     final List<Offset> corners = <Offset>[
       Offset.zero,
-      Offset(_canvasSize.width, 0),
-      Offset(0, _canvasSize.height),
-      Offset(_canvasSize.width, _canvasSize.height),
+      Offset(canvasSize.width, 0),
+      Offset(0, canvasSize.height),
+      Offset(canvasSize.width, canvasSize.height),
     ].map((Offset p) => MatrixUtils.transformPoint(matrix, p)).toList();
 
     double left = corners.first.dx;
@@ -645,54 +633,6 @@ class _CanvasContentState extends State<CanvasContent>
       if (point.dy > bottom) bottom = point.dy;
     }
     return Rect.fromLTRB(left, top, right, bottom);
-  }
-
-  /// Builds the contour layer, loading the compiled SVG picture when the
-  /// contour or its stroke width changes.
-  Widget _buildContour(CanvasState state) {
-    final ContourEntity contour = state.contour!;
-    final String key = '${contour.id}:${state.contourWidth}';
-    if (_loadedContourKey != key) {
-      _loadedContourKey = key;
-      final String svgData = SvgUtils.applyStrokeWidth(
-        contour.svgData,
-        state.contourWidth,
-      );
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _loadContourPicture(svgData, key);
-      });
-    }
-
-    final PictureInfo? pictureInfo = _contourPicture;
-    if (pictureInfo == null) {
-      return const SizedBox.shrink();
-    }
-    return CustomPaint(
-      painter: ContourPainter(
-        pictureInfo: pictureInfo,
-        color: state.contourColor,
-        opacity: state.contourOpacity,
-      ),
-    );
-  }
-
-  Future<void> _loadContourPicture(String svgData, String key) async {
-    try {
-      final PictureInfo info = await vg.loadPicture(
-        SvgStringLoader(svgData),
-        null,
-      );
-      if (!mounted || _loadedContourKey != key) {
-        info.picture.dispose();
-        return;
-      }
-      setState(() {
-        _contourPicture?.picture.dispose();
-        _contourPicture = info;
-      });
-    } catch (e, stackTrace) {
-      ErrorHandler.report(e, stackTrace);
-    }
   }
 
   Future<void> _captureEyedropperImage() async {

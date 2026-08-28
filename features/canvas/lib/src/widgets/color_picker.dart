@@ -156,10 +156,8 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
   @override
   Widget build(BuildContext context) {
     final AppColors colors = AppColors.of(context);
-    final state = context.watch<CanvasBloc>().state;
-    final Color currentColor = widget.isContour
-        ? state.contourColor
-        : state.color;
+    final Color currentColor = context.select((CanvasBloc bloc) => 
+        widget.isContour ? bloc.state.contourColor : bloc.state.color);
 
     if (_hsvColor == null ||
         (_hsvColor!.toColor().toARGB32() != currentColor.toARGB32() &&
