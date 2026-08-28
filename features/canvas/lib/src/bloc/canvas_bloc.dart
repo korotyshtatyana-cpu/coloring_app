@@ -103,9 +103,11 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
   ) {
     final effectiveSize = _effectiveSize(event.pressure);
     final stroke = StrokeEntity(
-      points: <Offset>[event.point],
+      points: <StrokePoint>[
+        StrokePoint(offset: event.point, pressure: event.pressure)
+      ],
       color: state.isEraser ? Colors.white.toARGB32() : state.color.toARGB32(),
-      size: state.isEraser ? effectiveSize * 2 : effectiveSize,
+      size: state.isEraser ? effectiveSize * 2 : state.brushSize,
       opacity: state.isEraser ? 1.0 : state.opacity,
       brushType: state.isEraser ? BrushType.circle : state.brushType,
     );
@@ -129,10 +131,11 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
   ) {
     if (state.currentStroke == null || state.strokes.isEmpty) return;
 
-    final effectiveSize = _effectiveSize(event.pressure);
     final updated = state.currentStroke!.copyWith(
-      points: <Offset>[...state.currentStroke!.points, event.point],
-      size: effectiveSize,
+      points: <StrokePoint>[
+        ...state.currentStroke!.points,
+        StrokePoint(offset: event.point, pressure: event.pressure),
+      ],
     );
     final strokes = List<StrokeEntity>.from(state.strokes);
     strokes[strokes.length - 1] = updated;
@@ -430,7 +433,8 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
             'id': '${_contourId}_${entry.key}',
             'project_id': _contourId,
             'points': stroke.points
-                .map((Offset p) => <double>[p.dx, p.dy])
+                .map((StrokePoint p) =>
+                    <double>[p.offset.dx, p.offset.dy, p.pressure])
                 .toList(),
             'color': stroke.color,
             'size': stroke.size,
@@ -460,7 +464,10 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
         points: (map['points'] as List<dynamic>)
             .map((dynamic row) {
               final list = row as List<dynamic>;
-              return Offset(list[0] as double, list[1] as double);
+              return StrokePoint(
+                offset: Offset(list[0] as double, list[1] as double),
+                pressure: list.length > 2 ? list[2] as double : 1.0,
+              );
             })
             .toList(),
         color: map['color'] as int,

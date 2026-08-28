@@ -69,7 +69,6 @@ abstract final class CanvasRenderingService {
 
     final paint = Paint()
       ..color = Color(stroke.color).withValues(alpha: stroke.opacity)
-      ..strokeWidth = stroke.size
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round
       ..style = PaintingStyle.stroke;
@@ -79,12 +78,12 @@ abstract final class CanvasRenderingService {
       paint.maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
     }
 
-    final path = Path();
-    path.moveTo(stroke.points.first.dx, stroke.points.first.dy);
-    for (int i = 1; i < stroke.points.length; i++) {
-      path.lineTo(stroke.points[i].dx, stroke.points[i].dy);
+    for (int i = 0; i < stroke.points.length - 1; i++) {
+      final point = stroke.points[i];
+      final next = stroke.points[i + 1];
+      paint.strokeWidth = stroke.size * point.pressure;
+      canvas.drawLine(point.offset, next.offset, paint);
     }
-    canvas.drawPath(path, paint);
   }
 
   static Future<void> _drawContour(

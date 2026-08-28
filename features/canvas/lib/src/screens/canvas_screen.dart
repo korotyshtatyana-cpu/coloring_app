@@ -483,15 +483,16 @@ class _CanvasContentState extends State<CanvasContent>
   bool _isDotStroke(StrokeEntity stroke) {
     if (stroke.points.length < 2) return true;
 
-    double minX = stroke.points.first.dx;
-    double minY = stroke.points.first.dy;
-    double maxX = stroke.points.first.dx;
-    double maxY = stroke.points.first.dy;
-    for (final Offset point in stroke.points) {
-      if (point.dx < minX) minX = point.dx;
-      if (point.dy < minY) minY = point.dy;
-      if (point.dx > maxX) maxX = point.dx;
-      if (point.dy > maxY) maxY = point.dy;
+    double minX = stroke.points.first.offset.dx;
+    double minY = stroke.points.first.offset.dy;
+    double maxX = stroke.points.first.offset.dx;
+    double maxY = stroke.points.first.offset.dy;
+    for (final StrokePoint point in stroke.points) {
+      final Offset offset = point.offset;
+      if (offset.dx < minX) minX = offset.dx;
+      if (offset.dy < minY) minY = offset.dy;
+      if (offset.dx > maxX) maxX = offset.dx;
+      if (offset.dy > maxY) maxY = offset.dy;
     }
 
     final double scale = _transformationController.value.getMaxScaleOnAxis();

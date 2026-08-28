@@ -9,7 +9,10 @@ abstract final class StrokeMapper {
   static StrokeEntity toEntity(StrokeModel model) {
     return StrokeEntity(
       points: model.points
-          .map((List<double> pair) => Offset(pair[0], pair[1]))
+          .map((List<double> triplet) => StrokePoint(
+                offset: Offset(triplet[0], triplet[1]),
+                pressure: triplet.length > 2 ? triplet[2] : 1.0,
+              ))
           .toList(),
       color: model.color,
       size: model.size,
@@ -24,7 +27,8 @@ abstract final class StrokeMapper {
       id: '${projectId}_${entity.hashCode}',
       projectId: projectId,
       points: entity.points
-          .map((Offset offset) => <double>[offset.dx, offset.dy])
+          .map((StrokePoint point) =>
+              <double>[point.offset.dx, point.offset.dy, point.pressure])
           .toList(),
       color: entity.color,
       size: entity.size,
