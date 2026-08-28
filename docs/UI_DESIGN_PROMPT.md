@@ -1,6 +1,6 @@
 # UI Design Specification & AI Prompts
 
-Этот документ содержит концепцию дизайна приложения "Coloring PRO" и готовые инструкции (промпты) для генерации визуальных интерфейсов с помощью AI (Midjourney, DALL-E, Claude и др.).
+> **ВАЖНО (Для AI):** Сгенерируй ОДНО изображение, представляющее собой презентацию (showcase) из 4-5 экранов мобильного приложения, строго следуя разделу "3. Мастер-промпт". НЕ добавляй стандартные навигационные панели (bottom navigation bar) и индикаторы прогресса на карточках.
 
 ## 1. Концепция Дизайна (Design Concept)
 
@@ -9,6 +9,7 @@
 *   **Аудитория:** Девушки и женщины 16+.
 *   **Вайб:** Легкость, чистота, отсутствие "давления", вдохновение. Приложение должно ощущаться как современное арт-пространство.
 *   **Референс функционала:** GoPaint (удобство, чистота, фокус на творчестве).
+*   **Устройства:** Адаптивный дизайн для смартфонов (портретная ориентация) и планшетов (портретная и ландшафтная ориентации).
 
 ### Визуальный язык
 *   **Формы:** Максимально скругленные углы (Pill-shaped). Большие радиусы скругления для всех кнопок и панелей.
@@ -18,37 +19,66 @@
     *   Акценты: Пастельные тона, мягкие градиенты. Цвет иконок меняется в зависимости от активности.
     *   Текст: Глубокий графитовый (избегаем жесткого черного).
 
-## 2. Описание экранов
+## 2. Детальное описание содержимого экранов (Screen Structure)
 
-### Галерея (Gallery)
-*   Просторная сетка с большими отступами.
-*   Карточки с сильным скруглением углов.
-*   Мягкие "островки" (chips) для категорий.
-*   Возможны абстрактные "мазки краски" на фоне экрана для поддержки стиля экспрессионизма.
+Чтобы AI сгенерировал не просто "красивую картинку", а функциональный интерфейс, используйте следующие описания структуры:
 
-### Редактор (Canvas Editor)
-*   Холст занимает 90%+ экрана.
-*   Парящие (floating) панели управления с мягкими тенями.
-*   Слайдеры в виде изящных полосок с градиентами (особенно для прозрачности).
-*   Компактные кнопки (24x24) с центрированными иконками (18x18).
+### Галерея (Gallery Screen)
+*   **Верхняя панель (Header):**
+    *   Заголовок "Gallery" элегантным тонким шрифтом.
+    *   Кнопка профиля или настроек в углу.
+*   **Фильтрация (Chips):**
+    *   Горизонтальная скроллируемая лента "островков" (All, Favorites, In Progress, Animals, Nature...).
+    *   Активный элемент выделен мягким пастельным цветом.
+*   **Сетка контуров (Grid):**
+    *   2 колонки для смартфонов, 3-4 для планшетов.
+    *   Карточки имеют очень большие радиусы (24px+).
+    *   Внутри карточки: чистый векторный контур на светлом фоне.
+    *   Иконка "звездочка" (избранное) в углу карточки — тонкая серая линия, желтая при активации.
+    *   Индикатор прогресса (папка) для начатых работ.
 
-### Оверлеи (Settings & Color Picker)
-*   Полностью прозрачные фоны (без затемнения остального экрана).
-*   Стиль "Glassmorphism" или плотные белые "карточки" с закруглением 24px+.
-*   Плавные переходы цветов в палитре.
+### Редактор (Canvas Editor Screen)
+*   **Центральная зона:**
+    *   Белоснежный холст, занимающий почти весь экран.
+    *   Векторный контур (лайн-арт) по центру.
+*   **Левая панель инструментов (Floating Left Bar):**
+    *   Вертикальный "парящий" островок с закруглением pill-shape.
+    *   Кнопка "Кисть" (Brush) и "Ластик" (Eraser).
+    *   Два вертикальных тонких слайдера (Размер кисти и Прозрачность).
+    *   Кнопка "Сбросить вид" (Reset view).
+*   **Нижняя панель (Floating Bottom Bar):**
+    *   Горизонтальный островок.
+    *   Кнопка выбора цвета (Color Lens).
+    *   Кнопки "Undo" и "Redo" (дизейблятся — становятся полупрозрачными).
+    *   Кнопка настроек контура (Settings/Shapes).
+*   **Верхняя панель (Top Actions):**
+    *   Кнопка "Назад" (Gallery) и кнопка "Экспорт" (Share/Save).
+
+### Всплывающие оверлеи (Overlays)
+*   **Выбор цвета (Color Picker):**
+    *   Floating card по центру.
+    *   Круглая палитра (Color Wheel) или квадрат.
+    *   Вертикальный слайдер оттенка (Hue).
+    *   Кнопка "Пипетка" (Eyedropper).
+    *   Поле ввода HEX-кода.
+*   **Настройки контура (Contour Settings):**
+    *   Floating card над нижней панелью.
+    *   Заголовок "Contour".
+    *   Слайдер прозрачности с градиентной подложкой.
+    *   Выбор цвета контура (мини-превью текущего цвета).
 
 ---
 
 ## 3. Промпты для AI (AI Generation Prompts)
 
-### Основной интерфейс (UI Layout)
-> **Prompt:** Mobile app UI design, Coloring book for women 16+, minimalist aesthetic, Digital Expressionism style accents, very rounded corners, pill-shaped buttons, thin line icons, soft pastel color palette, off-white background, airy and light feel, inspired by GoPaint, high resolution, clean layout, functional yet artistic.
+### Мастер-промпт: Презентация всех экранов (Master Showcase)
+**Инструкция для пользователя:** Если вы используете чат-бота (ChatGPT, Claude), скопируйте текст ниже и добавьте: "Используя этот файл как руководство, сгенерируй ОДНО изображение-презентацию по следующему промпту:".
 
-### Набор иконок (Icon Set)
-> **Prompt:** Minimalist thin line icon set for a drawing app: brush, eraser, undo, redo, color wheel, settings. Vector style, elegant, feminine, clean lines, consistent weight, isolated on white background.
+> **Master Prompt:** Mobile app UI/UX design showcase, 5 high-fidelity screens for drawing app "Coloring PRO" displayed in a clean row. **Screen 1: Splash Screen** with minimalist logo. **Screen 2: Gallery Screen** with 2-column grid of rounded cards showing black vector line-art (no progress bars). **Screen 3: Canvas Editor** with large white canvas and floating pill-shaped side toolbar. **Screen 4: Canvas with Color Picker Overlay**, transparent glassmorphism card with color wheel. **Screen 5: Canvas with Export Menu Overlay**, floating minimalist card. **Style:** Minimalist, Digital Expressionism, soft pastel accents, off-white background, thin line icons. **Constraints:** NO bottom navigation bar, NO tab bars, NO progress indicators on cards, NO system bars. Professional presentation, clean layout, 8k, --ar 16:9 --v 6.1
 
-### Цветовая палитра и текстуры (Atmosphere)
-> **Prompt:** Abstract digital expressionism background for mobile app, soft pastel brush strokes on off-white canvas, minimalist, artistic, calming, light and airy, high resolution.
+---
+
+### Отдельные экраны (Individual Screens)
 
 ---
 
