@@ -45,9 +45,12 @@ class CanvasRepositoryImpl implements CanvasRepository {
     _strokes.putIfAbsent(projectId, () => <StrokeEntity>[]);
     _strokes[projectId]!.add(stroke);
 
+    // Pass a copy because the cached list can be modified concurrently
+    // (e.g. another addStroke can run while saveProject is awaiting a DB
+    // write, which would mutate the list mid-iteration).
     await _localProvider.saveProject(
       _projectModelFromId(projectId),
-      _strokes[projectId]!,
+      List<StrokeEntity>.from(_strokes[projectId]!),
     );
   }
 
