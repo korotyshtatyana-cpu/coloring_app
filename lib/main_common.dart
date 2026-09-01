@@ -66,7 +66,9 @@ class _AppState extends State<App> {
   void initState() {
     super.initState();
 
-    _routerConfig = _appRouter.config();
+    _routerConfig = _appRouter.config(
+      navigatorObservers: () => [appLocator<AutoRouteObserver>()],
+    );
     _navigatorKey = _appRouter.navigatorKey;
     ErrorHandler.init(_navigatorKey);
   }

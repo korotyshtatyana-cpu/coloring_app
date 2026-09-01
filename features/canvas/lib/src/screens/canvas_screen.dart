@@ -127,12 +127,6 @@ class _CanvasContentState extends State<CanvasContent>
     left: 16,
   );
 
-  /// Whether a save-before-exit is currently running.
-  bool _exitSaveInProgress = false;
-
-  /// When true, the [PopScope] allows popping (set after the exit save).
-  bool _popEnabled = false;
-
   @override
   void initState() {
     super.initState();
@@ -172,10 +166,11 @@ class _CanvasContentState extends State<CanvasContent>
     final double fitScale = _fitScaleFor(viewportSize, canvasSize);
 
     return PopScope(
-      canPop: _popEnabled,
+      canPop: true,
       onPopInvokedWithResult: (bool didPop, Object? result) {
-        if (didPop) return;
-        _saveAndExit();
+        if (!didPop) return;
+        // Final save (updates thumbnail) happens as the screen is closing.
+        context.read<CanvasBloc>().saveProject(withThumbnail: true);
       },
       child: Scaffold(
         body: BlocListener<CanvasBloc, CanvasState>(
@@ -321,22 +316,6 @@ class _CanvasContentState extends State<CanvasContent>
         ),
       ),
     );
-  }
-
-  /// Saves the project (rendering its thumbnail) and only then pops the
-  /// route, so the gallery shows up-to-date data no matter how the user
-  /// leaves: toolbar button, system back or swipe gesture.
-  Future<void> _saveAndExit() async {
-    if (_exitSaveInProgress) return;
-    _exitSaveInProgress = true;
-    try {
-      await context.read<CanvasBloc>().saveProject();
-    } finally {
-      _exitSaveInProgress = false;
-    }
-    if (!mounted) return;
-    setState(() => _popEnabled = true);
-    context.router.maybePop();
   }
 
   void _onPointerDown(PointerDownEvent event, Size canvasSize) {
