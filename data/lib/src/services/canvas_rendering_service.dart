@@ -67,8 +67,20 @@ abstract final class CanvasRenderingService {
   static void _drawStroke(Canvas canvas, StrokeEntity stroke) {
     if (stroke.points.length < 2) return;
 
+    final bool useLayer = stroke.opacity < 1.0;
+    if (useLayer) {
+      // Draw the stroke at full opacity into a layer, then composite the
+      // layer once with the stroke opacity. This avoids darker overlaps at
+      // segment joints, so a semi-transparent stroke looks like a uniform
+      // line instead of a chain of dots.
+      canvas.saveLayer(
+        null,
+        Paint()..color = Colors.white.withValues(alpha: stroke.opacity),
+      );
+    }
+
     final paint = Paint()
-      ..color = Color(stroke.color).withValues(alpha: stroke.opacity)
+      ..color = Color(stroke.color)
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round
       ..style = PaintingStyle.stroke;
@@ -83,6 +95,10 @@ abstract final class CanvasRenderingService {
       final next = stroke.points[i + 1];
       paint.strokeWidth = stroke.size * point.pressure;
       canvas.drawLine(point.offset, next.offset, paint);
+    }
+
+    if (useLayer) {
+      canvas.restore();
     }
   }
 

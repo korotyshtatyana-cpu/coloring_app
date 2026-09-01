@@ -37,8 +37,20 @@ class CanvasPainter extends CustomPainter {
   void _drawStroke(Canvas canvas, StrokeEntity stroke) {
     if (stroke.points.length < 2) return;
 
+    final bool useLayer = stroke.opacity < 1.0;
+    if (useLayer) {
+      // Draw the stroke at full opacity into a layer, then composite the
+      // layer once with the stroke opacity. This avoids darker overlaps at
+      // segment joints, so a semi-transparent stroke looks like a uniform
+      // line instead of a chain of dots.
+      canvas.saveLayer(
+        null,
+        Paint()..color = Colors.white.withValues(alpha: stroke.opacity),
+      );
+    }
+
     final paint = Paint()
-      ..color = Color(stroke.color).withValues(alpha: stroke.opacity)
+      ..color = Color(stroke.color)
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round
       ..style = PaintingStyle.stroke;
@@ -56,12 +68,12 @@ class CanvasPainter extends CustomPainter {
       final double w1 = stroke.size * p1.pressure;
       final double w2 = stroke.size * p2.pressure;
 
-      // For very short segments or when widths are similar, draw a single line.
-      // For longer segments with changing width, multiple segments would be
-      // better, but for drawing, point-to-point is usually sufficient given
-      // high sampling rates.
       paint.strokeWidth = (w1 + w2) / 2;
       canvas.drawLine(p1.offset, p2.offset, paint);
+    }
+
+    if (useLayer) {
+      canvas.restore();
     }
   }
 
