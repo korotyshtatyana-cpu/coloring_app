@@ -37,10 +37,16 @@ CREATE TABLE projects (
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   contour_id UUID REFERENCES contours(id) ON DELETE CASCADE,
   data JSONB NOT NULL,
+  thumbnail_url TEXT,
   last_opened TIMESTAMP DEFAULT NOW(),
   created_at TIMESTAMP DEFAULT NOW(),
   UNIQUE(user_id, contour_id)
 );
+
+-- thumbnail_url дублирует data.thumbnailPath, когда это URL из Supabase
+-- Storage (бакет project_thumbnails). Колонка нужна, чтобы галерея могла
+-- одним дешёвым запросом получить миниатюры всех проектов пользователя
+-- (select contour_id, thumbnail_url), не разбирая JSONB.
 ```
 
 ## Локальная база Drift (SQLite)
@@ -92,6 +98,14 @@ Query params:
 - user_id: eq.'USER_ID'
 ```
 
+### Получение миниатюр проектов пользователя (для галереи)
+```text
+GET /rest/v1/projects
+Query params:
+- select: contour_id, thumbnail_url
+- user_id: eq.'USER_ID'
+```
+
 ### Синхронизация профиля пользователя
 Создание и обновление записи в таблице `users` происходит автоматически на стороне базы данных Supabase с помощью триггера, который срабатывает при создании нового пользователя в схеме `auth.users` или обновлении его метаданных. Приложение не выполняет ручную синхронизацию профиля.
 
@@ -101,7 +115,8 @@ UPSERT /rest/v1/projects
 Body: {
   "user_id": "USER_ID",
   "contour_id": "CONTOUR_ID",
-  "data": {"strokes": [...]}
+  "data": {"strokes": [...], "thumbnailPath": "https://..."},
+  "thumbnail_url": "https://..."  // только если thumbnailPath — URL, не локальный путь
 }
 Использовать on_conflict: (user_id, contour_id) DO UPDATE
 ```
@@ -124,6 +139,30 @@ contours/
 ```text
 https://PROJECT_ID.supabase.co/storage/v1/object/public/contours/previews/contour_1.jpg
 ```
+
+### Бакет: project_thumbnails
+Публичный бакет с миниатюрами пользовательских проектов. Каждый пользователь
+имеет свою директорию, внутри которой лежит по одному PNG на контур.
+При повторном сохранении миниатюры файл перезаписывается (upsert).
+```text
+project_thumbnails/
+├── {user_id_1}/
+│   ├── {contour_id_1}.png
+│   ├── {contour_id_2}.png
+│   └── ...
+└── {user_id_2}/
+    └── ...
+```
+
+### URL для миниатюры проекта
+```text
+https://PROJECT_ID.supabase.co/storage/v1/object/public/project_thumbnails/{user_id}/{contour_id}.png
+```
+
+URL возвращается `CanvasRepositoryImpl.renderProjectThumbnail` и сохраняется
+в `projects.data.thumbnailPath`. Если загрузка в Supabase не удалась
+(офлайн, нет авторизации и т.п.), сохраняется локальный путь файла —
+галерея умеет отображать оба варианта (`Image.network` и `Image.file`).
 
 ## .env файлы
 Файлы содержат только те ключи, которые используются в `AppConfig`.

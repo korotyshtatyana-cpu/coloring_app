@@ -5,7 +5,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../theme/app_colors.dart';
 import '../../theme/app_dimens.dart';
-import '../../theme/app_fonts.dart';
 
 /// Card widget representing a contour in the gallery grid.
 class ContourCard extends StatelessWidget {
@@ -104,6 +103,7 @@ class _ContourPreview extends StatelessWidget {
   Widget build(BuildContext context) {
     final String? url = previewUrl;
 
+    // 1. Local file (thumbnail rendered on this device).
     if (url != null && url.isNotEmpty && !url.startsWith('http')) {
       if (_isSvgUrl(url)) {
         return _FadeIn(
@@ -123,25 +123,15 @@ class _ContourPreview extends StatelessWidget {
       );
     }
 
-    if (svgData != null && svgData!.isNotEmpty) {
-      return Padding(
-        padding: const EdgeInsets.all(8),
-        child: _FadeIn(
-          child: SvgPicture.string(
-            svgData!,
-            fit: BoxFit.contain,
-          ),
-        ),
-      );
-    }
-
+    // 2. Remote image (project thumbnail or contour preview from Supabase).
+    //    The local SVG is shown while loading and if the request fails.
     if (url != null && url.isNotEmpty) {
       if (_isSvgUrl(url)) {
         return _FadeIn(
           child: SvgPicture.network(
             url,
             fit: BoxFit.cover,
-            placeholderBuilder: (_) => _ContourPlaceholder(url: url),
+            placeholderBuilder: (_) => _VectorOrPlaceholder(svgData: svgData),
           ),
         );
       }
@@ -151,9 +141,22 @@ class _ContourPreview extends StatelessWidget {
           fit: BoxFit.cover,
           loadingBuilder: (_, Widget child, ImageChunkEvent? loadingProgress) {
             if (loadingProgress == null) return child;
-            return _ContourPlaceholder(url: url);
+            return _VectorOrPlaceholder(svgData: svgData);
           },
-          errorBuilder: (_, __, ___) => _ContourPlaceholder(url: url),
+          errorBuilder: (_, __, ___) => _VectorOrPlaceholder(svgData: svgData),
+        ),
+      );
+    }
+
+    // 3. No image at all: render the contour SVG locally.
+    if (svgData != null && svgData!.isNotEmpty) {
+      return Padding(
+        padding: const EdgeInsets.all(8),
+        child: _FadeIn(
+          child: SvgPicture.string(
+            svgData!,
+            fit: BoxFit.contain,
+          ),
         ),
       );
     }
@@ -190,9 +193,7 @@ class _VectorOrPlaceholder extends StatelessWidget {
 }
 
 class _ContourPlaceholder extends StatelessWidget {
-  final String? url;
-
-  const _ContourPlaceholder({this.url});
+  const _ContourPlaceholder();
 
   @override
   Widget build(BuildContext context) {
@@ -201,25 +202,10 @@ class _ContourPlaceholder extends StatelessWidget {
     return Container(
       color: colors.secondaryBg,
       padding: const EdgeInsets.all(12),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          Icon(
-            Icons.image,
-            color: colors.primaryBg,
-            size: 48,
-          ),
-          if (url != null && url!.isNotEmpty) ...<Widget>[
-            const SizedBox(height: 8),
-            Text(
-              url!,
-              style: AppFonts.normal12.copyWith(color: colors.primaryBg),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ],
+      child: Icon(
+        Icons.image,
+        color: colors.primaryBg,
+        size: 48,
       ),
     );
   }

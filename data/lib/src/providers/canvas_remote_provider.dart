@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../data.dart';
@@ -16,12 +18,60 @@ class CanvasRemoteProvider {
       throw Exception(RequestConstants.userNotAuthenticated);
     }
 
-    await _client.from(RequestConstants.projectsTable).upsert(<String, dynamic>{
+    final Map<String, dynamic> payload = <String, dynamic>{
       RequestConstants.userIdColumn: user.id,
       RequestConstants.contourIdColumn: project.contourId,
       RequestConstants.dataColumn: project.data,
       RequestConstants.lastOpenedColumn: project.lastOpened.toIso8601String(),
-    }, onConflict: RequestConstants.onConflictUserContour);
+    };
+
+    // Mirror the thumbnail into its own column so the gallery can list
+    // per-user thumbnails with a cheap query. Only sync remote URLs — a
+    // device-local file path is useless on other devices.
+    final String? thumbnailPath = project.data['thumbnailPath'] as String?;
+    if (thumbnailPath != null && thumbnailPath.startsWith('http')) {
+      payload[RequestConstants.thumbnailUrlColumn] = thumbnailPath;
+    }
+
+    await _client
+        .from(RequestConstants.projectsTable)
+        .upsert(payload, onConflict: RequestConstants.onConflictUserContour);
+  }
+
+  /// Uploads a project thumbnail to Supabase Storage and returns its public
+  /// URL. The object path is `user_id/contour_id.png` in the
+  /// `project_thumbnails` bucket, so each user has their own copy.
+  Future<String> uploadThumbnail({
+    required String contourId,
+    required Uint8List pngBytes,
+  }) async {
+    final User? user = _client.auth.currentUser;
+    if (user == null) {
+      throw Exception(RequestConstants.userNotAuthenticated);
+    }
+
+    final String path =
+        '${user.id}/$contourId${RequestConstants.thumbnailFileExtension}';
+
+    await _client.storage
+        .from(RequestConstants.thumbnailsBucket)
+        .uploadBinary(
+          path,
+          pngBytes,
+          fileOptions: const FileOptions(
+            contentType: RequestConstants.pngMimeType,
+            upsert: true,
+          ),
+        );
+
+    final String publicUrl = _client.storage
+        .from(RequestConstants.thumbnailsBucket)
+        .getPublicUrl(path);
+
+    // The object is overwritten on every save, so its URL never changes.
+    // A version query busts both the Flutter image cache and the CDN cache,
+    // otherwise the gallery would keep showing the previous thumbnail.
+    return '$publicUrl?v=${DateTime.now().millisecondsSinceEpoch}';
   }
 
   /// Loads the project for the given contour.

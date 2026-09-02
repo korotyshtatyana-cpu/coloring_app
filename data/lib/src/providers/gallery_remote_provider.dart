@@ -62,6 +62,28 @@ class GalleryRemoteProvider {
         .toList();
   }
 
+  /// Returns thumbnail URLs of the current user's projects, keyed by
+  /// contour id. Projects without an uploaded thumbnail are included with
+  /// a null value so they still count as "in progress".
+  Future<Map<String, String?>> getWorkInProgressThumbnails() async {
+    final User? user = _client.auth.currentUser;
+    if (user == null) {
+      return <String, String?>{};
+    }
+
+    final List<Map<String, dynamic>> response = await _client
+        .from(RequestConstants.projectsTable)
+        .select(RequestConstants.selectProjectThumbnails)
+        .eq(RequestConstants.userIdColumn, user.id);
+
+    final Map<String, String?> result = <String, String?>{};
+    for (final Map<String, dynamic> row in response) {
+      result[row[RequestConstants.contourIdColumn] as String] =
+          row[RequestConstants.thumbnailUrlColumn] as String?;
+    }
+    return result;
+  }
+
   /// Returns favorite contour ids for the current user.
   Future<List<String>> getFavoriteIds() async {
     final User? user = _client.auth.currentUser;

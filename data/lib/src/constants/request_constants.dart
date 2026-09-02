@@ -6,10 +6,18 @@ abstract final class RequestConstants {
   static const String favoritesTable = 'favorites';
   static const String projectsTable = 'projects';
 
+  // Supabase Storage buckets
+  static const String thumbnailsBucket = 'project_thumbnails';
+
+  // Supabase Storage file naming
+  static const String thumbnailFileExtension = '.png';
+  static const String pngMimeType = 'image/png';
+
   // Supabase query columns
   static const String selectAll = '*';
   static const String selectContourId = 'contour_id';
   static const String selectProjectData = 'contour_id, data, last_opened';
+  static const String selectProjectThumbnails = 'contour_id, thumbnail_url';
 
   // Supabase columns
   static const String createdAtColumn = 'created_at';
@@ -18,6 +26,7 @@ abstract final class RequestConstants {
   static const String contourIdColumn = 'contour_id';
   static const String lastOpenedColumn = 'last_opened';
   static const String dataColumn = 'data';
+  static const String thumbnailUrlColumn = 'thumbnail_url';
 
   // Supabase query parameters
   static const String limitParam = 'limit';

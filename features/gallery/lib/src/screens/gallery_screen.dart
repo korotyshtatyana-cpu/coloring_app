@@ -19,6 +19,12 @@ class GalleryScreen extends StatefulWidget {
 class _GalleryScreenState extends State<GalleryScreen> with AutoRouteAware {
   AutoRouteObserver? _observer;
 
+  /// The bloc is owned by this state (not created inside [build]) so that
+  /// route-aware callbacks like [didPopNext] can access it without a
+  /// [BuildContext] — the screen's own context is an ancestor of the
+  /// [BlocProvider] and therefore cannot look it up.
+  late final GalleryBloc _bloc = _createBloc();
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -29,6 +35,8 @@ class _GalleryScreenState extends State<GalleryScreen> with AutoRouteAware {
   @override
   void dispose() {
     _observer?.unsubscribe(this);
+    // BlocProvider.value doesn't close the bloc, so we do it ourselves.
+    _bloc.close();
     super.dispose();
   }
 
@@ -37,21 +45,21 @@ class _GalleryScreenState extends State<GalleryScreen> with AutoRouteAware {
     // This is called when we return to this screen from another screen (like Canvas).
     // Wait a short time to allow background save and thumbnail generation to finish.
     Future<void>.delayed(const Duration(milliseconds: 500), () {
-      if (mounted) {
-        context.read<GalleryBloc>().add(const LoadContours(reset: true));
+      if (mounted && !_bloc.isClosed) {
+        _bloc.add(const LoadContours(reset: true));
       }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<GalleryBloc>(
-      create: (BuildContext context) => _createBloc(context),
+    return BlocProvider<GalleryBloc>.value(
+      value: _bloc,
       child: const GalleryContent(),
     );
   }
 
-  GalleryBloc _createBloc(BuildContext context) {
+  GalleryBloc _createBloc() {
     return GalleryBloc(
       getContoursUseCase: appLocator<GetContoursUseCase>(),
       getContoursByIdsUseCase: appLocator<GetContoursByIdsUseCase>(),
