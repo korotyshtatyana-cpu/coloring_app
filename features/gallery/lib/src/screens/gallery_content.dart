@@ -8,6 +8,7 @@ import '../bloc/gallery_bloc.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/filter_chips.dart';
 import '../widgets/gallery_grid.dart';
+import '../widgets/user_avatar_button.dart';
 
 /// Content of the gallery screen.
 class GalleryContent extends StatelessWidget {
@@ -28,9 +29,8 @@ class GalleryContent extends StatelessWidget {
           style: titleStyle,
         ),
         actions: <Widget>[
-          IconButton(
-            icon: Icon(Icons.settings, color: colors.primaryText),
-            onPressed: () => _onSettingsPressed(context),
+          UserAvatarButton(
+            onPressed: () => _onProfilePressed(context),
           ),
         ],
       ),
@@ -73,7 +73,7 @@ class GalleryContent extends StatelessWidget {
     );
   }
 
-  void _onSettingsPressed(BuildContext context) {
+  void _onProfilePressed(BuildContext context) {
     context.router.push(const SettingsRoute());
   }
 

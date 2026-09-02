@@ -38,7 +38,7 @@ class SettingsContent extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: colors.primaryBg,
         title: Text(
-          LocaleKeys.settings.tr(),
+          LocaleKeys.profile.tr(),
           style: AppFonts.semiBold20.copyWith(color: colors.primaryText),
         ),
       ),

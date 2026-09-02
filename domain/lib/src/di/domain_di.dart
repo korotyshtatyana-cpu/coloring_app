@@ -28,6 +28,12 @@ abstract class DomainDI {
       ),
     );
 
+    appLocator.registerLazySingleton<GetCurrentUserUseCase>(
+      () => GetCurrentUserUseCase(
+        repository: appLocator<AuthRepository>(),
+      ),
+    );
+
     appLocator.registerLazySingleton<GetContoursUseCase>(
       () => GetContoursUseCase(
         repository: appLocator<GalleryRepository>(),

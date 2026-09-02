@@ -11,6 +11,7 @@ export 'src/repositories/gallery_repository.dart';
 export 'src/repositories/settings_repository.dart';
 export 'src/repositories/share_repository.dart';
 export 'src/use_cases/auth/check_auth_use_case.dart';
+export 'src/use_cases/auth/get_current_user_use_case.dart';
 export 'src/use_cases/auth/sign_in_silently_use_case.dart';
 export 'src/use_cases/auth/sign_in_use_case.dart';
 export 'src/use_cases/canvas/add_stroke_use_case.dart';

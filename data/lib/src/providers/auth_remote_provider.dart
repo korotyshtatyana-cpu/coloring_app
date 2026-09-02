@@ -22,6 +22,30 @@ class AuthRemoteProvider {
   /// Identifier of the currently authenticated user, or `null`.
   String? get currentUserId => _client.auth.currentUser?.id;
 
+  /// Returns the currently authenticated user from the existing Supabase
+  /// session, or `null` when there is no session.
+  ///
+  /// Unlike sign-in (where the name comes from the platform credential),
+  /// here only the session data is available, so the name and avatar are
+  /// read from Supabase user metadata.
+  UserModel? getCurrentUser() {
+    final User? user = _client.auth.currentUser;
+    if (user == null) return null;
+
+    final Map<String, dynamic>? metadata = user.userMetadata;
+    final String name =
+        (metadata?['full_name'] as String?) ??
+        (metadata?['name'] as String?) ??
+        'User';
+
+    return UserModel(
+      id: user.id,
+      email: user.email ?? '',
+      name: name,
+      avatarUrl: metadata?['avatar_url'] as String?,
+    );
+  }
+
   /// Checks whether a user session exists.
   Future<bool> checkAuth() async {
     return _client.auth.currentSession != null;
