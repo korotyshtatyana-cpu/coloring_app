@@ -64,9 +64,7 @@ class ContourSettings extends StatelessWidget {
                             child: Material(
                               color: colors.primaryBg,
                               elevation: 4,
-                              shadowColor: colors.accentDark.withValues(
-                                alpha: 0.2,
-                              ),
+                              shadowColor: colors.accentDark.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(24),
                               child: SingleChildScrollView(
                                 child: BlocProvider<CanvasBloc>.value(
