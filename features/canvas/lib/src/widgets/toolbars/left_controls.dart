@@ -3,6 +3,7 @@ import 'package:core_ui/core_ui.dart';
 import 'package:flutter/material.dart';
 
 import '../../bloc/canvas_bloc.dart';
+import 'toolbar_container.dart';
 
 /// Left-side control panel with brush size, opacity and view reset.
 class LeftControls extends StatelessWidget {
@@ -11,27 +12,21 @@ class LeftControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isEraser = context.select((CanvasBloc bloc) => bloc.state.isEraser);
-    final double brushSize = context.select((CanvasBloc bloc) => bloc.state.brushSize);
-    final double opacity = context.select((CanvasBloc bloc) => bloc.state.opacity);
-    
+    final bool isEraser = context.select(
+      (CanvasBloc bloc) => bloc.state.isEraser,
+    );
+    final double brushSize = context.select(
+      (CanvasBloc bloc) => bloc.state.brushSize,
+    );
+    final double opacity = context.select(
+      (CanvasBloc bloc) => bloc.state.opacity,
+    );
+
     final AppColors colors = AppColors.of(context);
     final CanvasBloc bloc = context.read<CanvasBloc>();
-    const spacer8 = SizedBox(height: 8);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: colors.secondaryBg,
-        borderRadius: BorderRadius.circular(32),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            spreadRadius: 2,
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+    return ToolbarContainer(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 0),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
@@ -43,7 +38,7 @@ class LeftControls extends StatelessWidget {
             isActive: !isEraser,
             onPressed: () => _onSelectTool(bloc, CanvasTool.brush),
           ),
-          spacer8,
+          const SizedBox(height: 8),
           AppIconButton(
             size: 32,
             iconSize: 24,
@@ -52,12 +47,12 @@ class LeftControls extends StatelessWidget {
             isActive: isEraser,
             onPressed: () => _onSelectTool(bloc, CanvasTool.eraser),
           ),
-          spacer8,
+          const SizedBox(height: 8),
           RotatedBox(
             quarterTurns: 3,
             child: CustomSlider(
               value: brushSize,
-              activeColor: colors.primaryText,
+              activeColor: colors.accentDark,
               inactiveColor: colors.secondaryText.withValues(alpha: 0.2),
               min: Constants.minBrushSize,
               max: Constants.maxBrushSize,
@@ -68,14 +63,14 @@ class LeftControls extends StatelessWidget {
             quarterTurns: 3,
             child: CustomSlider(
               value: opacity,
-              activeColor: colors.primaryText,
+              activeColor: colors.accentDark,
               inactiveColor: colors.secondaryText.withValues(alpha: 0.2),
               min: 0.0,
               max: 1.0,
               onChanged: (double value) => _onOpacityChanged(bloc, value),
             ),
           ),
-          spacer8,
+          const SizedBox(height: 8),
           AppIconButton(
             size: 32,
             iconSize: 24,

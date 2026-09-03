@@ -155,7 +155,7 @@ class _CanvasContentState extends State<CanvasContent>
     final state = context.watch<CanvasBloc>().state;
     final contour = state.contour;
     final status = state.status;
-    
+
     final bool isLoading =
         status == CanvasStatus.initial || status == CanvasStatus.loading;
     final AppColors colors = AppColors.of(context);

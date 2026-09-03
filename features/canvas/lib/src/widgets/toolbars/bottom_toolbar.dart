@@ -3,8 +3,9 @@ import 'package:core_ui/core_ui.dart';
 import 'package:flutter/material.dart';
 
 import '../../bloc/canvas_bloc.dart';
-import '../color_picker.dart';
+import '../color_picker_dialog.dart';
 import '../contour_settings.dart';
+import 'toolbar_container.dart';
 
 /// Bottom toolbar with drawing tools and actions.
 class BottomToolbar extends StatelessWidget {
@@ -18,23 +19,11 @@ class BottomToolbar extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool canUndo = context.select((CanvasBloc bloc) => bloc.state.undoStack.isNotEmpty);
     final bool canRedo = context.select((CanvasBloc bloc) => bloc.state.redoStack.isNotEmpty);
-    
-    final colors = AppColors.of(context);
+
     final bloc = context.read<CanvasBloc>();
 
-    return Container(
-      decoration: BoxDecoration(
-        color: colors.secondaryBg,
-        borderRadius: BorderRadius.circular(32),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            spreadRadius: 2,
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    return ToolbarContainer(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -82,6 +71,8 @@ class BottomToolbar extends StatelessWidget {
 
   void _showColorPicker(BuildContext context) {
     final bloc = context.read<CanvasBloc>();
+    final colors = AppColors.of(context);
+
     showGeneralDialog(
       context: context,
       barrierDismissible: true,
@@ -89,12 +80,13 @@ class BottomToolbar extends StatelessWidget {
       barrierColor: Colors.transparent,
       pageBuilder: (dialogContext, anim1, anim2) {
         return Align(
-          alignment: Alignment.bottomCenter,
+          alignment: Alignment.bottomRight,
           child: Padding(
             padding: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
             child: Material(
-              color: Colors.white,
-              elevation: 8,
+              color: colors.primaryBg,
+              elevation: 4,
+              shadowColor: colors.accentDark.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(24),
               child: SingleChildScrollView(
                 child: BlocProvider<CanvasBloc>.value(
@@ -111,6 +103,8 @@ class BottomToolbar extends StatelessWidget {
 
   void _showContourSettings(BuildContext context) {
     final CanvasBloc bloc = context.read<CanvasBloc>();
+    final colors = AppColors.of(context);
+
     showGeneralDialog(
       context: context,
       barrierDismissible: true,
@@ -118,12 +112,13 @@ class BottomToolbar extends StatelessWidget {
       barrierColor: Colors.transparent,
       pageBuilder: (dialogContext, anim1, anim2) {
         return Align(
-          alignment: Alignment.bottomCenter,
+          alignment: Alignment.bottomRight,
           child: Padding(
             padding: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
             child: Material(
-              color: Colors.white,
-              elevation: 8,
+              color: colors.primaryBg,
+              elevation: 4,
+              shadowColor: colors.accentDark.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(24),
               child: BlocProvider<CanvasBloc>.value(
                 value: bloc,

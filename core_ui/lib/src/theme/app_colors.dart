@@ -65,7 +65,7 @@ class LightColors implements AppColors {
   const LightColors();
 
   @override
-  Color get primaryBg => const Color(0xFFF9F8F4);
+  Color get primaryBg => const Color(0xFFF9F8F6);
 
   @override
   Color get secondaryBg => const Color(0xFFFFFFFF);

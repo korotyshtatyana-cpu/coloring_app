@@ -49,7 +49,7 @@ class AppIconButton extends StatelessWidget {
 
     final Color effectiveColor = isDisabled
         ? colors.primaryText.withValues(alpha: 0.3)
-        : (isActive ? colors.accentDark : colors.secondaryText);
+        : (isActive ? colors.secondaryText : colors.primaryText);
     final double effectiveIconSize = iconSize ?? size * 0.5;
 
     Widget content = IconButton(
