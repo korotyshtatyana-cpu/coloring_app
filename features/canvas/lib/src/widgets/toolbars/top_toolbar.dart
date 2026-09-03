@@ -29,8 +29,10 @@ class TopToolbar extends StatelessWidget {
         child: Row(
           children: <Widget>[
             AppIconButton(
-              icon: Icon(Icons.arrow_back, color: colors.primaryText),
-              backgroundColor: colors.metallicBlue,
+              size: 32,
+              iconSize: 24,
+              icon: const Icon(Icons.arrow_back),
+              backgroundColor: Colors.transparent,
               onPressed: () {
                 // Saving happens in the PopScope handler of CanvasScreen.
                 context.router.maybePop();
@@ -43,8 +45,10 @@ class TopToolbar extends StatelessWidget {
                 child: Icon(Icons.sync, color: colors.green, size: 16),
               ),
             AppIconButton(
-              icon: Icon(Icons.share, color: colors.primaryText),
-              backgroundColor: colors.metallicBlue,
+              size: 32,
+              iconSize: 24,
+              icon: const Icon(Icons.share),
+              backgroundColor: Colors.transparent,
               onPressed: onExport,
             ),
           ],

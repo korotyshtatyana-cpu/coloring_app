@@ -176,18 +176,18 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
         children: <Widget>[
           Text(
             LocaleKeys.color.tr(),
-            style: AppFonts.semiBold20.copyWith(color: Colors.black),
+            style: AppFonts.semiBold20.copyWith(color: colors.primaryText),
           ),
           const SizedBox(height: 16),
           Theme(
             data: Theme.of(context).copyWith(
               textTheme: Theme.of(context).textTheme.apply(
-                bodyColor: Colors.black,
-                displayColor: Colors.black,
-              ),
+                    bodyColor: colors.primaryText,
+                    displayColor: colors.primaryText,
+                  ),
             ),
             child: DefaultTextStyle(
-              style: AppFonts.normal16.copyWith(color: Colors.black),
+              style: AppFonts.normal16.copyWith(color: colors.primaryText),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
@@ -243,7 +243,7 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
                       IconButton(
-                        icon: const Icon(Icons.colorize, color: Colors.black),
+                        icon: Icon(Icons.colorize, color: colors.primaryText),
                         tooltip: 'Pipe',
                         onPressed: () {
                           Navigator.of(context).pop();
@@ -255,9 +255,9 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
                         child: TextField(
                           controller: _textController,
                           focusNode: _textFocusNode,
-                          cursorColor: Colors.blue,
+                          cursorColor: colors.green,
                           style: AppFonts.normal16.copyWith(
-                            color: Colors.black,
+                            color: colors.primaryText,
                           ),
                           decoration: InputDecoration(
                             contentPadding: const EdgeInsets.symmetric(
@@ -265,10 +265,10 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
                               vertical: 4,
                             ),
                             enabledBorder: UnderlineInputBorder(
-                              borderSide: BorderSide(color: colors.primaryText),
+                              borderSide: BorderSide(color: colors.secondaryText),
                             ),
-                            focusedBorder: const UnderlineInputBorder(
-                              borderSide: BorderSide(color: Colors.black),
+                            focusedBorder: UnderlineInputBorder(
+                              borderSide: BorderSide(color: colors.primaryText),
                             ),
                           ),
                           onChanged: (String value) {
@@ -277,7 +277,7 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.copy, color: Colors.black),
+                        icon: Icon(Icons.copy, color: colors.primaryText),
                         tooltip: 'Copy',
                         onPressed: _copyValueToClipboard,
                       ),

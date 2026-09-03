@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
-import '../../theme/app_dimens.dart';
 import '../../theme/app_fonts.dart';
 
 /// Primary rounded button used throughout the application.
@@ -41,28 +40,27 @@ class PrimaryButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: colors.secondaryBg,
-          foregroundColor: colors.primaryBg,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppDimens.defaultBorder),
-          ),
+          backgroundColor: colors.green,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          shape: const StadiumBorder(),
           padding: const EdgeInsets.symmetric(
             vertical: 12,
             horizontal: 24,
           ),
         ),
         child: isLoading
-            ? SizedBox(
+            ? const SizedBox(
                 width: 24,
                 height: 24,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  color: colors.primaryBg,
+                  color: Colors.white,
                 ),
               )
             : Text(
                 text,
-                style: AppFonts.semiBold20.copyWith(color: colors.primaryBg),
+                style: AppFonts.semiBold20.copyWith(color: Colors.white),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),

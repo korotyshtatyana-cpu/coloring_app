@@ -49,7 +49,7 @@ class AppIconButton extends StatelessWidget {
 
     final Color effectiveColor = isDisabled
         ? colors.primaryText.withValues(alpha: 0.3)
-        : (isActive ? colors.yellow : colors.primaryText);
+        : (isActive ? colors.accentDark : colors.secondaryText);
     final double effectiveIconSize = iconSize ?? size * 0.5;
 
     Widget content = IconButton(
@@ -66,10 +66,11 @@ class AppIconButton extends StatelessWidget {
       tooltip: tooltip,
       style: IconButton.styleFrom(
         backgroundColor:
-            backgroundColor ?? colors.primaryBg,
+            backgroundColor ?? colors.secondaryBg,
         minimumSize: Size(size, size),
         maximumSize: Size(size, size),
         padding: EdgeInsets.zero,
+        elevation: 0,
       ),
     );
 

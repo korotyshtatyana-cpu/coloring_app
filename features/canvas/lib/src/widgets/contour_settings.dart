@@ -12,6 +12,7 @@ class ContourSettings extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppColors colors = AppColors.of(context);
     final Color contourColor = context.select((CanvasBloc bloc) => bloc.state.contourColor);
     final double contourOpacity = context.select((CanvasBloc bloc) => bloc.state.contourOpacity);
     
@@ -25,14 +26,14 @@ class ContourSettings extends StatelessWidget {
         children: <Widget>[
           Text(
             LocaleKeys.contour.tr(),
-            style: AppFonts.semiBold20.copyWith(color: Colors.black),
+            style: AppFonts.semiBold20.copyWith(color: colors.primaryText),
           ),
           const SizedBox(height: 16),
           Row(
             children: <Widget>[
               Text(
                 LocaleKeys.contour_color.tr(),
-                style: AppFonts.normal16.copyWith(color: Colors.black),
+                style: AppFonts.normal16.copyWith(color: colors.primaryText),
               ),
               const SizedBox(width: 16),
               InkWell(
@@ -53,7 +54,7 @@ class ContourSettings extends StatelessWidget {
                             right: 16,
                           ),
                           child: Material(
-                            color: Colors.white,
+                            color: colors.secondaryBg,
                             elevation: 8,
                             borderRadius: BorderRadius.circular(24),
                             child: SingleChildScrollView(
@@ -83,9 +84,9 @@ class ContourSettings extends StatelessWidget {
           const SizedBox(height: 16),
           CustomSlider(
             label: LocaleKeys.opacity.tr(),
-            labelColor: Colors.black,
-            activeColor: Colors.black,
-            inactiveColor: Colors.black12,
+            labelColor: colors.primaryText,
+            activeColor: colors.primaryText,
+            inactiveColor: colors.secondaryText.withValues(alpha: 0.2),
             gradient: LinearGradient(
               colors: [
                 contourColor.withValues(alpha: 0),

@@ -24,10 +24,17 @@ class BottomToolbar extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: colors.metallicBlue,
+        color: colors.secondaryBg,
         borderRadius: BorderRadius.circular(32),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            spreadRadius: 2,
+          ),
+        ],
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -35,28 +42,28 @@ class BottomToolbar extends StatelessWidget {
           AppIconButton(
             size: 32,
             iconSize: 24,
-            backgroundColor: colors.metallicBlue,
+            backgroundColor: Colors.transparent,
             icon: const Icon(Icons.color_lens),
             onPressed: () => _showColorPicker(context),
           ),
           AppIconButton(
             size: 32,
             iconSize: 24,
-            backgroundColor: colors.metallicBlue,
+            backgroundColor: Colors.transparent,
             icon: const Icon(Icons.undo),
             onPressed: canUndo ? () => _onUndo(bloc) : null,
           ),
           AppIconButton(
             size: 32,
             iconSize: 24,
-            backgroundColor: colors.metallicBlue,
+            backgroundColor: Colors.transparent,
             icon: const Icon(Icons.redo),
             onPressed: canRedo ? () => _onRedo(bloc) : null,
           ),
           AppIconButton(
             size: 32,
             iconSize: 24,
-            backgroundColor: colors.metallicBlue,
+            backgroundColor: Colors.transparent,
             icon: const Icon(Icons.format_shapes),
             onPressed: () => _showContourSettings(context),
           ),

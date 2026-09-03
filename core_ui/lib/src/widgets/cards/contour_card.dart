@@ -67,7 +67,7 @@ class ContourCard extends StatelessWidget {
                 left: 8,
                 child: Icon(
                   Icons.folder,
-                  color: colors.yellow,
+                  color: colors.accentDark,
                   size: 20,
                 ),
               ),
@@ -78,7 +78,7 @@ class ContourCard extends StatelessWidget {
                 onTap: onFavoriteTap,
                 child: Icon(
                   isFavorite ? Icons.star : Icons.star_border,
-                  color: isFavorite ? colors.yellow : colors.primaryText,
+                  color: isFavorite ? colors.accentDark : colors.secondaryText,
                   size: 24,
                 ),
               ),

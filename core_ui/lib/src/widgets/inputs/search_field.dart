@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
-import '../../theme/app_dimens.dart';
 import '../../theme/app_fonts.dart';
 
 /// Search input field with a search icon, clear button and debounced changes.
@@ -89,22 +88,32 @@ class _SearchFieldState extends State<SearchField> {
       controller: _controller,
       onSubmitted: widget.onSubmitted,
       style: AppFonts.normal16.copyWith(color: colors.primaryText),
+      cursorColor: colors.green,
       decoration: InputDecoration(
         hintText: widget.hintText,
-        hintStyle: AppFonts.normal16.copyWith(color: colors.primaryText),
-        prefixIcon: Icon(Icons.search, color: colors.primaryText),
+        hintStyle: AppFonts.normal16.copyWith(color: colors.secondaryText),
+        prefixIcon: Icon(Icons.search, color: colors.secondaryText),
         suffixIcon: hasText
             ? IconButton(
-                icon: Icon(Icons.clear, color: colors.primaryText),
+                icon: Icon(Icons.clear, color: colors.secondaryText),
                 onPressed: _clear,
               )
             : null,
         filled: true,
-        fillColor: colors.secondaryBg.withValues(alpha: 0.2),
+        fillColor: colors.secondaryBg,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppDimens.defaultBorder),
+          borderRadius: BorderRadius.circular(32),
           borderSide: BorderSide.none,
         ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(32),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(32),
+          borderSide: BorderSide(color: colors.green.withValues(alpha: 0.5)),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       ),
     );
   }

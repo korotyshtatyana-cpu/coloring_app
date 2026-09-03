@@ -21,17 +21,24 @@ class LeftControls extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: colors.metallicBlue,
+        color: colors.secondaryBg,
         borderRadius: BorderRadius.circular(32),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            spreadRadius: 2,
+          ),
+        ],
       ),
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           AppIconButton(
             size: 32,
             iconSize: 24,
-            backgroundColor: colors.metallicBlue,
+            backgroundColor: Colors.transparent,
             icon: const Icon(Icons.brush),
             isActive: !isEraser,
             onPressed: () => _onSelectTool(bloc, CanvasTool.brush),
@@ -40,7 +47,7 @@ class LeftControls extends StatelessWidget {
           AppIconButton(
             size: 32,
             iconSize: 24,
-            backgroundColor: colors.metallicBlue,
+            backgroundColor: Colors.transparent,
             icon: const Icon(Icons.auto_fix_normal),
             isActive: isEraser,
             onPressed: () => _onSelectTool(bloc, CanvasTool.eraser),
@@ -50,6 +57,8 @@ class LeftControls extends StatelessWidget {
             quarterTurns: 3,
             child: CustomSlider(
               value: brushSize,
+              activeColor: colors.primaryText,
+              inactiveColor: colors.secondaryText.withValues(alpha: 0.2),
               min: Constants.minBrushSize,
               max: Constants.maxBrushSize,
               onChanged: (double value) => _onBrushSizeChanged(bloc, value),
@@ -59,6 +68,8 @@ class LeftControls extends StatelessWidget {
             quarterTurns: 3,
             child: CustomSlider(
               value: opacity,
+              activeColor: colors.primaryText,
+              inactiveColor: colors.secondaryText.withValues(alpha: 0.2),
               min: 0.0,
               max: 1.0,
               onChanged: (double value) => _onOpacityChanged(bloc, value),
@@ -68,7 +79,7 @@ class LeftControls extends StatelessWidget {
           AppIconButton(
             size: 32,
             iconSize: 24,
-            backgroundColor: colors.metallicBlue,
+            backgroundColor: Colors.transparent,
             icon: const Icon(Icons.refresh),
             onPressed: () => _onResetView(bloc),
           ),
