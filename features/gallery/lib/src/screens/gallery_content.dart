@@ -7,7 +7,7 @@ import 'package:settings/settings.dart';
 import '../bloc/gallery_bloc.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/filter_chips.dart';
-import '../widgets/gallery_grid.dart';
+import '../widgets/grid/gallery_grid.dart';
 import '../widgets/user_avatar_button.dart';
 
 /// Content of the gallery screen.
@@ -18,7 +18,6 @@ class GalleryContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppColors colors = AppColors.of(context);
-    final TextStyle titleStyle = AppFonts.semiBold20.copyWith(color: colors.primaryText);
 
     return Scaffold(
       backgroundColor: colors.primaryBg,
@@ -26,12 +25,14 @@ class GalleryContent extends StatelessWidget {
         backgroundColor: colors.primaryBg,
         title: Text(
           LocaleKeys.gallery.tr(),
-          style: titleStyle,
+          style: AppFonts.appBarTitle.copyWith(
+            color: colors.primaryText,
+            shadows: [],
+          ),
         ),
         actions: <Widget>[
-          UserAvatarButton(
-            onPressed: () => _onProfilePressed(context),
-          ),
+          UserAvatarButton(onPressed: () => _onProfilePressed(context)),
+          const SizedBox(width: 16),
         ],
       ),
       body: Column(
@@ -45,9 +46,12 @@ class GalleryContent extends StatelessWidget {
               listener: _onFailure,
               child: BlocBuilder<GalleryBloc, GalleryState>(
                 builder: (BuildContext context, GalleryState state) {
-                  if (state.status == GalleryStatus.loading && state.contours.isEmpty) {
+                  if (state.status == GalleryStatus.loading &&
+                      state.contours.isEmpty) {
                     return Center(
-                      child: CircularProgressIndicator(color: colors.secondaryBg),
+                      child: CircularProgressIndicator(
+                        color: colors.accentDark,
+                      ),
                     );
                   }
 
@@ -56,10 +60,12 @@ class GalleryContent extends StatelessWidget {
                   }
 
                   return NotificationListener<ScrollNotification>(
-                    onNotification: (ScrollNotification notification) =>
-                        _handleScroll(context, notification, state),
+                    onNotification: (ScrollNotification notification) {
+                      return _handleScroll(context, notification, state);
+                    },
                     child: RefreshIndicator(
-                      color: colors.secondaryBg,
+                      color: colors.accentDark,
+                      backgroundColor: colors.secondaryBg,
                       onRefresh: () async => _onRefresh(context),
                       child: GalleryGrid(state: state),
                     ),
@@ -78,7 +84,8 @@ class GalleryContent extends StatelessWidget {
   }
 
   bool _shouldListenToFailure(GalleryState previous, GalleryState current) {
-    return current.status == GalleryStatus.failure && previous.status != GalleryStatus.failure;
+    return current.status == GalleryStatus.failure &&
+        previous.status != GalleryStatus.failure;
   }
 
   void _onFailure(BuildContext context, GalleryState state) {
@@ -98,10 +105,17 @@ class GalleryContent extends StatelessWidget {
     context.read<GalleryBloc>().add(const LoadContours());
   }
 
-  bool _handleScroll(BuildContext context, ScrollNotification notification, GalleryState state) {
+  bool _handleScroll(
+    BuildContext context,
+    ScrollNotification notification,
+    GalleryState state,
+  ) {
     final bool isNearBottom =
-        notification.metrics.pixels >= notification.metrics.maxScrollExtent * 0.9;
-    if (isNearBottom && !state.hasReachedMax && state.status != GalleryStatus.loading) {
+        notification.metrics.pixels >=
+        notification.metrics.maxScrollExtent * 0.9;
+    if (isNearBottom &&
+        !state.hasReachedMax &&
+        state.status != GalleryStatus.loading) {
       _onLoadMore(context);
     }
     return false;

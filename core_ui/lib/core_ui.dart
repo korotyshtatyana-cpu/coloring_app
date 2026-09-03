@@ -4,7 +4,6 @@ export 'src/theme/app_fonts.dart';
 export 'src/theme/app_theme.dart';
 export 'src/widgets/buttons/icon_button.dart';
 export 'src/widgets/buttons/primary_button.dart';
-export 'src/widgets/cards/contour_card.dart';
 export 'src/widgets/dialogs/error_dialog.dart';
 export 'src/widgets/dialogs/loading_dialog.dart';
 export 'src/widgets/inputs/custom_slider.dart';

@@ -1,11 +1,11 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:canvas/canvas.dart';
-import 'package:core_ui/core_ui.dart';
 import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../bloc/gallery_bloc.dart';
+import '../../bloc/gallery_bloc.dart';
+import 'contour_card.dart';
 
 /// Gallery-specific card displaying a contour preview and actions.
 class GalleryContourCard extends StatelessWidget {

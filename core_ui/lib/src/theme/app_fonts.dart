@@ -86,10 +86,17 @@ class AppFonts {
     package: _packageName,
   );
 
+  static TextStyle appBarTitle = const TextStyle(
+    fontWeight: FontWeight.w500,
+    fontSize: 32,
+    fontFamily: _playfairDisplayFamily,
+    package: _packageName,
+  );
+
   static TextStyle semiBold20 = const TextStyle(
     fontWeight: FontWeight.w600,
     fontSize: 20,
-    fontFamily: _montserratFamily,
+    fontFamily: _playfairDisplayFamily,
     package: _packageName,
   );
 

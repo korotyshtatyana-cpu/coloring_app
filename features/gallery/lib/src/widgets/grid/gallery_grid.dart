@@ -1,8 +1,8 @@
 import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 
-import '../bloc/gallery_bloc.dart';
-import 'contour_card.dart';
+import '../../bloc/gallery_bloc.dart';
+import 'gallery_contour_card.dart';
 
 /// Grid displaying gallery contours.
 class GalleryGrid extends StatelessWidget {

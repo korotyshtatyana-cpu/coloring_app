@@ -30,22 +30,14 @@ class GalleryFilterChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isActive ? colors.accentDark : colors.secondaryBg,
+          color: isActive ? colors.accentDark : colors.primaryBg,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            if (!isActive)
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-          ],
+          border: Border.all(color: isActive ? colors.secondaryBg : colors.accentDark),
         ),
         child: Text(
           label,
           style: AppFonts.normal14.copyWith(
             color: isActive ? Colors.white : colors.primaryText,
-            fontWeight: isActive ? FontWeight.w600 : null,
           ),
         ),
       ),
