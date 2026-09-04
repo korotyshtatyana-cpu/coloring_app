@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import '../bloc/settings_bloc.dart';
 import '../widgets/language_picker.dart';
 
-/// UI implementation of the settings screen.
 class SettingsContent extends StatelessWidget {
   /// Creates [SettingsContent].
   const SettingsContent({super.key});
@@ -13,20 +12,29 @@ class SettingsContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppColors colors = AppColors.of(context);
-    final TextStyle sectionHeaderStyle = AppFonts.semiBold20.copyWith(color: colors.primaryText);
 
     return Scaffold(
       backgroundColor: colors.primaryBg,
       appBar: AppBar(
         backgroundColor: colors.primaryBg,
         title: Text(
-          LocaleKeys.settings.tr(),
-          style: sectionHeaderStyle,
+          LocaleKeys.profile.tr(),
+          style: AppFonts.appBarTitle.copyWith(
+            color: colors.primaryText,
+            shadows: [],
+          ),
         ),
       ),
       body: BlocListener<SettingsBloc, SettingsState>(
-        listenWhen: _shouldListenToFailure,
-        listener: _onFailure,
+        listenWhen: (SettingsState previous, SettingsState current) =>
+        previous.status != current.status &&
+            current.status == SettingsStatus.failure,
+        listener: (BuildContext context, SettingsState state) {
+          ErrorDialog.show(
+            context,
+            message: state.error ?? LocaleKeys.something_went_wrong.tr(),
+          );
+        },
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -34,7 +42,7 @@ class SettingsContent extends StatelessWidget {
             children: <Widget>[
               Text(
                 LocaleKeys.language.tr(),
-                style: sectionHeaderStyle,
+                style: AppFonts.semiBold20.copyWith(color: colors.primaryText),
               ),
               const SizedBox(height: 8),
               const LanguagePicker(),
@@ -42,18 +50,6 @@ class SettingsContent extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-
-  bool _shouldListenToFailure(SettingsState previous, SettingsState current) {
-    return previous.status != current.status &&
-           current.status == SettingsStatus.failure;
-  }
-
-  void _onFailure(BuildContext context, SettingsState state) {
-    ErrorDialog.show(
-      context,
-      message: state.error ?? LocaleKeys.something_went_wrong.tr(),
     );
   }
 }

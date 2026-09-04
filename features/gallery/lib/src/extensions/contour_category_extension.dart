@@ -1,5 +1,6 @@
 import 'package:core/core.dart';
 import 'package:domain/domain.dart';
+import 'package:flutter/widgets.dart';
 
 /// Localization helpers for [ContourCategory].
 extension ContourCategoryLocalization on ContourCategory {
@@ -21,5 +22,7 @@ extension ContourCategoryLocalization on ContourCategory {
   }
 
   /// Returns the localized name of this category.
-  String localized() => _localizationKey.tr();
+  ///
+  /// Uses [context.tr] so the widget rebuilds when the locale changes.
+  String localized(BuildContext context) => context.tr(_localizationKey);
 }

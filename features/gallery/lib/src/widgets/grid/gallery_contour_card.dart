@@ -1,11 +1,11 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:canvas/canvas.dart';
-import 'package:core_ui/core_ui.dart';
 import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../bloc/gallery_bloc.dart';
+import '../../bloc/gallery_bloc.dart';
+import 'contour_card.dart';
 
 /// Gallery-specific card displaying a contour preview and actions.
 class GalleryContourCard extends StatelessWidget {
@@ -34,7 +34,9 @@ class GalleryContourCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return ContourCard(
       title: contour.title,
-      previewUrl: thumbnailPath,
+      // Started project → its thumbnail (local file or Supabase URL);
+      // otherwise → the contour's default preview image from Supabase.
+      previewUrl: thumbnailPath ?? contour.previewUrl,
       svgData: contour.svgData,
       isFavorite: isFavorite,
       isInProgress: isInProgress,
@@ -44,13 +46,9 @@ class GalleryContourCard extends StatelessWidget {
   }
 
   void _onTap(BuildContext context) {
-    context.router.push(CanvasRoute(contourId: contour.id)).then((_) {
-      // Refresh so the work-in-progress mark appears for the contour that
-      // was just edited.
-      if (context.mounted) {
-        context.read<GalleryBloc>().add(const LoadContours(reset: true));
-      }
-    });
+    // No reload here: GalleryScreen.didPopNext reloads the gallery with a
+    // delay after returning from the canvas, once the final save finished.
+    context.router.push(CanvasRoute(contourId: contour.id));
   }
 
   void _onFavoriteTap(BuildContext context) {

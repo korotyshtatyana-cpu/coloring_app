@@ -90,6 +90,15 @@ class _CanvasContentState extends State<CanvasContent>
   /// Color currently previewed by the eyedropper.
   Color? _previewColor;
 
+  /// Whether the final save (with thumbnail) is running before the screen
+  /// closes. While true, a progress overlay is shown.
+  bool _isSavingBeforeClose = false;
+
+  /// Whether the pop was already requested after the save finished.
+  /// Prevents re-entering the save when the router triggers the pop-scope
+  /// callback again while the route is being removed.
+  bool _popped = false;
+
   /// Cached canvas image used while dragging the eyedropper.
   ui.Image? _eyedropperImage;
 
@@ -127,12 +136,6 @@ class _CanvasContentState extends State<CanvasContent>
     left: 16,
   );
 
-  /// Whether a save-before-exit is currently running.
-  bool _exitSaveInProgress = false;
-
-  /// When true, the [PopScope] allows popping (set after the exit save).
-  bool _popEnabled = false;
-
   @override
   void initState() {
     super.initState();
@@ -151,7 +154,32 @@ class _CanvasContentState extends State<CanvasContent>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive) {
-      context.read<CanvasBloc>().add(const SaveProject());
+      // Background saves should only persist data, not re-render UI.
+      context.read<CanvasBloc>().add(const SaveProject(withThumbnail: false));
+    }
+  }
+
+  /// Runs the final save (with thumbnail) and closes the screen afterwards.
+  ///
+  /// Awaiting the save before popping guarantees that the gallery reads the
+  /// fresh thumbnail when it reloads. On failure the screen still closes —
+  /// the latest strokes were already persisted by autosave.
+  Future<void> _saveAndPop() async {
+    if (_isSavingBeforeClose || _popped) return;
+    setState(() => _isSavingBeforeClose = true);
+
+    final CanvasBloc bloc = context.read<CanvasBloc>();
+    try {
+      await bloc.saveProject(withThumbnail: true);
+    } finally {
+      if (mounted) {
+        setState(() => _isSavingBeforeClose = false);
+        _popped = true;
+        // Use pop() (not maybePop) so the route closes unconditionally:
+        // maybePop() goes through the PopScope again and can silently fail
+        // when called after the async gap.
+        context.router.pop();
+      }
     }
   }
 
@@ -161,7 +189,7 @@ class _CanvasContentState extends State<CanvasContent>
     final state = context.watch<CanvasBloc>().state;
     final contour = state.contour;
     final status = state.status;
-    
+
     final bool isLoading =
         status == CanvasStatus.initial || status == CanvasStatus.loading;
     final AppColors colors = AppColors.of(context);
@@ -172,10 +200,14 @@ class _CanvasContentState extends State<CanvasContent>
     final double fitScale = _fitScaleFor(viewportSize, canvasSize);
 
     return PopScope(
-      canPop: _popEnabled,
+      // Back navigation is triggered explicitly from the toolbar (reliable
+      // on all devices). This is only a fallback for the system back
+      // gesture: while the final save runs, pops are blocked; once the save
+      // finished and the pop was requested, the route is allowed to pop.
+      canPop: _popped,
       onPopInvokedWithResult: (bool didPop, Object? result) {
         if (didPop) return;
-        _saveAndExit();
+        _saveAndPop();
       },
       child: Scaffold(
         body: BlocListener<CanvasBloc, CanvasState>(
@@ -294,7 +326,10 @@ class _CanvasContentState extends State<CanvasContent>
                   top: 0,
                   left: 0,
                   right: 0,
-                  child: TopToolbar(onExport: widget.onExport),
+                  child: TopToolbar(
+                    onExport: widget.onExport,
+                    onBack: _saveAndPop,
+                  ),
                 ),
                 const Positioned(left: 8, top: 120, child: LeftControls()),
                 Positioned(
@@ -315,28 +350,23 @@ class _CanvasContentState extends State<CanvasContent>
                       );
                     },
                   ),
+                if (_isSavingBeforeClose)
+                  Positioned.fill(
+                    child: ColoredBox(
+                      color: colors.black.withValues(alpha: 0.45),
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          color: colors.primaryBg,
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
         ),
       ),
     );
-  }
-
-  /// Saves the project (rendering its thumbnail) and only then pops the
-  /// route, so the gallery shows up-to-date data no matter how the user
-  /// leaves: toolbar button, system back or swipe gesture.
-  Future<void> _saveAndExit() async {
-    if (_exitSaveInProgress) return;
-    _exitSaveInProgress = true;
-    try {
-      await context.read<CanvasBloc>().saveProject();
-    } finally {
-      _exitSaveInProgress = false;
-    }
-    if (!mounted) return;
-    setState(() => _popEnabled = true);
-    context.router.maybePop();
   }
 
   void _onPointerDown(PointerDownEvent event, Size canvasSize) {
@@ -483,15 +513,16 @@ class _CanvasContentState extends State<CanvasContent>
   bool _isDotStroke(StrokeEntity stroke) {
     if (stroke.points.length < 2) return true;
 
-    double minX = stroke.points.first.dx;
-    double minY = stroke.points.first.dy;
-    double maxX = stroke.points.first.dx;
-    double maxY = stroke.points.first.dy;
-    for (final Offset point in stroke.points) {
-      if (point.dx < minX) minX = point.dx;
-      if (point.dy < minY) minY = point.dy;
-      if (point.dx > maxX) maxX = point.dx;
-      if (point.dy > maxY) maxY = point.dy;
+    double minX = stroke.points.first.offset.dx;
+    double minY = stroke.points.first.offset.dy;
+    double maxX = stroke.points.first.offset.dx;
+    double maxY = stroke.points.first.offset.dy;
+    for (final StrokePoint point in stroke.points) {
+      final Offset offset = point.offset;
+      if (offset.dx < minX) minX = offset.dx;
+      if (offset.dy < minY) minY = offset.dy;
+      if (offset.dx > maxX) maxX = offset.dx;
+      if (offset.dy > maxY) maxY = offset.dy;
     }
 
     final double scale = _transformationController.value.getMaxScaleOnAxis();

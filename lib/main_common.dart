@@ -42,11 +42,13 @@ Future<void> _setupDI(Flavor flavor) async {
 }
 
 void _setupErrorHandlerDelegate() {
-  core_error.ErrorHandler.setDelegate(
-    (Object error, StackTrace stackTrace, String? message) {
-      ErrorHandler.report(error, stackTrace, message: message);
-    },
-  );
+  core_error.ErrorHandler.setDelegate((
+    Object error,
+    StackTrace stackTrace,
+    String? message,
+  ) {
+    ErrorHandler.report(error, stackTrace, message: message);
+  });
 }
 
 class App extends StatefulWidget {
@@ -66,7 +68,9 @@ class _AppState extends State<App> {
   void initState() {
     super.initState();
 
-    _routerConfig = _appRouter.config();
+    _routerConfig = _appRouter.config(
+      navigatorObservers: () => [appLocator<AutoRouteObserver>()],
+    );
     _navigatorKey = _appRouter.navigatorKey;
     ErrorHandler.init(_navigatorKey);
   }
@@ -77,6 +81,8 @@ class _AppState extends State<App> {
       path: AppLocalization.langFolderPath,
       supportedLocales: AppLocalization.supportedLocales,
       fallbackLocale: AppLocalization.fallbackLocale,
+      // useFallbackLocale: true,
+      startLocale: null,
       child: Builder(
         builder: (BuildContext context) {
           return AppErrorHandlerProvider(

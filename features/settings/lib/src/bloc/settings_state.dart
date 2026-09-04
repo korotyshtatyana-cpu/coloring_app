@@ -29,7 +29,7 @@ class SettingsState extends Equatable {
   /// Creates a [SettingsState].
   const SettingsState({
     this.status = SettingsStatus.initial,
-    this.locale = 'en',
+    this.locale = 'en-US',
     this.error,
   });
 

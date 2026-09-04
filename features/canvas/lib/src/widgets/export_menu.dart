@@ -21,37 +21,58 @@ class ExportMenu extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppColors colors = AppColors.of(context);
 
-    return Material(
-      color: Colors.white,
-      elevation: 8,
-      borderRadius: BorderRadius.circular(24),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(
-              LocaleKeys.export.tr(),
-              style: AppFonts.semiBold20.copyWith(color: colors.black),
-            ),
-            const SizedBox(height: 16),
-            ListTile(
-              leading: Icon(Icons.share, color: colors.black),
-              title: Text(
-                LocaleKeys.share.tr(),
-                style: AppFonts.normal16.copyWith(color: colors.black),
+    return IntrinsicWidth(
+      child: Material(
+        color: colors.primaryBg,
+        elevation: 4,
+        shadowColor: colors.accentDark.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(24),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Text(
+                  LocaleKeys.export.tr(),
+                  style: AppFonts.semiBold20.copyWith(color: colors.primaryText),
+                ),
               ),
-              onTap: onShare,
-            ),
-            ListTile(
-              leading: Icon(Icons.photo_library, color: colors.black),
-              title: Text(
-                LocaleKeys.save_to_gallery.tr(),
-                style: AppFonts.normal16.copyWith(color: colors.black),
+              const SizedBox(height: 4),
+              ListTile(
+                leading: Icon(Icons.share, color: colors.primaryText),
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(16)),
+                ),
+                title: Text(
+                  LocaleKeys.share.tr(),
+                  style: AppFonts.normal16.copyWith(color: colors.primaryText),
+                ),
+                onTap: onShare,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                dense: true,
+                visualDensity: VisualDensity.compact,
+                minLeadingWidth: 24,
               ),
-              onTap: onSaveToGallery,
-            ),
-          ],
+              ListTile(
+                leading: Icon(Icons.photo_library, color: colors.primaryText),
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(16)),
+                ),
+                title: Text(
+                  LocaleKeys.save_to_gallery.tr(),
+                  style: AppFonts.normal16.copyWith(color: colors.primaryText),
+                ),
+                onTap: onSaveToGallery,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                dense: true,
+                visualDensity: VisualDensity.compact,
+                minLeadingWidth: 24,
+              ),
+            ],
+          ),
         ),
       ),
     );

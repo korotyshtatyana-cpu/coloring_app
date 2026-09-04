@@ -16,6 +16,10 @@ abstract class AppColors {
 
   Color get secondaryText;
 
+  Color get accentLight;
+
+  Color get accentDark;
+
   Color get error;
 
   Color get green;
@@ -61,16 +65,22 @@ class LightColors implements AppColors {
   const LightColors();
 
   @override
-  Color get primaryBg => const Color(0xFF007BFE);
+  Color get primaryBg => const Color(0xFFF9F8F6);
 
   @override
   Color get secondaryBg => const Color(0xFFFFFFFF);
 
   @override
-  Color get primaryText => const Color(0xFFFFFFFF);
+  Color get primaryText => const Color(0xFF4A4A48);
 
   @override
-  Color get secondaryText => const Color(0xFF007BFE);
+  Color get secondaryText => const Color(0xFF9E9E9C);
+
+  @override
+  Color get accentLight => const Color(0xFFCFD3C1);
+
+  @override
+  Color get accentDark => const Color(0xFFA0AA8E);
 
   @override
   Color get transparent => const Color(0x00000000);
@@ -79,13 +89,13 @@ class LightColors implements AppColors {
   Color get error => const Color(0xFFFF0000);
 
   @override
-  Color get green => const Color(0xFF14FF00);
+  Color get green => accentLight;
 
   @override
   Color get brightAppleGreen => const Color(0xFF44CB01);
 
   @override
-  Color get yellow => const Color(0xFFFFD700);
+  Color get yellow => accentDark; // Use Dark Sage for active highlights
 
   @override
   Color get fluorescentYellow => const Color(0xFFFFF500);

@@ -45,9 +45,12 @@ class CanvasRepositoryImpl implements CanvasRepository {
     _strokes.putIfAbsent(projectId, () => <StrokeEntity>[]);
     _strokes[projectId]!.add(stroke);
 
+    // Pass a copy because the cached list can be modified concurrently
+    // (e.g. another addStroke can run while saveProject is awaiting a DB
+    // write, which would mutate the list mid-iteration).
     await _localProvider.saveProject(
       _projectModelFromId(projectId),
-      _strokes[projectId]!,
+      List<StrokeEntity>.from(_strokes[projectId]!),
     );
   }
 
@@ -128,13 +131,28 @@ class CanvasRepositoryImpl implements CanvasRepository {
       thumbnailsDir.createSync(recursive: true);
     }
     final file = File('${thumbnailsDir.path}/${params.projectId}.png');
-    await file.writeAsBytes(byteData.buffer.asUint8List());
+    final Uint8List bytes = byteData.buffer.asUint8List();
+    await file.writeAsBytes(bytes);
 
     // The file path never changes, so drop the stale decoded image from the
     // framework cache; otherwise the gallery keeps showing the old render.
     imageCache.evict(FileImage(file));
 
-    return file.path;
+    // Also upload to Supabase so the thumbnail survives reinstalls and is
+    // available on any device. On failure, fall back to the local path so
+    // the gallery still shows something.
+    try {
+      final String url = await _remoteProvider.uploadThumbnail(
+        contourId: params.projectId,
+        pngBytes: bytes,
+      );
+      debugPrint('Thumbnail uploaded to Supabase: $url');
+      return url;
+    } catch (e, stackTrace) {
+      debugPrint('Thumbnail upload to Supabase failed: $e');
+      debugPrint('$stackTrace');
+      return file.path;
+    }
   }
 
   /// Renders the whole canvas (white background, strokes and contour) into

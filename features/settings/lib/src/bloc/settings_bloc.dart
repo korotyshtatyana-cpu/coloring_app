@@ -27,7 +27,11 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   ) async {
     try {
       emit(state.copyWith(status: SettingsStatus.loading, error: null));
-      final code = await _getSettingsUseCase.execute();
+      String? code = await _getSettingsUseCase.execute();
+
+      // Normalize existing codes
+      code = _normalizeLocaleCode(code ?? event.currentLocale);
+
       emit(state.copyWith(
         status: SettingsStatus.success,
         locale: code ?? state.locale,
@@ -39,6 +43,15 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         error: e.toString(),
       ));
     }
+  }
+
+  String? _normalizeLocaleCode(String? code) {
+    if (code == null) return null;
+    if (code == 'en') return 'en-US';
+    if (code == 'ru') return 'ru-RU';
+    if (code == 'en_US') return 'en-US';
+    if (code == 'ru_RU') return 'ru-RU';
+    return code;
   }
 
   Future<void> _onChangeLanguage(

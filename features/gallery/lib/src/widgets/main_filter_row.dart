@@ -23,19 +23,19 @@ class MainFilterRow extends StatelessWidget {
       child: Row(
         children: <Widget>[
           GalleryFilterChip(
-            label: LocaleKeys.all.tr(),
+            label: context.tr(LocaleKeys.all),
             isActive: activeFilter == FilterType.all,
             onTap: () => _onFilterChanged(context, FilterType.all),
           ),
           const SizedBox(width: 8),
           GalleryFilterChip(
-            label: LocaleKeys.favorites.tr(),
+            label: context.tr(LocaleKeys.favorites),
             isActive: activeFilter == FilterType.favorites,
             onTap: () => _onFilterChanged(context, FilterType.favorites),
           ),
           const SizedBox(width: 8),
           GalleryFilterChip(
-            label: LocaleKeys.work_in_progress.tr(),
+            label: context.tr(LocaleKeys.work_in_progress),
             isActive: activeFilter == FilterType.inProgress,
             onTap: () => _onFilterChanged(context, FilterType.inProgress),
           ),

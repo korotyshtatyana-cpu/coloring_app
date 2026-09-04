@@ -37,9 +37,20 @@ class CanvasPainter extends CustomPainter {
   void _drawStroke(Canvas canvas, StrokeEntity stroke) {
     if (stroke.points.length < 2) return;
 
+    final bool useLayer = stroke.opacity < 1.0;
+    if (useLayer) {
+      // Draw the stroke at full opacity into a layer, then composite the
+      // layer once with the stroke opacity. This avoids darker overlaps at
+      // segment joints, so a semi-transparent stroke looks like a uniform
+      // line instead of a chain of dots.
+      canvas.saveLayer(
+        null,
+        Paint()..color = Colors.white.withValues(alpha: stroke.opacity),
+      );
+    }
+
     final paint = Paint()
-      ..color = Color(stroke.color).withValues(alpha: stroke.opacity)
-      ..strokeWidth = stroke.size
+      ..color = Color(stroke.color)
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round
       ..style = PaintingStyle.stroke;
@@ -49,12 +60,21 @@ class CanvasPainter extends CustomPainter {
       paint.maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
     }
 
-    final path = Path();
-    path.moveTo(stroke.points.first.dx, stroke.points.first.dy);
-    for (int i = 1; i < stroke.points.length; i++) {
-      path.lineTo(stroke.points[i].dx, stroke.points[i].dy);
+    for (int i = 0; i < stroke.points.length - 1; i++) {
+      final p1 = stroke.points[i];
+      final p2 = stroke.points[i + 1];
+
+      // Linear interpolation of width based on pressure at each point.
+      final double w1 = stroke.size * p1.pressure;
+      final double w2 = stroke.size * p2.pressure;
+
+      paint.strokeWidth = (w1 + w2) / 2;
+      canvas.drawLine(p1.offset, p2.offset, paint);
     }
-    canvas.drawPath(path, paint);
+
+    if (useLayer) {
+      canvas.restore();
+    }
   }
 
   @override

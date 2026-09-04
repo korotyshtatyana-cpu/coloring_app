@@ -101,8 +101,34 @@ class GalleryRepositoryImpl implements GalleryRepository {
   }
 
   @override
-  Future<Map<String, String?>> getWorkInProgressThumbnails() {
-    return _localProvider.getWorkInProgressThumbnails();
+  Future<Map<String, String?>> getWorkInProgressThumbnails() async {
+    final Map<String, String?> local =
+        await _localProvider.getWorkInProgressThumbnails();
+
+    try {
+      final Map<String, String?> remote =
+          await _remoteProvider.getWorkInProgressThumbnails();
+
+      // Local entries always count (they exist on this device). A local
+      // HTTP thumbnail wins over the remote one because it is the freshest.
+      // A local device-file thumbnail only fills the gap when there is no
+      // remote URL: the file may be older than the remote version (it is
+      // kept only when the upload failed), while remote URLs are
+      // cache-busted on every save.
+      final Map<String, String?> merged = Map<String, String?>.of(remote);
+      local.forEach((String contourId, String? thumbnail) {
+        final bool hasRemote = merged[contourId] != null;
+        final bool localIsRemoteUrl =
+            thumbnail != null && thumbnail.startsWith('http');
+        if (localIsRemoteUrl || !hasRemote) {
+          merged[contourId] = thumbnail;
+        }
+      });
+      return merged;
+    } catch (_) {
+      // Offline or unauthenticated: fall back to local data only.
+      return local;
+    }
   }
 
   @override

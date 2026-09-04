@@ -18,6 +18,7 @@ abstract class  LocaleKeys {
   static const redo = 'redo';
   static const contour = 'contour';
   static const settings = 'settings';
+  static const profile = 'profile';
   static const save = 'save';
   static const share = 'share';
   static const export = 'export';

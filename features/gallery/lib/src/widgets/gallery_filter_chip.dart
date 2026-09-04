@@ -24,13 +24,22 @@ class GalleryFilterChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppColors colors = AppColors.of(context);
 
-    return ChoiceChip(
-      label: Text(label),
-      selected: isActive,
-      onSelected: (_) => onTap(),
-      selectedColor: colors.secondaryBg,
-      labelStyle: AppFonts.normal14.copyWith(
-        color: isActive ? colors.gainsboro : colors.primaryBg,
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isActive ? colors.accentDark : colors.primaryBg,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: isActive ? colors.secondaryBg : colors.accentDark),
+        ),
+        child: Text(
+          label,
+          style: AppFonts.normal14.copyWith(
+            color: isActive ? Colors.white : colors.primaryText,
+          ),
+        ),
       ),
     );
   }

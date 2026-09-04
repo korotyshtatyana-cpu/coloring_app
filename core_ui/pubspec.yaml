@@ -23,3 +23,11 @@ flutter:
     - resources/fonts/
     - resources/icons/
     - resources/images/
+
+  fonts:
+    - family: Montserrat
+      fonts:
+        - asset: resources/fonts/Montserrat-VariableFont_wght.ttf
+    - family: PlayfairDisplay
+      fonts:
+        - asset: resources/fonts/PlayfairDisplay-VariableFont_wght.ttf

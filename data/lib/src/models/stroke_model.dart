@@ -8,13 +8,13 @@ class StrokeModel {
   /// Parent project identifier.
   final String projectId;
 
-  /// Serialized list of points as [x, y] pairs.
+  /// Serialized list of points as [x, y, pressure] triplets.
   final List<List<double>> points;
 
   /// Stroke color as a 32-bit ARGB integer.
   final int color;
 
-  /// Brush size.
+  /// Base brush size.
   final double size;
 
   /// Stroke opacity.

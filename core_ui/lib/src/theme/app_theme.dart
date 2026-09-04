@@ -17,27 +17,25 @@ final ThemeData lightTheme = ThemeData.light().copyWith(
     error: _appColors.error,
   ),
   textSelectionTheme: TextSelectionThemeData(
-    cursorColor: _appColors.white,
-    selectionColor: Colors.white.withValues(alpha: 0.3),
-    selectionHandleColor: _appColors.white,
+    cursorColor: _appColors.green,
+    selectionColor: _appColors.green.withValues(alpha: 0.3),
+    selectionHandleColor: _appColors.green,
   ),
   elevatedButtonTheme: ElevatedButtonThemeData(
     style: ElevatedButton.styleFrom(
       elevation: 0,
-      backgroundColor: _appColors.secondaryBg,
-      foregroundColor: _appColors.primaryBg,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
+      backgroundColor: _appColors.green,
+      foregroundColor: Colors.white,
+      shape: const StadiumBorder(),
       padding: const EdgeInsets.symmetric(
-        vertical: 8,
-        horizontal: 16,
+        vertical: 12,
+        horizontal: 24,
       ),
       textStyle: AppFonts.semiBold24,
     ),
   ),
   progressIndicatorTheme: ProgressIndicatorThemeData(
-    color: _appColors.secondaryBg,
+    color: _appColors.green,
   ),
   checkboxTheme: CheckboxThemeData(
     side: BorderSide(

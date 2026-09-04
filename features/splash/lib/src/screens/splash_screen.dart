@@ -60,11 +60,33 @@ class SplashContent extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Text(
-                LocaleKeys.app_title.tr(),
-                style: AppFonts.extraBold46.copyWith(color: colors.primaryText),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 40,
+                  vertical: 60,
+                ),
+                decoration: BoxDecoration(
+                  color: colors.accentLight.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(60),
+                ),
+                child: Column(
+                  children: [
+                    const Icon(
+                      Icons.brush,
+                      size: 80,
+                      color: Colors.white,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      LocaleKeys.app_title.tr(),
+                      style: AppFonts.extraBold36.copyWith(
+                        color: colors.primaryText,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 48),
               BlocBuilder<AuthBloc, AuthState>(
                 builder: (context, state) {
                   if (state.status == AuthStatus.loading) {

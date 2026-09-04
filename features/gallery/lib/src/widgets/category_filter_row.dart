@@ -29,7 +29,7 @@ class CategoryFilterRow extends StatelessWidget {
       child: Row(
         children: <Widget>[
           GalleryFilterChip(
-            label: LocaleKeys.all.tr(),
+            label: context.tr(LocaleKeys.all),
             isActive: selectedCategory == ContourCategory.all,
             onTap: () => _onCategoryChanged(context, ContourCategory.all),
           ),
@@ -39,7 +39,7 @@ class CategoryFilterRow extends StatelessWidget {
             return Padding(
               padding: const EdgeInsets.only(right: 8),
               child: GalleryFilterChip(
-                label: category.localized(),
+                label: category.localized(context),
                 isActive: isSelected,
                 onTap: () => _onCategoryChanged(
                   context,
