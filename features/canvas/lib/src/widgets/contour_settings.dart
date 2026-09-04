@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../bloc/canvas_bloc.dart';
 import 'color_picker_dialog.dart';
+import 'picker_scroll_view.dart';
 
 /// Settings panel for contour appearance.
 class ContourSettings extends StatelessWidget {
@@ -47,6 +48,20 @@ class ContourSettings extends StatelessWidget {
                 InkWell(
                   onTap: () {
                     final bloc = context.read<CanvasBloc>();
+                    // Distance from the right edge reserved for the contour
+                    // settings panel, so the picker can sit beside it.
+                    const double settingsReserve = 256;
+                    // Offset applied instead when the picker must overlap the
+                    // panel — a small gap so it stays slightly away from the
+                    // panel edge rather than sitting flush on top.
+                    const double overlapOffset = 64;
+                    final double screenWidth = MediaQuery.sizeOf(context).width;
+                    // The picker is ~250px wide (200px controls + padding).
+                    // Reserve space for the settings panel only when it fits;
+                    // otherwise open the picker on top of the panel with a
+                    // small gap.
+                    final bool overlapsPanel =
+                        screenWidth - 16 - settingsReserve < 250;
                     showGeneralDialog(
                       context: context,
                       barrierDismissible: true,
@@ -56,17 +71,19 @@ class ContourSettings extends StatelessWidget {
                         return Align(
                           alignment: Alignment.bottomRight,
                           child: Padding(
-                            padding: const EdgeInsets.only(
-                              bottom: 80,
+                            padding: EdgeInsets.only(
+                              bottom: overlapsPanel ? 96 : 80,
                               left: 16,
-                              right: 256,
+                              right: overlapsPanel
+                                  ? overlapOffset
+                                  : settingsReserve,
                             ),
                             child: Material(
                               color: colors.primaryBg,
                               elevation: 4,
                               shadowColor: colors.accentDark.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(24),
-                              child: SingleChildScrollView(
+                              child: PickerScrollView(
                                 child: BlocProvider<CanvasBloc>.value(
                                   value: bloc,
                                   child: const ColorPickerDialog(

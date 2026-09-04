@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../bloc/canvas_bloc.dart';
 import '../color_picker_dialog.dart';
 import '../contour_settings.dart';
+import '../picker_scroll_view.dart';
 import 'toolbar_container.dart';
 
 /// Bottom toolbar with drawing tools and actions.
@@ -89,9 +90,11 @@ class BottomToolbar extends StatelessWidget {
               shadowColor: colors.accentDark.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(24),
               child: SingleChildScrollView(
-                child: BlocProvider<CanvasBloc>.value(
-                  value: bloc,
-                  child: ColorPickerDialog(onEyedropper: onEyedropper),
+                child: PickerScrollView(
+                  child: BlocProvider<CanvasBloc>.value(
+                    value: bloc,
+                    child: ColorPickerDialog(onEyedropper: onEyedropper),
+                  ),
                 ),
               ),
             ),
