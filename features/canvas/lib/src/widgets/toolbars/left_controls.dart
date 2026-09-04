@@ -1,101 +1,58 @@
-import 'package:core/core.dart';
-import 'package:core_ui/core_ui.dart';
 import 'package:flutter/material.dart';
 
-import '../../bloc/canvas_bloc.dart';
+import 'left_controls/single_column_layout.dart';
+import 'left_controls/two_columns_layout.dart';
 import 'toolbar_container.dart';
 
 /// Left-side control panel with brush size, opacity and view reset.
+///
+/// On tall screens the controls are laid out in a single column; when the
+/// available height is too small (e.g. a phone in portrait) they wrap into
+/// two columns so every control stays visible.
 class LeftControls extends StatelessWidget {
   /// Creates [LeftControls].
   const LeftControls({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final bool isEraser = context.select(
-      (CanvasBloc bloc) => bloc.state.isEraser,
-    );
-    final double brushSize = context.select(
-      (CanvasBloc bloc) => bloc.state.brushSize,
-    );
-    final double opacity = context.select(
-      (CanvasBloc bloc) => bloc.state.opacity,
-    );
+    // Fixed heights so the required panel height is predictable.
+    const double iconButtonSize = 32;
+    const double gap = 8;
+    const double sliderHeight = 160;
+    const double singleColumnHeight =
+        2 * iconButtonSize + 2 * gap + 2 * sliderHeight + gap + iconButtonSize;
 
-    final AppColors colors = AppColors.of(context);
-    final CanvasBloc bloc = context.read<CanvasBloc>();
+    // Vertical space available to the panel: from its top position (120) up
+    // to the bottom edge, minus system bars.
+    final MediaQueryData mq = MediaQuery.of(context);
+    final double availableHeight = mq.size.height -
+        mq.viewPadding.top -
+        mq.viewPadding.bottom -
+        8;
 
-    return ToolbarContainer(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 0),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          AppIconButton(
-            size: 32,
-            iconSize: 24,
-            backgroundColor: Colors.transparent,
-            icon: const Icon(Icons.brush),
-            isActive: !isEraser,
-            onPressed: () => _onSelectTool(bloc, CanvasTool.brush),
-          ),
-          const SizedBox(height: 8),
-          AppIconButton(
-            size: 32,
-            iconSize: 24,
-            backgroundColor: Colors.transparent,
-            icon: const Icon(Icons.auto_fix_normal),
-            isActive: isEraser,
-            onPressed: () => _onSelectTool(bloc, CanvasTool.eraser),
-          ),
-          const SizedBox(height: 8),
-          RotatedBox(
-            quarterTurns: 3,
-            child: CustomSlider(
-              value: brushSize,
-              activeColor: colors.accentDark,
-              inactiveColor: colors.secondaryText.withValues(alpha: 0.2),
-              min: Constants.minBrushSize,
-              max: Constants.maxBrushSize,
-              onChanged: (double value) => _onBrushSizeChanged(bloc, value),
-            ),
-          ),
-          RotatedBox(
-            quarterTurns: 3,
-            child: CustomSlider(
-              value: opacity,
-              activeColor: colors.accentDark,
-              inactiveColor: colors.secondaryText.withValues(alpha: 0.2),
-              min: 0.0,
-              max: 1.0,
-              onChanged: (double value) => _onOpacityChanged(bloc, value),
-            ),
-          ),
-          const SizedBox(height: 8),
-          AppIconButton(
-            size: 32,
-            iconSize: 24,
-            backgroundColor: Colors.transparent,
-            icon: const Icon(Icons.refresh),
-            onPressed: () => _onResetView(bloc),
-          ),
-        ],
+    // Constrain the panel so it can never overflow, and let LayoutBuilder
+    // pick the layout based on the real, bounded height.
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxHeight: availableHeight),
+      child: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          final bool useTwoColumns = singleColumnHeight > constraints.maxHeight;
+          return ToolbarContainer(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 0),
+            child: useTwoColumns
+                ? const TwoColumnsLayout(
+                    iconButtonSize: iconButtonSize,
+                    gap: gap,
+                    sliderHeight: sliderHeight,
+                  )
+                : const SingleColumnLayout(
+                    iconButtonSize: iconButtonSize,
+                    gap: gap,
+                    sliderHeight: sliderHeight,
+                  ),
+          );
+        },
       ),
     );
-  }
-
-  void _onSelectTool(CanvasBloc bloc, CanvasTool tool) {
-    bloc.add(SelectTool(tool));
-  }
-
-  void _onBrushSizeChanged(CanvasBloc bloc, double value) {
-    bloc.add(ChangeBrushSize(value));
-  }
-
-  void _onOpacityChanged(CanvasBloc bloc, double value) {
-    bloc.add(ChangeOpacity(value));
-  }
-
-  void _onResetView(CanvasBloc bloc) {
-    bloc.add(const ResetView());
   }
 }
