@@ -154,7 +154,8 @@ class _CanvasContentState extends State<CanvasContent>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive) {
-      context.read<CanvasBloc>().add(const SaveProject());
+      // Background saves should only persist data, not re-render UI.
+      context.read<CanvasBloc>().add(const SaveProject(withThumbnail: false));
     }
   }
 
