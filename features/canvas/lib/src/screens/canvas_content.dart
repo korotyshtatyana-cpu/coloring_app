@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:auto_route/auto_route.dart';
 import 'package:core/core.dart';
 import 'package:core_ui/core_ui.dart';
 import 'package:flutter/gestures.dart';
@@ -90,7 +91,10 @@ class _CanvasContentState extends State<CanvasContent>
               top: 0,
               left: 0,
               right: 0,
-              child: TopToolbar(onExport: _showExportMenu),
+              child: TopToolbar(
+                onExport: _showExportMenu,
+                onBack: () => context.router.maybePop(),
+              ),
             ),
             const Positioned(
               left: 0,

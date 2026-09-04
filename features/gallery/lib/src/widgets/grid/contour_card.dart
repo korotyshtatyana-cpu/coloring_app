@@ -48,7 +48,7 @@ class ContourCard extends StatelessWidget {
       child: Card(
         elevation: 4,
         shadowColor: colors.accentDark.withValues(alpha: 0.2),
-        color: colors.secondaryBg,
+        color: colors.primaryText,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimens.defaultBorder),
         ),

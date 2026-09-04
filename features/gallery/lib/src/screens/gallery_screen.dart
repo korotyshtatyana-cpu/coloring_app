@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:core/core.dart';
 import 'package:domain/domain.dart';
 import 'package:auto_route/auto_route.dart';
@@ -42,10 +44,25 @@ class _GalleryScreenState extends State<GalleryScreen> with AutoRouteAware {
 
   @override
   void didPopNext() {
-    // This is called when we return to this screen from another screen (like Canvas).
-    // Wait a short time to allow background save and thumbnail generation to finish.
-    Future<void>.delayed(const Duration(milliseconds: 500), () {
-      if (mounted && !_bloc.isClosed) {
+    // The canvas completes its save (including thumbnail) before popping,
+    // so no delay is needed here — just reload immediately.
+    if (mounted && !_bloc.isClosed) {
+      _addResetLoadWhenIdle();
+    }
+  }
+
+  /// Dispatches a reset load, waiting for any in-flight load to finish
+  /// first (LoadContours is droppable, so dispatching during another load
+  /// would silently drop the refresh and keep stale thumbnails).
+  void _addResetLoadWhenIdle() {
+    if (_bloc.state.status != GalleryStatus.loading) {
+      _bloc.add(const LoadContours(reset: true));
+      return;
+    }
+    late final StreamSubscription<GalleryState> subscription;
+    subscription = _bloc.stream.listen((GalleryState state) {
+      if (state.status != GalleryStatus.loading) {
+        subscription.cancel();
         _bloc.add(const LoadContours(reset: true));
       }
     });

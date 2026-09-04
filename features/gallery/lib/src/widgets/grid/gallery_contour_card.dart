@@ -46,13 +46,9 @@ class GalleryContourCard extends StatelessWidget {
   }
 
   void _onTap(BuildContext context) {
-    context.router.push(CanvasRoute(contourId: contour.id)).then((_) {
-      // Refresh so the work-in-progress mark appears for the contour that
-      // was just edited.
-      if (context.mounted) {
-        context.read<GalleryBloc>().add(const LoadContours(reset: true));
-      }
-    });
+    // No reload here: GalleryScreen.didPopNext reloads the gallery with a
+    // delay after returning from the canvas, once the final save finished.
+    context.router.push(CanvasRoute(contourId: contour.id));
   }
 
   void _onFavoriteTap(BuildContext context) {

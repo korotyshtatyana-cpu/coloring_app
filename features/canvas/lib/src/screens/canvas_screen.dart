@@ -90,6 +90,15 @@ class _CanvasContentState extends State<CanvasContent>
   /// Color currently previewed by the eyedropper.
   Color? _previewColor;
 
+  /// Whether the final save (with thumbnail) is running before the screen
+  /// closes. While true, a progress overlay is shown.
+  bool _isSavingBeforeClose = false;
+
+  /// Whether the pop was already requested after the save finished.
+  /// Prevents re-entering the save when the router triggers the pop-scope
+  /// callback again while the route is being removed.
+  bool _popped = false;
+
   /// Cached canvas image used while dragging the eyedropper.
   ui.Image? _eyedropperImage;
 
@@ -149,6 +158,30 @@ class _CanvasContentState extends State<CanvasContent>
     }
   }
 
+  /// Runs the final save (with thumbnail) and closes the screen afterwards.
+  ///
+  /// Awaiting the save before popping guarantees that the gallery reads the
+  /// fresh thumbnail when it reloads. On failure the screen still closes —
+  /// the latest strokes were already persisted by autosave.
+  Future<void> _saveAndPop() async {
+    if (_isSavingBeforeClose || _popped) return;
+    setState(() => _isSavingBeforeClose = true);
+
+    final CanvasBloc bloc = context.read<CanvasBloc>();
+    try {
+      await bloc.saveProject(withThumbnail: true);
+    } finally {
+      if (mounted) {
+        setState(() => _isSavingBeforeClose = false);
+        _popped = true;
+        // Use pop() (not maybePop) so the route closes unconditionally:
+        // maybePop() goes through the PopScope again and can silently fail
+        // when called after the async gap.
+        context.router.pop();
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final Size viewportSize = MediaQuery.sizeOf(context);
@@ -166,11 +199,14 @@ class _CanvasContentState extends State<CanvasContent>
     final double fitScale = _fitScaleFor(viewportSize, canvasSize);
 
     return PopScope(
-      canPop: true,
+      // Back navigation is triggered explicitly from the toolbar (reliable
+      // on all devices). This is only a fallback for the system back
+      // gesture: while the final save runs, pops are blocked; once the save
+      // finished and the pop was requested, the route is allowed to pop.
+      canPop: _popped,
       onPopInvokedWithResult: (bool didPop, Object? result) {
-        if (!didPop) return;
-        // Final save (updates thumbnail) happens as the screen is closing.
-        context.read<CanvasBloc>().saveProject(withThumbnail: true);
+        if (didPop) return;
+        _saveAndPop();
       },
       child: Scaffold(
         body: BlocListener<CanvasBloc, CanvasState>(
@@ -289,7 +325,10 @@ class _CanvasContentState extends State<CanvasContent>
                   top: 0,
                   left: 0,
                   right: 0,
-                  child: TopToolbar(onExport: widget.onExport),
+                  child: TopToolbar(
+                    onExport: widget.onExport,
+                    onBack: _saveAndPop,
+                  ),
                 ),
                 const Positioned(left: 8, top: 120, child: LeftControls()),
                 Positioned(
@@ -309,6 +348,17 @@ class _CanvasContentState extends State<CanvasContent>
                         image: _eyedropperImage,
                       );
                     },
+                  ),
+                if (_isSavingBeforeClose)
+                  Positioned.fill(
+                    child: ColoredBox(
+                      color: colors.black.withValues(alpha: 0.45),
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          color: colors.primaryBg,
+                        ),
+                      ),
+                    ),
                   ),
               ],
             ),

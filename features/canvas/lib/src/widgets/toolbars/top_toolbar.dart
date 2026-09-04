@@ -1,6 +1,5 @@
 import 'package:canvas/src/widgets/toolbars/toolbar_container.dart';
 import 'package:core_ui/core_ui.dart';
-import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -11,8 +10,11 @@ class TopToolbar extends StatelessWidget {
   /// Callback invoked when the export button is pressed.
   final VoidCallback onExport;
 
+  /// Callback invoked when the back button is pressed.
+  final VoidCallback onBack;
+
   /// Creates a [TopToolbar].
-  const TopToolbar({required this.onExport, super.key});
+  const TopToolbar({required this.onExport, required this.onBack, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -33,10 +35,7 @@ class TopToolbar extends StatelessWidget {
                 iconSize: 24,
                 icon: const Icon(Icons.arrow_back),
                 backgroundColor: Colors.transparent,
-                onPressed: () {
-                  // Saving happens in the PopScope handler of CanvasScreen.
-                  context.router.maybePop();
-                },
+                onPressed: onBack,
               ),
             ),
             const Spacer(),

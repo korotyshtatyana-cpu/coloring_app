@@ -11,13 +11,7 @@ class VectorOrPlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (svgData != null && svgData!.isNotEmpty) {
-      return Padding(
-        padding: const EdgeInsets.all(8),
-        child: SvgPicture.string(
-          svgData!,
-          fit: BoxFit.contain,
-        ),
-      );
+      return SvgPicture.string(svgData!, fit: BoxFit.fill);
     }
     return const ContourPlaceholder();
   }
