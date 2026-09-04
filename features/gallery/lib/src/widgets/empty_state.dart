@@ -25,7 +25,7 @@ class EmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            message ?? LocaleKeys.gallery.tr(),
+            message ?? context.tr(LocaleKeys.gallery),
             style: AppFonts.normal16.copyWith(color: colors.primaryText),
             textAlign: TextAlign.center,
           ),

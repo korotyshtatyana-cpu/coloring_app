@@ -24,7 +24,7 @@ class GalleryContent extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: colors.primaryBg,
         title: Text(
-          LocaleKeys.gallery.tr(),
+          context.tr(LocaleKeys.gallery),
           style: AppFonts.appBarTitle.copyWith(
             color: colors.primaryText,
             shadows: [],
@@ -91,8 +91,8 @@ class GalleryContent extends StatelessWidget {
   void _onFailure(BuildContext context, GalleryState state) {
     ErrorDialog.show(
       context,
-      message: state.error ?? LocaleKeys.something_went_wrong.tr(),
-      retryLabel: LocaleKeys.retry.tr(),
+      message: state.error ?? context.tr(LocaleKeys.something_went_wrong),
+      retryLabel: context.tr(LocaleKeys.retry),
       onRetry: () => _onRefresh(context),
     );
   }

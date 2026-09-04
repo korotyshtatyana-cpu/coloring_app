@@ -38,5 +38,9 @@
   "save_to_gallery": "Save to Gallery",
   "saved_to_gallery": "Saved to gallery",
   "contour_color": "Contour Color",
-  "eyedropper": "Eyedropper"
+  "eyedropper": "Eyedropper",
+  "english": "English",
+  "russian": "Russian",
+  "copied_to_clipboard": "Copied to clipboard",
+  "copy": "Copy"
 }

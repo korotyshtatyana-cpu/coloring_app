@@ -15,11 +15,13 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final String currentLocale = context.locale.toString();
+
     return BlocProvider<SettingsBloc>(
       create: (context) => SettingsBloc(
         getSettingsUseCase: appLocator<GetSettingsUseCase>(),
         updateSettingsUseCase: appLocator<UpdateSettingsUseCase>(),
-      )..add(const LoadSettings()),
+      )..add(LoadSettings(currentLocale: currentLocale)),
       child: const SettingsContent(),
     );
   }

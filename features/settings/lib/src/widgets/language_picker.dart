@@ -20,20 +20,22 @@ class LanguagePicker extends StatelessWidget {
       value: locale,
       dropdownColor: colors.secondaryBg,
       style: AppFonts.normal16.copyWith(color: colors.primaryText),
-      items: const <DropdownMenuItem<String>>[
+      items: <DropdownMenuItem<String>>[
         DropdownMenuItem<String>(
-          value: 'en',
-          child: Text('English'),
+          value: 'en-US',
+          child: Text('english'.tr()),
         ),
         DropdownMenuItem<String>(
-          value: 'ru',
-          child: Text('Русский'),
+          value: 'ru-RU',
+          child: Text('russian'.tr()),
         ),
       ],
       onChanged: (String? value) {
         if (value != null) {
           context.read<SettingsBloc>().add(ChangeLanguage(value));
-          context.setLocale(Locale(value));
+
+          final parts = value.split('-');
+          context.setLocale(Locale(parts[0], parts[1]));
         }
       },
     );

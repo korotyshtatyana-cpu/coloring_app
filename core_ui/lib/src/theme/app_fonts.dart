@@ -17,7 +17,7 @@ class AppFonts {
   static TextStyle extraBold56 = const TextStyle(
     fontWeight: FontWeight.w400,
     fontSize: 56,
-    fontFamily: _montserratFamily,
+    fontFamily: _playfairDisplayFamily,
     package: _packageName,
     shadows: <Shadow>[
       Shadow(offset: Offset(0, 2), blurRadius: 4),
@@ -27,21 +27,21 @@ class AppFonts {
   static TextStyle extraBold46 = const TextStyle(
     fontWeight: FontWeight.w800,
     fontSize: 46,
-    fontFamily: _montserratFamily,
+    fontFamily: _playfairDisplayFamily,
     package: _packageName,
   );
 
   static TextStyle extraBold36 = const TextStyle(
     fontWeight: FontWeight.w800,
     fontSize: 36,
-    fontFamily: _montserratFamily,
+    fontFamily: _playfairDisplayFamily,
     package: _packageName,
   );
 
   static TextStyle bold36 = const TextStyle(
     fontWeight: FontWeight.w700,
     fontSize: 36,
-    fontFamily: _montserratFamily,
+    fontFamily: _playfairDisplayFamily,
     package: _packageName,
     shadows: <Shadow>[
       Shadow(offset: Offset(0, 2), blurRadius: 4),
@@ -51,28 +51,28 @@ class AppFonts {
   static TextStyle bold32 = const TextStyle(
     fontWeight: FontWeight.w700,
     fontSize: 32,
-    fontFamily: _montserratFamily,
+    fontFamily: _playfairDisplayFamily,
     package: _packageName,
   );
 
   static TextStyle normal32 = const TextStyle(
     fontWeight: FontWeight.w400,
     fontSize: 32,
-    fontFamily: _montserratFamily,
+    fontFamily: _playfairDisplayFamily,
     package: _packageName,
   );
 
   static TextStyle bold28 = const TextStyle(
     fontWeight: FontWeight.w700,
     fontSize: 28,
-    fontFamily: _montserratFamily,
+    fontFamily: _playfairDisplayFamily,
     package: _packageName,
   );
 
   static TextStyle semiBold28 = const TextStyle(
     fontWeight: FontWeight.w600,
     fontSize: 28,
-    fontFamily: _montserratFamily,
+    fontFamily: _playfairDisplayFamily,
     package: _packageName,
     shadows: <Shadow>[
       Shadow(offset: Offset(0, 2), blurRadius: 4),

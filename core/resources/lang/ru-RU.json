@@ -38,5 +38,9 @@
   "save_to_gallery": "Сохранить в галерею",
   "saved_to_gallery": "Сохранено в галерею",
   "contour_color": "Цвет контура",
-  "eyedropper": "Пипетка"
+  "eyedropper": "Пипетка",
+  "english": "Английский",
+  "russian": "Русский",
+  "copied_to_clipboard": "Скопировано в буфер обмена",
+  "copy": "Копировать"
 }

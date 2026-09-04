@@ -11,8 +11,14 @@ abstract class SettingsEvent extends Equatable {
 
 /// Requests loading saved settings.
 class LoadSettings extends SettingsEvent {
+  /// Current locale to use as fallback if no settings are saved.
+  final String? currentLocale;
+
   /// Creates a [LoadSettings] event.
-  const LoadSettings();
+  const LoadSettings({this.currentLocale});
+
+  @override
+  List<Object?> get props => <Object?>[currentLocale];
 }
 
 /// Changes the application language.

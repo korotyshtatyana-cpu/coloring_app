@@ -144,7 +144,7 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Copied to clipboard',
+            'copied_to_clipboard'.tr(),
             style: AppFonts.normal16.copyWith(color: Colors.white),
           ),
           duration: const Duration(seconds: 1),
@@ -261,7 +261,7 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
                               color: colors.primaryText,
                               size: 20,
                             ),
-                            tooltip: 'Eyedropper',
+                            tooltip: 'eyedropper'.tr(),
                             onPressed: () {
                               Navigator.of(context).pop();
                               widget.onEyedropper?.call();
@@ -310,7 +310,7 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
                               color: colors.primaryText,
                               size: 20,
                             ),
-                            tooltip: 'Copy',
+                            tooltip: 'copy'.tr(),
                             onPressed: _copyValueToClipboard,
                             padding: const EdgeInsets.all(4),
                             constraints: const BoxConstraints(
