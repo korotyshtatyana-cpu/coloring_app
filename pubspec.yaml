@@ -54,3 +54,11 @@ flutter:
   assets:
     - .env.dev
     - .env.prod
+
+flutter_native_splash:
+  color: "#FBFBF9"
+  image: core_ui/resources/icons/logo.svg
+  android_12:
+    color: "#FBFBF9"
+    image: core_ui/resources/icons/logo.svg
+  fullscreen: true
