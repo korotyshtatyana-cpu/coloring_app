@@ -30,7 +30,16 @@ class _ContourPreviewState extends State<ContourPreview> {
   @override
   void initState() {
     super.initState();
-    _displayedUrl = widget.previewUrl;
+    // Always start with null (fallback SVG) to force a cross-fade to the
+    // real image once the screen is loaded. This creates a cinematic
+    // "coloring" effect when the gallery opens.
+    _displayedUrl = null;
+
+    if (widget.previewUrl != null && widget.previewUrl!.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _swapUrl(widget.previewUrl);
+      });
+    }
   }
 
   @override
@@ -71,9 +80,9 @@ class _ContourPreviewState extends State<ContourPreview> {
   @override
   Widget build(BuildContext context) {
     return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 350),
-      switchInCurve: Curves.easeIn,
-      switchOutCurve: Curves.easeOut,
+      duration: const Duration(milliseconds: 800),
+      switchInCurve: Curves.easeInOutCubic,
+      switchOutCurve: Curves.easeInOutCubic,
       child: _buildPreview(_displayedUrl),
     );
   }
