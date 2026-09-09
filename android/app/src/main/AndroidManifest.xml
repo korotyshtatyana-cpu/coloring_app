@@ -7,9 +7,9 @@
         android:maxSdkVersion="28"
         tools:ignore="ScopedStorage" />
     <application
-        android:label="coloring_app"
+        android:label="ColoringPRO"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/launcher_icon">
         <activity
             android:name=".MainActivity"
             android:exported="true"
