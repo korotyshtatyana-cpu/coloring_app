@@ -49,7 +49,8 @@ class CanvasScreen extends StatelessWidget {
       child: CanvasContent(
         key: _canvasKey,
         onExport: () => _canvasKey.currentState?.showExportMenu(),
-        onEyedropper: () => _canvasKey.currentState?.enterEyedropperMode(),
+        onEyedropper: ({required bool isContour}) =>
+            _canvasKey.currentState?.enterEyedropperMode(isContour: isContour),
       ),
     );
   }
@@ -60,7 +61,7 @@ class CanvasContent extends StatefulWidget {
   final VoidCallback onExport;
 
   /// Callback invoked when the eyedropper mode is requested.
-  final VoidCallback onEyedropper;
+  final void Function({required bool isContour}) onEyedropper;
 
   /// Creates [CanvasContent].
   const CanvasContent({
@@ -107,6 +108,9 @@ class _CanvasContentState extends State<CanvasContent>
 
   /// Future for the in-progress eyedropper image capture, if any.
   Future<void>? _eyedropperCaptureFuture;
+
+  /// Whether the eyedropper was triggered for the contour or the brush.
+  bool _isEyedropperForContour = false;
 
   /// Active pointers currently on screen (viewport coordinates).
   final Map<int, Offset> _pointerPositions = <int, Offset>{};
@@ -753,7 +757,12 @@ class _CanvasContentState extends State<CanvasContent>
             ? _readColorAt(_eyedropperPosition!)
             : null);
     if (color != null) {
-      context.read<CanvasBloc>().add(ChangeColor(color));
+      final bloc = context.read<CanvasBloc>();
+      if (_isEyedropperForContour) {
+        bloc.add(ChangeContourSettings(color: color));
+      } else {
+        bloc.add(ChangeColor(color));
+      }
     }
     _disposeEyedropperImage();
     setState(() {
@@ -784,9 +793,10 @@ class _CanvasContentState extends State<CanvasContent>
     _eyedropperByteData = null;
   }
 
-  void enterEyedropperMode() {
+  void enterEyedropperMode({required bool isContour}) {
     setState(() {
       _isEyedropperActive = true;
+      _isEyedropperForContour = isContour;
     });
 
     _eyedropperCaptureFuture = _captureEyedropperImage();

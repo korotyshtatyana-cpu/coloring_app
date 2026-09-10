@@ -7,5 +7,5 @@ export 'src/widgets/buttons/icon_button.dart';
 export 'src/widgets/buttons/primary_button.dart';
 export 'src/widgets/dialogs/error_dialog.dart';
 export 'src/widgets/dialogs/loading_dialog.dart';
-export 'src/widgets/inputs/custom_slider.dart';
+export 'src/widgets/inputs/gradient_slider.dart';
 export 'src/widgets/inputs/search_field.dart';

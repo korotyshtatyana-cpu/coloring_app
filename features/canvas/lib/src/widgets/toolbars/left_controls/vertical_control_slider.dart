@@ -34,16 +34,17 @@ class VerticalControlSlider extends StatelessWidget {
 
     return SizedBox(
       height: height,
-      child: RotatedBox(
-        quarterTurns: 3,
-        child: CustomSlider(
-          value: value,
-          min: min,
-          max: max,
-          onChanged: onChanged,
-          activeColor: colors.accentDark,
-          inactiveColor: colors.secondaryText.withValues(alpha: 0.2),
-        ),
+      width: 32,
+      child: GradientSlider(
+        value: (value - min) / (max - min),
+        onChanged: (double normalizedValue) {
+          onChanged(min + normalizedValue * (max - min));
+        },
+        activeColor: colors.accentDark,
+        inactiveColor: colors.secondaryText.withValues(alpha: 0.2),
+        trackHeight: 8,
+        thumbRadius: 10,
+        isVertical: true,
       ),
     );
   }
