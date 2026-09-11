@@ -17,7 +17,8 @@ abstract final class RequestConstants {
   static const String selectAll = '*';
   static const String selectContourId = 'contour_id';
   static const String selectProjectData = 'contour_id, data, last_opened';
-  static const String selectProjectThumbnails = 'contour_id, thumbnail_url';
+  static const String selectProjectThumbnails =
+      'contour_id, thumbnail_url, last_opened';
 
   // Supabase columns
   static const String createdAtColumn = 'created_at';

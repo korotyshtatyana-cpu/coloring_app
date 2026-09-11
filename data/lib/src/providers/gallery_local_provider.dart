@@ -34,15 +34,23 @@ class GalleryLocalProvider {
     return rows.map((Contour row) => _fromRow(row)).toList();
   }
 
-  /// Returns contour identifiers that have a started local project mapped to
-  /// the project's thumbnail path, if any.
-  Future<Map<String, String?>> getWorkInProgressThumbnails() async {
-    final List<Project> rows = await _database.select(_database.projects).get();
-    final Map<String, String?> result = <String, String?>{};
-    for (final Project row in rows) {
-      result[row.contourId] = row.data['thumbnailPath'] as String?;
-    }
-    return result;
+  /// Returns started (work in progress) projects ordered by the date of
+  /// the last change, most recent first.
+  Future<List<WorkInProgressEntity>> getWorkInProgress() async {
+    final List<Project> rows = await (_database.select(_database.projects)
+          ..orderBy(<OrderingTerm Function($ProjectsTable)>[
+            ($ProjectsTable row) => OrderingTerm.desc(row.lastOpened),
+          ]))
+        .get();
+    return rows
+        .map(
+          (Project row) => WorkInProgressEntity(
+            contourId: row.contourId,
+            thumbnailPath: row.data['thumbnailPath'] as String?,
+            lastOpened: row.lastOpened,
+          ),
+        )
+        .toList();
   }
 
   ContoursCompanion _toCompanion(ContourModel contour) {

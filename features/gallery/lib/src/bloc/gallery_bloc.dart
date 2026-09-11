@@ -50,8 +50,17 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
 
       if (event.reset) {
         favoriteIds = await _getFavoriteIdsUseCase.execute();
-        workInProgressThumbnails = await _getWorkInProgressUseCase.execute();
-        workInProgressIds = workInProgressThumbnails.keys.toList();
+        // Entries come ordered by the date of the last change, most recent
+        // first; the ids below keep that order for the WIP filter.
+        final List<WorkInProgressEntity> workInProgress =
+            await _getWorkInProgressUseCase.execute();
+        workInProgressIds = workInProgress
+            .map((WorkInProgressEntity entry) => entry.contourId)
+            .toList();
+        workInProgressThumbnails = <String, String?>{
+          for (final WorkInProgressEntity entry in workInProgress)
+            entry.contourId: entry.thumbnailPath,
+        };
       }
 
       final List<ContourEntity> contours;
@@ -66,9 +75,29 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
             category: state.selectedCategory,
           ),
         );
-        contours = event.reset
+        final List<ContourEntity> combined = event.reset
             ? pageContours
             : <ContourEntity>[...state.contours, ...pageContours];
+
+        // Prioritize WIP items at the top of the "All" list
+        if (workInProgressIds.isNotEmpty) {
+          combined.sort((a, b) {
+            final aIndex = workInProgressIds.indexOf(a.id);
+            final bIndex = workInProgressIds.indexOf(b.id);
+
+            // Both are WIP: follow last_opened order (stored in workInProgressIds)
+            if (aIndex != -1 && bIndex != -1) return aIndex.compareTo(bIndex);
+            // Only A is WIP: A goes first
+            if (aIndex != -1) return -1;
+            // Only B is WIP: B goes first
+            if (bIndex != -1) return 1;
+
+            // Neither is WIP: keep default repository order (usually created_at desc)
+            return 0;
+          });
+        }
+
+        contours = combined;
         hasReachedMax = pageContours.length < Constants.pageSize;
         currentPage = event.reset ? 1 : state.currentPage + 1;
       } else {

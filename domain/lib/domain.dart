@@ -6,6 +6,7 @@ export 'src/entities/project_entity.dart';
 export 'src/entities/stroke_entity.dart';
 export 'src/entities/user_entity.dart';
 export 'src/entities/tool_entity.dart';
+export 'src/entities/work_in_progress_entity.dart';
 export 'src/repositories/auth_repository.dart';
 export 'src/repositories/canvas_repository.dart';
 export 'src/repositories/gallery_repository.dart';

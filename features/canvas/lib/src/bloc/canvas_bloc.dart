@@ -100,6 +100,9 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
         activeBrushId: allTools.isNotEmpty ? allTools.first.id : null,
         activeEraserId: allTools.isNotEmpty ? allTools.first.id : null,
       ));
+
+      // Automatically update last_opened timestamp when project is opened
+      unawaited(saveProject(withThumbnail: false));
     } catch (e, stackTrace) {
       ErrorHandler.report(e, stackTrace);
       emit(state.copyWith(

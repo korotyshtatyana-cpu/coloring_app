@@ -1,5 +1,6 @@
 import '../entities/contour_category.dart';
 import '../entities/contour_entity.dart';
+import '../entities/work_in_progress_entity.dart';
 
 /// Repository for gallery and contour operations.
 abstract class GalleryRepository {
@@ -24,9 +25,9 @@ abstract class GalleryRepository {
   /// Returns favorite contour identifiers for the current user.
   Future<List<String>> getFavoriteIds();
 
-  /// Returns contour identifiers with started projects mapped to the
-  /// project's thumbnail path, if any.
-  Future<Map<String, String?>> getWorkInProgressThumbnails();
+  /// Returns started (work in progress) projects ordered by the date of
+  /// the last change, most recent first.
+  Future<List<WorkInProgressEntity>> getWorkInProgress();
 
   /// Loads a single cached contour by its identifier.
   Future<ContourEntity?> getContourById(String id);

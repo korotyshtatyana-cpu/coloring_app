@@ -57,12 +57,14 @@ class GalleryRepositoryImpl implements GalleryRepository {
     try {
       final contours = await _remoteProvider.getContoursByIds(
         ids: ids,
-        limit: limit,
-        offset: offset,
         category: category,
       );
       await _localProvider.cacheContours(contours);
-      return contours.map(ContourMapper.toEntity).toList();
+      return _paginate(
+        _sortByIds(contours, ids),
+        offset: offset,
+        limit: limit,
+      ).map(ContourMapper.toEntity).toList();
     } catch (_) {
       final cached = await _localProvider.getCachedContours();
       final filtered = cached
@@ -72,10 +74,24 @@ class GalleryRepositoryImpl implements GalleryRepository {
                 category == null || contour.category == category,
           )
           .toList();
-      return _paginate(filtered, offset: offset, limit: limit)
-          .map(ContourMapper.toEntity)
-          .toList();
+      return _paginate(
+        _sortByIds(filtered, ids),
+        offset: offset,
+        limit: limit,
+      ).map(ContourMapper.toEntity).toList();
     }
+  }
+
+  /// Orders [contours] to match the order of [ids].
+  List<ContourModel> _sortByIds(List<ContourModel> contours, List<String> ids) {
+    final Map<String, int> indexById = <String, int>{
+      for (int i = 0; i < ids.length; i++) ids[i]: i,
+    };
+    contours.sort(
+      (ContourModel a, ContourModel b) => (indexById[a.id] ?? ids.length)
+          .compareTo(indexById[b.id] ?? ids.length),
+    );
+    return contours;
   }
 
   List<ContourModel> _paginate(
@@ -101,13 +117,13 @@ class GalleryRepositoryImpl implements GalleryRepository {
   }
 
   @override
-  Future<Map<String, String?>> getWorkInProgressThumbnails() async {
-    final Map<String, String?> local =
-        await _localProvider.getWorkInProgressThumbnails();
+  Future<List<WorkInProgressEntity>> getWorkInProgress() async {
+    final List<WorkInProgressEntity> local =
+        await _localProvider.getWorkInProgress();
 
     try {
-      final Map<String, String?> remote =
-          await _remoteProvider.getWorkInProgressThumbnails();
+      final List<WorkInProgressEntity> remote =
+          await _remoteProvider.getWorkInProgress();
 
       // Local entries always count (they exist on this device). A local
       // HTTP thumbnail wins over the remote one because it is the freshest.
@@ -115,18 +131,40 @@ class GalleryRepositoryImpl implements GalleryRepository {
       // remote URL: the file may be older than the remote version (it is
       // kept only when the upload failed), while remote URLs are
       // cache-busted on every save.
-      final Map<String, String?> merged = Map<String, String?>.of(remote);
-      local.forEach((String contourId, String? thumbnail) {
-        final bool hasRemote = merged[contourId] != null;
+      final Map<String, WorkInProgressEntity> merged =
+          <String, WorkInProgressEntity>{
+        for (final WorkInProgressEntity entry in remote) entry.contourId: entry,
+      };
+      for (final WorkInProgressEntity entry in local) {
+        final WorkInProgressEntity? remoteEntry = merged[entry.contourId];
+        final String? remoteThumbnail = remoteEntry?.thumbnailPath;
         final bool localIsRemoteUrl =
-            thumbnail != null && thumbnail.startsWith('http');
-        if (localIsRemoteUrl || !hasRemote) {
-          merged[contourId] = thumbnail;
-        }
-      });
-      return merged;
+            entry.thumbnailPath != null && entry.thumbnailPath!.startsWith('http');
+
+        final String? thumbnail =
+            (localIsRemoteUrl || remoteThumbnail == null)
+                ? entry.thumbnailPath
+                : remoteThumbnail;
+        final DateTime lastOpened =
+            remoteEntry != null && remoteEntry.lastOpened.isAfter(entry.lastOpened)
+                ? remoteEntry.lastOpened
+                : entry.lastOpened;
+
+        merged[entry.contourId] = WorkInProgressEntity(
+          contourId: entry.contourId,
+          thumbnailPath: thumbnail,
+          lastOpened: lastOpened,
+        );
+      }
+
+      return merged.values.toList()
+        ..sort(
+          (WorkInProgressEntity a, WorkInProgressEntity b) =>
+              b.lastOpened.compareTo(a.lastOpened),
+        );
     } catch (_) {
-      // Offline or unauthenticated: fall back to local data only.
+      // Offline or unauthenticated: fall back to local data only (already
+      // ordered by the provider).
       return local;
     }
   }

@@ -77,6 +77,7 @@ GET /rest/v1/favorites
 Query params:
 - select: contour_id
 - user_id: eq.'USER_ID'
+- order: created_at.desc
 ```
 
 ### Добавление/удаление из избранного
@@ -102,8 +103,9 @@ Query params:
 ```text
 GET /rest/v1/projects
 Query params:
-- select: contour_id, thumbnail_url
+- select: contour_id, thumbnail_url, last_opened
 - user_id: eq.'USER_ID'
+- order: last_opened.desc
 ```
 
 ### Синхронизация профиля пользователя
