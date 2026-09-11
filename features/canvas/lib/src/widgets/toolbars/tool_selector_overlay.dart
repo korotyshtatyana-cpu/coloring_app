@@ -40,6 +40,7 @@ class ToolSelectorOverlay extends StatelessWidget {
               final bool isActive = tool.id == activeToolId;
 
               return InkWell(
+                splashColor: colors.accentLight,
                 onTap: () {
                   onToolSelected(tool.id);
                   Navigator.of(context).pop();

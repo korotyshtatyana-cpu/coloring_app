@@ -31,21 +31,23 @@ class ExportMenu extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: Text(
                   LocaleKeys.export.tr(),
                   style: AppFonts.semiBold20.copyWith(color: colors.primaryText),
+                  textAlign: TextAlign.center,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 8),
               ListTile(
                 leading: Icon(Icons.share, color: colors.primaryText),
                 shape: const RoundedRectangleBorder(
                   borderRadius: BorderRadius.all(Radius.circular(16)),
                 ),
+                splashColor: colors.accentLight,
                 title: Text(
                   LocaleKeys.share.tr(),
                   style: AppFonts.normal16.copyWith(color: colors.primaryText),
@@ -61,6 +63,7 @@ class ExportMenu extends StatelessWidget {
                 shape: const RoundedRectangleBorder(
                   borderRadius: BorderRadius.all(Radius.circular(16)),
                 ),
+                splashColor: colors.accentLight,
                 title: Text(
                   LocaleKeys.save_to_gallery.tr(),
                   style: AppFonts.normal16.copyWith(color: colors.primaryText),
