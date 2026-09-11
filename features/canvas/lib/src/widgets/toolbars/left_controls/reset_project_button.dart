@@ -36,18 +36,18 @@ class ResetProjectButton extends StatelessWidget {
         return AlertDialog(
           backgroundColor: colors.secondaryBg,
           title: Text(
-            'reset_project_confirm_title'.tr(),
+            LocaleKeys.reset_project_confirm_title.tr(),
             style: AppFonts.semiBold20.copyWith(color: colors.accentDark),
           ),
           content: Text(
-            'reset_project_confirm_message'.tr(),
+            LocaleKeys.reset_project_confirm_message.tr(),
             style: AppFonts.normal16.copyWith(color: colors.primaryText),
           ),
           actions: <Widget>[
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
               child: Text(
-                'cancel'.tr(),
+                LocaleKeys.cancel.tr(),
                 style: AppFonts.normal14.copyWith(
                   color: colors.secondaryText,
                   fontWeight: FontWeight.w600,

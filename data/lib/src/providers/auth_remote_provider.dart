@@ -51,6 +51,11 @@ class AuthRemoteProvider {
     return _client.auth.currentSession != null;
   }
 
+  /// Deletes the currently authenticated user's account via RPC.
+  Future<void> deleteAccount() async {
+    await _client.rpc('delete_user_account');
+  }
+
   /// Signs in with platform identity provider and returns the user.
   Future<UserModel> signIn() async {
     if (Platform.isIOS) {

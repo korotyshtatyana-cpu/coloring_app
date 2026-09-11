@@ -32,6 +32,11 @@ class AuthRepositoryImpl implements AuthRepository {
     return _toEntity(model);
   }
 
+  @override
+  Future<void> deleteAccount() {
+    return _remoteProvider.deleteAccount();
+  }
+
   UserEntity _toEntity(UserModel model) {
     return UserEntity(
       id: model.id,

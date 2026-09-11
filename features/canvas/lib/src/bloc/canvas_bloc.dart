@@ -451,7 +451,10 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
       );
 
       if (filePath == null) {
-        emit(state.copyWith(status: CanvasStatus.error, error: 'Export failed'));
+        emit(state.copyWith(
+          status: CanvasStatus.error,
+          error: LocaleKeys.export_failed.tr(),
+        ));
         return;
       }
 

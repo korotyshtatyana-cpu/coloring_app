@@ -11,23 +11,21 @@ class LanguagePicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final AppColors colors = AppColors.of(context);
     final String locale = context.select(
       (SettingsBloc bloc) => bloc.state.locale,
     );
 
-    return DropdownButton<String>(
+    return AppDropdown<String>(
       value: locale,
-      dropdownColor: colors.secondaryBg,
-      style: AppFonts.normal16.copyWith(color: colors.primaryText),
+      width: 200,
       items: <DropdownMenuItem<String>>[
         DropdownMenuItem<String>(
           value: 'en-US',
-          child: Text('english'.tr()),
+          child: Text(LocaleKeys.english.tr()),
         ),
         DropdownMenuItem<String>(
           value: 'ru-RU',
-          child: Text('russian'.tr()),
+          child: Text(LocaleKeys.russian.tr()),
         ),
       ],
       onChanged: (String? value) {

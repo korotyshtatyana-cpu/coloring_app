@@ -34,6 +34,12 @@ abstract class DomainDI {
       ),
     );
 
+    appLocator.registerLazySingleton<DeleteAccountUseCase>(
+      () => DeleteAccountUseCase(
+        repository: appLocator<AuthRepository>(),
+      ),
+    );
+
     appLocator.registerLazySingleton<GetContoursUseCase>(
       () => GetContoursUseCase(
         repository: appLocator<GalleryRepository>(),

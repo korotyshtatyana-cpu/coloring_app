@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import '../../bloc/canvas_bloc.dart';
 import '../color_picker_dialog.dart';
 import '../picker_scroll_view.dart';
-import 'toolbar_container.dart';
 
 /// Bottom toolbar with drawing tools and actions.
 class BottomToolbar extends StatelessWidget {

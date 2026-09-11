@@ -20,6 +20,8 @@ class SettingsScreen extends StatelessWidget {
       create: (context) => SettingsBloc(
         getSettingsUseCase: appLocator<GetSettingsUseCase>(),
         updateSettingsUseCase: appLocator<UpdateSettingsUseCase>(),
+        getCurrentUserUseCase: appLocator<GetCurrentUserUseCase>(),
+        deleteAccountUseCase: appLocator<DeleteAccountUseCase>(),
       )..add(LoadSettings(currentLocale: currentLocale)),
       child: const SettingsContent(),
     );

@@ -15,4 +15,7 @@ abstract class AuthRepository {
   /// Attempts to sign the user in silently using a platform account.
   /// Throws if silent sign-in is not available.
   Future<UserEntity> signInSilently();
+
+  /// Deletes the currently authenticated user's account and all associated data.
+  Future<void> deleteAccount();
 }

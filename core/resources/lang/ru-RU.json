@@ -35,6 +35,7 @@
   "flowers": "Цветы",
   "patterns": "Узоры",
   "abstract": "Абстракция",
+  "export_failed": "Ошибка экспорта",
   "save_to_gallery": "Сохранить в галерею",
   "saved_to_gallery": "Сохранено в галерею",
   "contour_color": "Цвет контура",
@@ -45,5 +46,15 @@
   "eraser_soft": "Мягкий ластик",
   "reset_project_confirm_title": "Начать заново",
   "reset_project_confirm_message": "Вы уверены, что хотите начать раскраску заново? Предыдущая версия не будет сохранена.",
-  "cancel": "Отмена"
+  "cancel": "Отмена",
+  "hi_user": "Привет, {}!",
+  "delete_account": "Удалить аккаунт",
+  "delete_account_confirm_title": "Удалить аккаунт?",
+  "delete_account_confirm_message": "Вы уверены, что хотите удалить свой аккаунт? Все ваши рисунки и избранное будут безвозвратно утеряны, а приложение закроется.",
+  "confirm": "Удалить",
+  "english": "Английский",
+  "russian": "Русский",
+  "user_placeholder": "Пользователь",
+  "copied_to_clipboard": "Скопировано в буфер обмена",
+  "copy": "Копировать"
 }

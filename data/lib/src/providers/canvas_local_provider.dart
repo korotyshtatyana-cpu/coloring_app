@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import 'package:core/core.dart';
 import 'package:domain/domain.dart';
 
 import '../../data.dart';
@@ -71,13 +72,13 @@ class CanvasLocalProvider {
     final seeds = [
       BrushesCompanion.insert(
         id: 'round_basic',
-        nameKey: 'brush_round_basic',
+        nameKey: LocaleKeys.brush_round_basic,
         previewPath: '',
         isPressureSensitive: false,
       ),
       BrushesCompanion.insert(
         id: 'fine_liner',
-        nameKey: 'brush_fine_liner',
+        nameKey: LocaleKeys.brush_fine_liner,
         previewPath: '',
         isPressureSensitive: true,
       ),

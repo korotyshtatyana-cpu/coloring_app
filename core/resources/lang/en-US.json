@@ -35,6 +35,7 @@
   "flowers": "Flowers",
   "patterns": "Patterns",
   "abstract": "Abstract",
+  "export_failed": "Export failed",
   "save_to_gallery": "Save to Gallery",
   "saved_to_gallery": "Saved to gallery",
   "contour_color": "Contour Color",
@@ -45,5 +46,15 @@
   "eraser_soft": "Soft Eraser",
   "reset_project_confirm_title": "Reset Project",
   "reset_project_confirm_message": "Are you sure you want to start over? All your progress will be permanently lost.",
-  "cancel": "Cancel"
+  "cancel": "Cancel",
+  "hi_user": "Hi, {}!",
+  "delete_account": "Delete Account",
+  "delete_account_confirm_title": "Delete Account?",
+  "delete_account_confirm_message": "Are you sure you want to delete your account? All your drawings and favorites will be permanently lost, and the app will close.",
+  "confirm": "Confirm",
+  "english": "English",
+  "russian": "Russian",
+  "user_placeholder": "User",
+  "copied_to_clipboard": "Copied to clipboard",
+  "copy": "Copy"
 }

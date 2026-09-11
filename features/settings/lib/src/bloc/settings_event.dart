@@ -32,3 +32,9 @@ class ChangeLanguage extends SettingsEvent {
   @override
   List<Object?> get props => <Object?>[languageCode];
 }
+
+/// Requests permanent deletion of the current user's account.
+class DeleteAccount extends SettingsEvent {
+  /// Creates a [DeleteAccount] event.
+  const DeleteAccount();
+}

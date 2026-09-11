@@ -16,6 +16,7 @@ export 'src/use_cases/auth/check_auth_use_case.dart';
 export 'src/use_cases/auth/get_current_user_use_case.dart';
 export 'src/use_cases/auth/sign_in_silently_use_case.dart';
 export 'src/use_cases/auth/sign_in_use_case.dart';
+export 'src/use_cases/auth/delete_account_use_case.dart';
 export 'src/use_cases/canvas/add_stroke_use_case.dart';
 export 'src/use_cases/canvas/export_image_params.dart';
 export 'src/use_cases/canvas/export_image_use_case.dart';
