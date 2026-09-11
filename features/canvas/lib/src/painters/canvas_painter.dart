@@ -64,11 +64,15 @@ class CanvasPainter extends CustomPainter {
       final p1 = stroke.points[i];
       final p2 = stroke.points[i + 1];
 
-      // Linear interpolation of width based on pressure at each point.
-      final double w1 = stroke.size * p1.pressure;
-      final double w2 = stroke.size * p2.pressure;
+      if (stroke.isPressureSensitive) {
+        // Linear interpolation of width based on pressure at each point.
+        final double w1 = stroke.size * p1.pressure;
+        final double w2 = stroke.size * p2.pressure;
+        paint.strokeWidth = (w1 + w2) / 2;
+      } else {
+        paint.strokeWidth = stroke.size;
+      }
 
-      paint.strokeWidth = (w1 + w2) / 2;
       canvas.drawLine(p1.offset, p2.offset, paint);
     }
 

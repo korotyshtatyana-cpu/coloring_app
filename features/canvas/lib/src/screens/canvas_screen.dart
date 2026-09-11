@@ -45,6 +45,7 @@ class CanvasScreen extends StatelessWidget {
         saveImageToGalleryUseCase: appLocator<SaveImageToGalleryUseCase>(),
         renderProjectThumbnailUseCase:
             appLocator<RenderProjectThumbnailUseCase>(),
+        getAvailableToolsUseCase: appLocator<GetAvailableToolsUseCase>(),
       )..add(const LoadProject()),
       child: CanvasContent(
         key: _canvasKey,

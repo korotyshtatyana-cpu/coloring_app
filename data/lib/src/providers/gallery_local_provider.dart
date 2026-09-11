@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:domain/domain.dart';
 import 'package:drift/drift.dart';
 
@@ -42,9 +40,7 @@ class GalleryLocalProvider {
     final List<Project> rows = await _database.select(_database.projects).get();
     final Map<String, String?> result = <String, String?>{};
     for (final Project row in rows) {
-      final Map<String, dynamic> data =
-          jsonDecode(row.data) as Map<String, dynamic>;
-      result[row.contourId] = data['thumbnailPath'] as String?;
+      result[row.contourId] = row.data['thumbnailPath'] as String?;
     }
     return result;
   }

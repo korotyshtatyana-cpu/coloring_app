@@ -20,6 +20,7 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
   final ShareFileUseCase _shareFileUseCase;
   final SaveImageToGalleryUseCase _saveImageToGalleryUseCase;
   final RenderProjectThumbnailUseCase _renderProjectThumbnailUseCase;
+  final GetAvailableToolsUseCase _getAvailableToolsUseCase;
 
   Timer? _autosaveTimer;
 
@@ -34,6 +35,7 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     required this._shareFileUseCase,
     required this._saveImageToGalleryUseCase,
     required this._renderProjectThumbnailUseCase,
+    required this._getAvailableToolsUseCase,
   })  : super(CanvasState()) {
     on<LoadProject>(_onLoadProject);
     on<StartDrawing>(_onStartDrawing);
@@ -52,6 +54,8 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     on<UpdateTransform>(_onUpdateTransform);
     on<ToggleEraser>(_onToggleEraser);
     on<SelectTool>(_onSelectTool);
+    on<SelectBrush>(_onSelectBrush);
+    on<SelectEraser>(_onSelectEraser);
     on<ExportImage>(_onExportImage);
     on<ExportImageFinished>(_onExportImageFinished);
   }
@@ -63,6 +67,10 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     try {
       emit(state.copyWith(status: CanvasStatus.loading, error: null));
 
+      // 1. Fetch available tools from DB
+      final allTools = await _getAvailableToolsUseCase.execute();
+
+      // 2. Load contour and project data
       final contour = await _getContourByIdUseCase.execute(_contourId);
       final project = await _loadProjectUseCase.execute(_contourId);
       final strokes = project == null
@@ -87,6 +95,9 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
         contourOpacity: loadedOpacity ?? state.contourOpacity,
         contourWidth: loadedWidth ?? state.contourWidth,
         thumbnailPath: thumbnailPath,
+        availableTools: allTools,
+        activeBrushId: allTools.isNotEmpty ? allTools.first.id : null,
+        activeEraserId: allTools.isNotEmpty ? allTools.first.id : null,
       ));
     } catch (e, stackTrace) {
       ErrorHandler.report(e, stackTrace);
@@ -101,15 +112,22 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     StartDrawing event,
     Emitter<CanvasState> emit,
   ) {
-    final effectiveSize = _effectiveSize(event.pressure);
+    final activeToolId = state.isEraser ? state.activeEraserId : state.activeBrushId;
+    final activeTool = state.availableTools.firstWhere((t) => t.id == activeToolId);
+
+    final isPressure = activeTool.isPressureSensitive;
+    final effectiveSize = isPressure ? _effectiveSize(event.pressure) : state.brushSize;
+
     final stroke = StrokeEntity(
       points: <StrokePoint>[
-        StrokePoint(offset: event.point, pressure: event.pressure)
+        StrokePoint(offset: event.point, pressure: isPressure ? event.pressure : 1.0)
       ],
       color: state.isEraser ? Colors.white.toARGB32() : state.color.toARGB32(),
       size: state.isEraser ? effectiveSize * 2 : state.brushSize,
       opacity: state.isEraser ? 1.0 : state.opacity,
       brushType: state.isEraser ? BrushType.circle : state.brushType,
+      brushId: activeToolId,
+      isPressureSensitive: isPressure,
     );
     final strokes = <StrokeEntity>[...state.strokes, stroke];
     final undoStack = <StrokeEntity>[...state.undoStack, stroke];
@@ -131,10 +149,14 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
   ) {
     if (state.currentStroke == null || state.strokes.isEmpty) return;
 
+    final activeToolId = state.currentStroke!.brushId;
+    final activeTool = state.availableTools.firstWhere((t) => t.id == activeToolId);
+    final isPressure = activeTool.isPressureSensitive;
+
     final updated = state.currentStroke!.copyWith(
       points: <StrokePoint>[
         ...state.currentStroke!.points,
-        StrokePoint(offset: event.point, pressure: event.pressure),
+        StrokePoint(offset: event.point, pressure: isPressure ? event.pressure : 1.0),
       ],
     );
     final strokes = List<StrokeEntity>.from(state.strokes);
@@ -147,6 +169,14 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
       undoStack: undoStack,
       currentStroke: updated,
     ));
+  }
+
+  void _onSelectBrush(SelectBrush event, Emitter<CanvasState> emit) {
+    emit(state.copyWith(activeBrushId: event.brushId, isEraser: false));
+  }
+
+  void _onSelectEraser(SelectEraser event, Emitter<CanvasState> emit) {
+    emit(state.copyWith(activeEraserId: event.eraserId, isEraser: true));
   }
 
   Future<void> _onEndDrawing(
@@ -440,6 +470,7 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
             'size': stroke.size,
             'opacity': stroke.opacity,
             'brushType': stroke.brushType.name,
+            'brushId': stroke.brushId,
           };
         }).toList(),
         'settings': <String, dynamic>{

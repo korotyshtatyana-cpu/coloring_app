@@ -23,6 +23,12 @@ class StrokeModel {
   /// Brush type name.
   final BrushType brushType;
 
+  /// Identifier of the specific tool.
+  final String? brushId;
+
+  /// Whether the stroke reacts to pressure.
+  final bool isPressureSensitive;
+
   /// Creates a [StrokeModel].
   const StrokeModel({
     required this.id,
@@ -32,6 +38,8 @@ class StrokeModel {
     required this.size,
     required this.opacity,
     required this.brushType,
+    this.brushId,
+    this.isPressureSensitive = true,
   });
 
   /// Creates a [StrokeModel] from a JSON map.
@@ -46,6 +54,8 @@ class StrokeModel {
       size: (json['size'] as num).toDouble(),
       opacity: (json['opacity'] as num).toDouble(),
       brushType: BrushType.values.byName(json['brushType'] as String),
+      brushId: json['brushId'] as String?,
+      isPressureSensitive: json['isPressureSensitive'] as bool? ?? true,
     );
   }
 
@@ -59,6 +69,8 @@ class StrokeModel {
       'size': size,
       'opacity': opacity,
       'brushType': brushType.name,
+      'brushId': brushId,
+      'isPressureSensitive': isPressureSensitive,
     };
   }
 }

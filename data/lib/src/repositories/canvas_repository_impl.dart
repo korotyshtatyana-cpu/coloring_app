@@ -41,6 +41,11 @@ class CanvasRepositoryImpl implements CanvasRepository {
   });
 
   @override
+  Future<List<ToolEntity>> getAvailableTools() {
+    return _localProvider.getAvailableTools();
+  }
+
+  @override
   Future<void> addStroke(String projectId, StrokeEntity stroke) async {
     _strokes.putIfAbsent(projectId, () => <StrokeEntity>[]);
     _strokes[projectId]!.add(stroke);

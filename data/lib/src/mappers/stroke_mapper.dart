@@ -18,6 +18,8 @@ abstract final class StrokeMapper {
       size: model.size,
       opacity: model.opacity,
       brushType: model.brushType,
+      brushId: model.brushId,
+      isPressureSensitive: model.isPressureSensitive,
     );
   }
 
@@ -34,6 +36,8 @@ abstract final class StrokeMapper {
       size: entity.size,
       opacity: entity.opacity,
       brushType: entity.brushType,
+      brushId: entity.brushId,
+      isPressureSensitive: entity.isPressureSensitive,
     );
   }
 }

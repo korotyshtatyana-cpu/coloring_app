@@ -39,8 +39,8 @@
   "saved_to_gallery": "Сохранено в галерею",
   "contour_color": "Цвет контура",
   "eyedropper": "Пипетка",
-  "english": "Английский",
-  "russian": "Русский",
-  "copied_to_clipboard": "Скопировано в буфер обмена",
-  "copy": "Копировать"
+  "brush_round_basic": "Базовая кисть",
+  "brush_fine_liner": "Художественная",
+  "eraser_standard": "Обычный ластик",
+  "eraser_soft": "Мягкий ластик"
 }

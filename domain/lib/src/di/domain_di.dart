@@ -70,6 +70,12 @@ abstract class DomainDI {
       ),
     );
 
+    appLocator.registerLazySingleton<GetAvailableToolsUseCase>(
+      () => GetAvailableToolsUseCase(
+        repository: appLocator<CanvasRepository>(),
+      ),
+    );
+
     appLocator.registerLazySingleton<AddStrokeUseCase>(
       () => AddStrokeUseCase(
         repository: appLocator<CanvasRepository>(),

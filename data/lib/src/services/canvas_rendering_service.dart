@@ -93,7 +93,13 @@ abstract final class CanvasRenderingService {
     for (int i = 0; i < stroke.points.length - 1; i++) {
       final point = stroke.points[i];
       final next = stroke.points[i + 1];
-      paint.strokeWidth = stroke.size * point.pressure;
+
+      if (stroke.isPressureSensitive) {
+        paint.strokeWidth = stroke.size * point.pressure;
+      } else {
+        paint.strokeWidth = stroke.size;
+      }
+
       canvas.drawLine(point.offset, next.offset, paint);
     }
 

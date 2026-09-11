@@ -219,7 +219,7 @@ enum CanvasTool {
 
 /// Selects a drawing tool.
 class SelectTool extends CanvasEvent {
-  /// The tool to select.
+  /// The tool category to select.
   final CanvasTool tool;
 
   /// Creates a [SelectTool] event.
@@ -227,4 +227,28 @@ class SelectTool extends CanvasEvent {
 
   @override
   List<Object?> get props => <Object?>[tool];
+}
+
+/// Changes the active brush tool within the category.
+class SelectBrush extends CanvasEvent {
+  /// Selected brush ID.
+  final String brushId;
+
+  /// Creates a [SelectBrush] event.
+  const SelectBrush(this.brushId);
+
+  @override
+  List<Object?> get props => <Object?>[brushId];
+}
+
+/// Changes the active eraser tool within the category.
+class SelectEraser extends CanvasEvent {
+  /// Selected eraser ID.
+  final String eraserId;
+
+  /// Creates a [SelectEraser] event.
+  const SelectEraser(this.eraserId);
+
+  @override
+  List<Object?> get props => <Object?>[eraserId];
 }

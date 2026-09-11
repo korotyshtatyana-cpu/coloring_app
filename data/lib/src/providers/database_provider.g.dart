@@ -37,15 +37,15 @@ class $ProjectsTable extends Projects with TableInfo<$ProjectsTable, Project> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _dataMeta = const VerificationMeta('data');
   @override
-  late final GeneratedColumn<String> data = GeneratedColumn<String>(
+  late final GeneratedColumnWithTypeConverter<Map<String, dynamic>, String>
+  data = GeneratedColumn<String>(
     'data',
     aliasedName,
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
-  );
+  ).withConverter<Map<String, dynamic>>($ProjectsTable.$converterdata);
   static const VerificationMeta _lastOpenedMeta = const VerificationMeta(
     'lastOpened',
   );
@@ -110,14 +110,6 @@ class $ProjectsTable extends Projects with TableInfo<$ProjectsTable, Project> {
     } else if (isInserting) {
       context.missing(_userIdMeta);
     }
-    if (data.containsKey('data')) {
-      context.handle(
-        _dataMeta,
-        this.data.isAcceptableOrUnknown(data['data']!, _dataMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_dataMeta);
-    }
     if (data.containsKey('last_opened')) {
       context.handle(
         _lastOpenedMeta,
@@ -140,6 +132,10 @@ class $ProjectsTable extends Projects with TableInfo<$ProjectsTable, Project> {
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {contourId, userId},
+  ];
+  @override
   Project map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return Project(
@@ -155,10 +151,12 @@ class $ProjectsTable extends Projects with TableInfo<$ProjectsTable, Project> {
         DriftSqlType.string,
         data['${effectivePrefix}user_id'],
       )!,
-      data: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}data'],
-      )!,
+      data: $ProjectsTable.$converterdata.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}data'],
+        )!,
+      ),
       lastOpened: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}last_opened'],
@@ -174,6 +172,9 @@ class $ProjectsTable extends Projects with TableInfo<$ProjectsTable, Project> {
   $ProjectsTable createAlias(String alias) {
     return $ProjectsTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Map<String, dynamic>, String> $converterdata =
+      const MapConverter();
 }
 
 class Project extends DataClass implements Insertable<Project> {
@@ -187,7 +188,7 @@ class Project extends DataClass implements Insertable<Project> {
   final String userId;
 
   /// Serialized project data (strokes and settings).
-  final String data;
+  final Map<String, dynamic> data;
 
   /// Last opened timestamp.
   final DateTime lastOpened;
@@ -208,7 +209,9 @@ class Project extends DataClass implements Insertable<Project> {
     map['id'] = Variable<String>(id);
     map['contour_id'] = Variable<String>(contourId);
     map['user_id'] = Variable<String>(userId);
-    map['data'] = Variable<String>(data);
+    {
+      map['data'] = Variable<String>($ProjectsTable.$converterdata.toSql(data));
+    }
     map['last_opened'] = Variable<DateTime>(lastOpened);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
@@ -234,7 +237,7 @@ class Project extends DataClass implements Insertable<Project> {
       id: serializer.fromJson<String>(json['id']),
       contourId: serializer.fromJson<String>(json['contourId']),
       userId: serializer.fromJson<String>(json['userId']),
-      data: serializer.fromJson<String>(json['data']),
+      data: serializer.fromJson<Map<String, dynamic>>(json['data']),
       lastOpened: serializer.fromJson<DateTime>(json['lastOpened']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
@@ -246,7 +249,7 @@ class Project extends DataClass implements Insertable<Project> {
       'id': serializer.toJson<String>(id),
       'contourId': serializer.toJson<String>(contourId),
       'userId': serializer.toJson<String>(userId),
-      'data': serializer.toJson<String>(data),
+      'data': serializer.toJson<Map<String, dynamic>>(data),
       'lastOpened': serializer.toJson<DateTime>(lastOpened),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
@@ -256,7 +259,7 @@ class Project extends DataClass implements Insertable<Project> {
     String? id,
     String? contourId,
     String? userId,
-    String? data,
+    Map<String, dynamic>? data,
     DateTime? lastOpened,
     DateTime? createdAt,
   }) => Project(
@@ -312,7 +315,7 @@ class ProjectsCompanion extends UpdateCompanion<Project> {
   final Value<String> id;
   final Value<String> contourId;
   final Value<String> userId;
-  final Value<String> data;
+  final Value<Map<String, dynamic>> data;
   final Value<DateTime> lastOpened;
   final Value<DateTime> createdAt;
   final Value<int> rowid;
@@ -329,7 +332,7 @@ class ProjectsCompanion extends UpdateCompanion<Project> {
     required String id,
     required String contourId,
     required String userId,
-    required String data,
+    required Map<String, dynamic> data,
     required DateTime lastOpened,
     required DateTime createdAt,
     this.rowid = const Value.absent(),
@@ -363,7 +366,7 @@ class ProjectsCompanion extends UpdateCompanion<Project> {
     Value<String>? id,
     Value<String>? contourId,
     Value<String>? userId,
-    Value<String>? data,
+    Value<Map<String, dynamic>>? data,
     Value<DateTime>? lastOpened,
     Value<DateTime>? createdAt,
     Value<int>? rowid,
@@ -392,7 +395,9 @@ class ProjectsCompanion extends UpdateCompanion<Project> {
       map['user_id'] = Variable<String>(userId.value);
     }
     if (data.present) {
-      map['data'] = Variable<String>(data.value);
+      map['data'] = Variable<String>(
+        $ProjectsTable.$converterdata.toSql(data.value),
+      );
     }
     if (lastOpened.present) {
       map['last_opened'] = Variable<DateTime>(lastOpened.value);
@@ -446,15 +451,15 @@ class $StrokesTable extends Strokes with TableInfo<$StrokesTable, Stroke> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _pointsMeta = const VerificationMeta('points');
   @override
-  late final GeneratedColumn<String> points = GeneratedColumn<String>(
+  late final GeneratedColumnWithTypeConverter<List<List<double>>, String>
+  points = GeneratedColumn<String>(
     'points',
     aliasedName,
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
-  );
+  ).withConverter<List<List<double>>>($StrokesTable.$converterpoints);
   static const VerificationMeta _colorMeta = const VerificationMeta('color');
   @override
   late final GeneratedColumn<int> color = GeneratedColumn<int>(
@@ -495,6 +500,31 @@ class $StrokesTable extends Strokes with TableInfo<$StrokesTable, Stroke> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _brushIdMeta = const VerificationMeta(
+    'brushId',
+  );
+  @override
+  late final GeneratedColumn<String> brushId = GeneratedColumn<String>(
+    'brush_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isPressureSensitiveMeta =
+      const VerificationMeta('isPressureSensitive');
+  @override
+  late final GeneratedColumn<bool> isPressureSensitive = GeneratedColumn<bool>(
+    'is_pressure_sensitive',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_pressure_sensitive" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -504,6 +534,8 @@ class $StrokesTable extends Strokes with TableInfo<$StrokesTable, Stroke> {
     size,
     opacity,
     brushType,
+    brushId,
+    isPressureSensitive,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -529,14 +561,6 @@ class $StrokesTable extends Strokes with TableInfo<$StrokesTable, Stroke> {
       );
     } else if (isInserting) {
       context.missing(_projectIdMeta);
-    }
-    if (data.containsKey('points')) {
-      context.handle(
-        _pointsMeta,
-        points.isAcceptableOrUnknown(data['points']!, _pointsMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_pointsMeta);
     }
     if (data.containsKey('color')) {
       context.handle(
@@ -570,6 +594,21 @@ class $StrokesTable extends Strokes with TableInfo<$StrokesTable, Stroke> {
     } else if (isInserting) {
       context.missing(_brushTypeMeta);
     }
+    if (data.containsKey('brush_id')) {
+      context.handle(
+        _brushIdMeta,
+        brushId.isAcceptableOrUnknown(data['brush_id']!, _brushIdMeta),
+      );
+    }
+    if (data.containsKey('is_pressure_sensitive')) {
+      context.handle(
+        _isPressureSensitiveMeta,
+        isPressureSensitive.isAcceptableOrUnknown(
+          data['is_pressure_sensitive']!,
+          _isPressureSensitiveMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -587,10 +626,12 @@ class $StrokesTable extends Strokes with TableInfo<$StrokesTable, Stroke> {
         DriftSqlType.string,
         data['${effectivePrefix}project_id'],
       )!,
-      points: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}points'],
-      )!,
+      points: $StrokesTable.$converterpoints.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}points'],
+        )!,
+      ),
       color: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}color'],
@@ -607,6 +648,14 @@ class $StrokesTable extends Strokes with TableInfo<$StrokesTable, Stroke> {
         DriftSqlType.string,
         data['${effectivePrefix}brush_type'],
       )!,
+      brushId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}brush_id'],
+      ),
+      isPressureSensitive: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_pressure_sensitive'],
+      )!,
     );
   }
 
@@ -614,6 +663,9 @@ class $StrokesTable extends Strokes with TableInfo<$StrokesTable, Stroke> {
   $StrokesTable createAlias(String alias) {
     return $StrokesTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<List<List<double>>, String> $converterpoints =
+      const PointsConverter();
 }
 
 class Stroke extends DataClass implements Insertable<Stroke> {
@@ -624,7 +676,7 @@ class Stroke extends DataClass implements Insertable<Stroke> {
   final String projectId;
 
   /// Serialized list of points.
-  final String points;
+  final List<List<double>> points;
 
   /// Stroke color as a 32-bit ARGB integer.
   final int color;
@@ -637,6 +689,12 @@ class Stroke extends DataClass implements Insertable<Stroke> {
 
   /// Brush type name.
   final String brushType;
+
+  /// Specific tool identifier.
+  final String? brushId;
+
+  /// Whether the stroke reacts to pressure.
+  final bool isPressureSensitive;
   const Stroke({
     required this.id,
     required this.projectId,
@@ -645,17 +703,27 @@ class Stroke extends DataClass implements Insertable<Stroke> {
     required this.size,
     required this.opacity,
     required this.brushType,
+    this.brushId,
+    required this.isPressureSensitive,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
     map['project_id'] = Variable<String>(projectId);
-    map['points'] = Variable<String>(points);
+    {
+      map['points'] = Variable<String>(
+        $StrokesTable.$converterpoints.toSql(points),
+      );
+    }
     map['color'] = Variable<int>(color);
     map['size'] = Variable<double>(size);
     map['opacity'] = Variable<double>(opacity);
     map['brush_type'] = Variable<String>(brushType);
+    if (!nullToAbsent || brushId != null) {
+      map['brush_id'] = Variable<String>(brushId);
+    }
+    map['is_pressure_sensitive'] = Variable<bool>(isPressureSensitive);
     return map;
   }
 
@@ -668,6 +736,10 @@ class Stroke extends DataClass implements Insertable<Stroke> {
       size: Value(size),
       opacity: Value(opacity),
       brushType: Value(brushType),
+      brushId: brushId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(brushId),
+      isPressureSensitive: Value(isPressureSensitive),
     );
   }
 
@@ -679,11 +751,15 @@ class Stroke extends DataClass implements Insertable<Stroke> {
     return Stroke(
       id: serializer.fromJson<String>(json['id']),
       projectId: serializer.fromJson<String>(json['projectId']),
-      points: serializer.fromJson<String>(json['points']),
+      points: serializer.fromJson<List<List<double>>>(json['points']),
       color: serializer.fromJson<int>(json['color']),
       size: serializer.fromJson<double>(json['size']),
       opacity: serializer.fromJson<double>(json['opacity']),
       brushType: serializer.fromJson<String>(json['brushType']),
+      brushId: serializer.fromJson<String?>(json['brushId']),
+      isPressureSensitive: serializer.fromJson<bool>(
+        json['isPressureSensitive'],
+      ),
     );
   }
   @override
@@ -692,22 +768,26 @@ class Stroke extends DataClass implements Insertable<Stroke> {
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
       'projectId': serializer.toJson<String>(projectId),
-      'points': serializer.toJson<String>(points),
+      'points': serializer.toJson<List<List<double>>>(points),
       'color': serializer.toJson<int>(color),
       'size': serializer.toJson<double>(size),
       'opacity': serializer.toJson<double>(opacity),
       'brushType': serializer.toJson<String>(brushType),
+      'brushId': serializer.toJson<String?>(brushId),
+      'isPressureSensitive': serializer.toJson<bool>(isPressureSensitive),
     };
   }
 
   Stroke copyWith({
     String? id,
     String? projectId,
-    String? points,
+    List<List<double>>? points,
     int? color,
     double? size,
     double? opacity,
     String? brushType,
+    Value<String?> brushId = const Value.absent(),
+    bool? isPressureSensitive,
   }) => Stroke(
     id: id ?? this.id,
     projectId: projectId ?? this.projectId,
@@ -716,6 +796,8 @@ class Stroke extends DataClass implements Insertable<Stroke> {
     size: size ?? this.size,
     opacity: opacity ?? this.opacity,
     brushType: brushType ?? this.brushType,
+    brushId: brushId.present ? brushId.value : this.brushId,
+    isPressureSensitive: isPressureSensitive ?? this.isPressureSensitive,
   );
   Stroke copyWithCompanion(StrokesCompanion data) {
     return Stroke(
@@ -726,6 +808,10 @@ class Stroke extends DataClass implements Insertable<Stroke> {
       size: data.size.present ? data.size.value : this.size,
       opacity: data.opacity.present ? data.opacity.value : this.opacity,
       brushType: data.brushType.present ? data.brushType.value : this.brushType,
+      brushId: data.brushId.present ? data.brushId.value : this.brushId,
+      isPressureSensitive: data.isPressureSensitive.present
+          ? data.isPressureSensitive.value
+          : this.isPressureSensitive,
     );
   }
 
@@ -738,14 +824,25 @@ class Stroke extends DataClass implements Insertable<Stroke> {
           ..write('color: $color, ')
           ..write('size: $size, ')
           ..write('opacity: $opacity, ')
-          ..write('brushType: $brushType')
+          ..write('brushType: $brushType, ')
+          ..write('brushId: $brushId, ')
+          ..write('isPressureSensitive: $isPressureSensitive')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, projectId, points, color, size, opacity, brushType);
+  int get hashCode => Object.hash(
+    id,
+    projectId,
+    points,
+    color,
+    size,
+    opacity,
+    brushType,
+    brushId,
+    isPressureSensitive,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -756,17 +853,21 @@ class Stroke extends DataClass implements Insertable<Stroke> {
           other.color == this.color &&
           other.size == this.size &&
           other.opacity == this.opacity &&
-          other.brushType == this.brushType);
+          other.brushType == this.brushType &&
+          other.brushId == this.brushId &&
+          other.isPressureSensitive == this.isPressureSensitive);
 }
 
 class StrokesCompanion extends UpdateCompanion<Stroke> {
   final Value<String> id;
   final Value<String> projectId;
-  final Value<String> points;
+  final Value<List<List<double>>> points;
   final Value<int> color;
   final Value<double> size;
   final Value<double> opacity;
   final Value<String> brushType;
+  final Value<String?> brushId;
+  final Value<bool> isPressureSensitive;
   final Value<int> rowid;
   const StrokesCompanion({
     this.id = const Value.absent(),
@@ -776,16 +877,20 @@ class StrokesCompanion extends UpdateCompanion<Stroke> {
     this.size = const Value.absent(),
     this.opacity = const Value.absent(),
     this.brushType = const Value.absent(),
+    this.brushId = const Value.absent(),
+    this.isPressureSensitive = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   StrokesCompanion.insert({
     required String id,
     required String projectId,
-    required String points,
+    required List<List<double>> points,
     required int color,
     required double size,
     required double opacity,
     required String brushType,
+    this.brushId = const Value.absent(),
+    this.isPressureSensitive = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        projectId = Value(projectId),
@@ -802,6 +907,8 @@ class StrokesCompanion extends UpdateCompanion<Stroke> {
     Expression<double>? size,
     Expression<double>? opacity,
     Expression<String>? brushType,
+    Expression<String>? brushId,
+    Expression<bool>? isPressureSensitive,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -812,6 +919,9 @@ class StrokesCompanion extends UpdateCompanion<Stroke> {
       if (size != null) 'size': size,
       if (opacity != null) 'opacity': opacity,
       if (brushType != null) 'brush_type': brushType,
+      if (brushId != null) 'brush_id': brushId,
+      if (isPressureSensitive != null)
+        'is_pressure_sensitive': isPressureSensitive,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -819,11 +929,13 @@ class StrokesCompanion extends UpdateCompanion<Stroke> {
   StrokesCompanion copyWith({
     Value<String>? id,
     Value<String>? projectId,
-    Value<String>? points,
+    Value<List<List<double>>>? points,
     Value<int>? color,
     Value<double>? size,
     Value<double>? opacity,
     Value<String>? brushType,
+    Value<String?>? brushId,
+    Value<bool>? isPressureSensitive,
     Value<int>? rowid,
   }) {
     return StrokesCompanion(
@@ -834,6 +946,8 @@ class StrokesCompanion extends UpdateCompanion<Stroke> {
       size: size ?? this.size,
       opacity: opacity ?? this.opacity,
       brushType: brushType ?? this.brushType,
+      brushId: brushId ?? this.brushId,
+      isPressureSensitive: isPressureSensitive ?? this.isPressureSensitive,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -848,7 +962,9 @@ class StrokesCompanion extends UpdateCompanion<Stroke> {
       map['project_id'] = Variable<String>(projectId.value);
     }
     if (points.present) {
-      map['points'] = Variable<String>(points.value);
+      map['points'] = Variable<String>(
+        $StrokesTable.$converterpoints.toSql(points.value),
+      );
     }
     if (color.present) {
       map['color'] = Variable<int>(color.value);
@@ -861,6 +977,12 @@ class StrokesCompanion extends UpdateCompanion<Stroke> {
     }
     if (brushType.present) {
       map['brush_type'] = Variable<String>(brushType.value);
+    }
+    if (brushId.present) {
+      map['brush_id'] = Variable<String>(brushId.value);
+    }
+    if (isPressureSensitive.present) {
+      map['is_pressure_sensitive'] = Variable<bool>(isPressureSensitive.value);
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -878,6 +1000,345 @@ class StrokesCompanion extends UpdateCompanion<Stroke> {
           ..write('size: $size, ')
           ..write('opacity: $opacity, ')
           ..write('brushType: $brushType, ')
+          ..write('brushId: $brushId, ')
+          ..write('isPressureSensitive: $isPressureSensitive, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $BrushesTable extends Brushes with TableInfo<$BrushesTable, Brushe> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $BrushesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameKeyMeta = const VerificationMeta(
+    'nameKey',
+  );
+  @override
+  late final GeneratedColumn<String> nameKey = GeneratedColumn<String>(
+    'name_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _previewPathMeta = const VerificationMeta(
+    'previewPath',
+  );
+  @override
+  late final GeneratedColumn<String> previewPath = GeneratedColumn<String>(
+    'preview_path',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isPressureSensitiveMeta =
+      const VerificationMeta('isPressureSensitive');
+  @override
+  late final GeneratedColumn<bool> isPressureSensitive = GeneratedColumn<bool>(
+    'is_pressure_sensitive',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_pressure_sensitive" IN (0, 1))',
+    ),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    nameKey,
+    previewPath,
+    isPressureSensitive,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'brushes';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Brushe> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name_key')) {
+      context.handle(
+        _nameKeyMeta,
+        nameKey.isAcceptableOrUnknown(data['name_key']!, _nameKeyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameKeyMeta);
+    }
+    if (data.containsKey('preview_path')) {
+      context.handle(
+        _previewPathMeta,
+        previewPath.isAcceptableOrUnknown(
+          data['preview_path']!,
+          _previewPathMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_previewPathMeta);
+    }
+    if (data.containsKey('is_pressure_sensitive')) {
+      context.handle(
+        _isPressureSensitiveMeta,
+        isPressureSensitive.isAcceptableOrUnknown(
+          data['is_pressure_sensitive']!,
+          _isPressureSensitiveMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_isPressureSensitiveMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Brushe map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Brushe(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      nameKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name_key'],
+      )!,
+      previewPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}preview_path'],
+      )!,
+      isPressureSensitive: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_pressure_sensitive'],
+      )!,
+    );
+  }
+
+  @override
+  $BrushesTable createAlias(String alias) {
+    return $BrushesTable(attachedDatabase, alias);
+  }
+}
+
+class Brushe extends DataClass implements Insertable<Brushe> {
+  /// Unique tool identifier.
+  final String id;
+
+  /// Localized name key.
+  final String nameKey;
+
+  /// Path or URL to the preview image.
+  final String previewPath;
+
+  /// Whether the tool reacts to pressure.
+  final bool isPressureSensitive;
+  const Brushe({
+    required this.id,
+    required this.nameKey,
+    required this.previewPath,
+    required this.isPressureSensitive,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name_key'] = Variable<String>(nameKey);
+    map['preview_path'] = Variable<String>(previewPath);
+    map['is_pressure_sensitive'] = Variable<bool>(isPressureSensitive);
+    return map;
+  }
+
+  BrushesCompanion toCompanion(bool nullToAbsent) {
+    return BrushesCompanion(
+      id: Value(id),
+      nameKey: Value(nameKey),
+      previewPath: Value(previewPath),
+      isPressureSensitive: Value(isPressureSensitive),
+    );
+  }
+
+  factory Brushe.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Brushe(
+      id: serializer.fromJson<String>(json['id']),
+      nameKey: serializer.fromJson<String>(json['nameKey']),
+      previewPath: serializer.fromJson<String>(json['previewPath']),
+      isPressureSensitive: serializer.fromJson<bool>(
+        json['isPressureSensitive'],
+      ),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'nameKey': serializer.toJson<String>(nameKey),
+      'previewPath': serializer.toJson<String>(previewPath),
+      'isPressureSensitive': serializer.toJson<bool>(isPressureSensitive),
+    };
+  }
+
+  Brushe copyWith({
+    String? id,
+    String? nameKey,
+    String? previewPath,
+    bool? isPressureSensitive,
+  }) => Brushe(
+    id: id ?? this.id,
+    nameKey: nameKey ?? this.nameKey,
+    previewPath: previewPath ?? this.previewPath,
+    isPressureSensitive: isPressureSensitive ?? this.isPressureSensitive,
+  );
+  Brushe copyWithCompanion(BrushesCompanion data) {
+    return Brushe(
+      id: data.id.present ? data.id.value : this.id,
+      nameKey: data.nameKey.present ? data.nameKey.value : this.nameKey,
+      previewPath: data.previewPath.present
+          ? data.previewPath.value
+          : this.previewPath,
+      isPressureSensitive: data.isPressureSensitive.present
+          ? data.isPressureSensitive.value
+          : this.isPressureSensitive,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Brushe(')
+          ..write('id: $id, ')
+          ..write('nameKey: $nameKey, ')
+          ..write('previewPath: $previewPath, ')
+          ..write('isPressureSensitive: $isPressureSensitive')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, nameKey, previewPath, isPressureSensitive);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Brushe &&
+          other.id == this.id &&
+          other.nameKey == this.nameKey &&
+          other.previewPath == this.previewPath &&
+          other.isPressureSensitive == this.isPressureSensitive);
+}
+
+class BrushesCompanion extends UpdateCompanion<Brushe> {
+  final Value<String> id;
+  final Value<String> nameKey;
+  final Value<String> previewPath;
+  final Value<bool> isPressureSensitive;
+  final Value<int> rowid;
+  const BrushesCompanion({
+    this.id = const Value.absent(),
+    this.nameKey = const Value.absent(),
+    this.previewPath = const Value.absent(),
+    this.isPressureSensitive = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  BrushesCompanion.insert({
+    required String id,
+    required String nameKey,
+    required String previewPath,
+    required bool isPressureSensitive,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       nameKey = Value(nameKey),
+       previewPath = Value(previewPath),
+       isPressureSensitive = Value(isPressureSensitive);
+  static Insertable<Brushe> custom({
+    Expression<String>? id,
+    Expression<String>? nameKey,
+    Expression<String>? previewPath,
+    Expression<bool>? isPressureSensitive,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (nameKey != null) 'name_key': nameKey,
+      if (previewPath != null) 'preview_path': previewPath,
+      if (isPressureSensitive != null)
+        'is_pressure_sensitive': isPressureSensitive,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  BrushesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? nameKey,
+    Value<String>? previewPath,
+    Value<bool>? isPressureSensitive,
+    Value<int>? rowid,
+  }) {
+    return BrushesCompanion(
+      id: id ?? this.id,
+      nameKey: nameKey ?? this.nameKey,
+      previewPath: previewPath ?? this.previewPath,
+      isPressureSensitive: isPressureSensitive ?? this.isPressureSensitive,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (nameKey.present) {
+      map['name_key'] = Variable<String>(nameKey.value);
+    }
+    if (previewPath.present) {
+      map['preview_path'] = Variable<String>(previewPath.value);
+    }
+    if (isPressureSensitive.present) {
+      map['is_pressure_sensitive'] = Variable<bool>(isPressureSensitive.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BrushesCompanion(')
+          ..write('id: $id, ')
+          ..write('nameKey: $nameKey, ')
+          ..write('previewPath: $previewPath, ')
+          ..write('isPressureSensitive: $isPressureSensitive, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1309,6 +1770,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $ProjectsTable projects = $ProjectsTable(this);
   late final $StrokesTable strokes = $StrokesTable(this);
+  late final $BrushesTable brushes = $BrushesTable(this);
   late final $ContoursTable contours = $ContoursTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
@@ -1317,6 +1779,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     projects,
     strokes,
+    brushes,
     contours,
   ];
 }
@@ -1326,7 +1789,7 @@ typedef $$ProjectsTableCreateCompanionBuilder =
       required String id,
       required String contourId,
       required String userId,
-      required String data,
+      required Map<String, dynamic> data,
       required DateTime lastOpened,
       required DateTime createdAt,
       Value<int> rowid,
@@ -1336,7 +1799,7 @@ typedef $$ProjectsTableUpdateCompanionBuilder =
       Value<String> id,
       Value<String> contourId,
       Value<String> userId,
-      Value<String> data,
+      Value<Map<String, dynamic>> data,
       Value<DateTime> lastOpened,
       Value<DateTime> createdAt,
       Value<int> rowid,
@@ -1366,9 +1829,14 @@ class $$ProjectsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get data => $composableBuilder(
+  ColumnWithTypeConverterFilters<
+    Map<String, dynamic>,
+    Map<String, dynamic>,
+    String
+  >
+  get data => $composableBuilder(
     column: $table.data,
-    builder: (column) => ColumnFilters(column),
+    builder: (column) => ColumnWithTypeConverterFilters(column),
   );
 
   ColumnFilters<DateTime> get lastOpened => $composableBuilder(
@@ -1440,7 +1908,7 @@ class $$ProjectsTableAnnotationComposer
   GeneratedColumn<String> get userId =>
       $composableBuilder(column: $table.userId, builder: (column) => column);
 
-  GeneratedColumn<String> get data =>
+  GeneratedColumnWithTypeConverter<Map<String, dynamic>, String> get data =>
       $composableBuilder(column: $table.data, builder: (column) => column);
 
   GeneratedColumn<DateTime> get lastOpened => $composableBuilder(
@@ -1483,7 +1951,7 @@ class $$ProjectsTableTableManager
                 Value<String> id = const Value.absent(),
                 Value<String> contourId = const Value.absent(),
                 Value<String> userId = const Value.absent(),
-                Value<String> data = const Value.absent(),
+                Value<Map<String, dynamic>> data = const Value.absent(),
                 Value<DateTime> lastOpened = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -1501,7 +1969,7 @@ class $$ProjectsTableTableManager
                 required String id,
                 required String contourId,
                 required String userId,
-                required String data,
+                required Map<String, dynamic> data,
                 required DateTime lastOpened,
                 required DateTime createdAt,
                 Value<int> rowid = const Value.absent(),
@@ -1540,22 +2008,26 @@ typedef $$StrokesTableCreateCompanionBuilder =
     StrokesCompanion Function({
       required String id,
       required String projectId,
-      required String points,
+      required List<List<double>> points,
       required int color,
       required double size,
       required double opacity,
       required String brushType,
+      Value<String?> brushId,
+      Value<bool> isPressureSensitive,
       Value<int> rowid,
     });
 typedef $$StrokesTableUpdateCompanionBuilder =
     StrokesCompanion Function({
       Value<String> id,
       Value<String> projectId,
-      Value<String> points,
+      Value<List<List<double>>> points,
       Value<int> color,
       Value<double> size,
       Value<double> opacity,
       Value<String> brushType,
+      Value<String?> brushId,
+      Value<bool> isPressureSensitive,
       Value<int> rowid,
     });
 
@@ -1578,9 +2050,10 @@ class $$StrokesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get points => $composableBuilder(
+  ColumnWithTypeConverterFilters<List<List<double>>, List<List<double>>, String>
+  get points => $composableBuilder(
     column: $table.points,
-    builder: (column) => ColumnFilters(column),
+    builder: (column) => ColumnWithTypeConverterFilters(column),
   );
 
   ColumnFilters<int> get color => $composableBuilder(
@@ -1600,6 +2073,16 @@ class $$StrokesTableFilterComposer
 
   ColumnFilters<String> get brushType => $composableBuilder(
     column: $table.brushType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get brushId => $composableBuilder(
+    column: $table.brushId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isPressureSensitive => $composableBuilder(
+    column: $table.isPressureSensitive,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -1647,6 +2130,16 @@ class $$StrokesTableOrderingComposer
     column: $table.brushType,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get brushId => $composableBuilder(
+    column: $table.brushId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isPressureSensitive => $composableBuilder(
+    column: $table.isPressureSensitive,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$StrokesTableAnnotationComposer
@@ -1664,7 +2157,7 @@ class $$StrokesTableAnnotationComposer
   GeneratedColumn<String> get projectId =>
       $composableBuilder(column: $table.projectId, builder: (column) => column);
 
-  GeneratedColumn<String> get points =>
+  GeneratedColumnWithTypeConverter<List<List<double>>, String> get points =>
       $composableBuilder(column: $table.points, builder: (column) => column);
 
   GeneratedColumn<int> get color =>
@@ -1678,6 +2171,14 @@ class $$StrokesTableAnnotationComposer
 
   GeneratedColumn<String> get brushType =>
       $composableBuilder(column: $table.brushType, builder: (column) => column);
+
+  GeneratedColumn<String> get brushId =>
+      $composableBuilder(column: $table.brushId, builder: (column) => column);
+
+  GeneratedColumn<bool> get isPressureSensitive => $composableBuilder(
+    column: $table.isPressureSensitive,
+    builder: (column) => column,
+  );
 }
 
 class $$StrokesTableTableManager
@@ -1710,11 +2211,13 @@ class $$StrokesTableTableManager
               ({
                 Value<String> id = const Value.absent(),
                 Value<String> projectId = const Value.absent(),
-                Value<String> points = const Value.absent(),
+                Value<List<List<double>>> points = const Value.absent(),
                 Value<int> color = const Value.absent(),
                 Value<double> size = const Value.absent(),
                 Value<double> opacity = const Value.absent(),
                 Value<String> brushType = const Value.absent(),
+                Value<String?> brushId = const Value.absent(),
+                Value<bool> isPressureSensitive = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => StrokesCompanion(
                 id: id,
@@ -1724,17 +2227,21 @@ class $$StrokesTableTableManager
                 size: size,
                 opacity: opacity,
                 brushType: brushType,
+                brushId: brushId,
+                isPressureSensitive: isPressureSensitive,
                 rowid: rowid,
               ),
           createCompanionCallback:
               ({
                 required String id,
                 required String projectId,
-                required String points,
+                required List<List<double>> points,
                 required int color,
                 required double size,
                 required double opacity,
                 required String brushType,
+                Value<String?> brushId = const Value.absent(),
+                Value<bool> isPressureSensitive = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => StrokesCompanion.insert(
                 id: id,
@@ -1744,6 +2251,8 @@ class $$StrokesTableTableManager
                 size: size,
                 opacity: opacity,
                 brushType: brushType,
+                brushId: brushId,
+                isPressureSensitive: isPressureSensitive,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -1766,6 +2275,185 @@ typedef $$StrokesTableProcessedTableManager =
       $$StrokesTableUpdateCompanionBuilder,
       (Stroke, BaseReferences<_$AppDatabase, $StrokesTable, Stroke>),
       Stroke,
+      PrefetchHooks Function()
+    >;
+typedef $$BrushesTableCreateCompanionBuilder =
+    BrushesCompanion Function({
+      required String id,
+      required String nameKey,
+      required String previewPath,
+      required bool isPressureSensitive,
+      Value<int> rowid,
+    });
+typedef $$BrushesTableUpdateCompanionBuilder =
+    BrushesCompanion Function({
+      Value<String> id,
+      Value<String> nameKey,
+      Value<String> previewPath,
+      Value<bool> isPressureSensitive,
+      Value<int> rowid,
+    });
+
+class $$BrushesTableFilterComposer
+    extends Composer<_$AppDatabase, $BrushesTable> {
+  $$BrushesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nameKey => $composableBuilder(
+    column: $table.nameKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get previewPath => $composableBuilder(
+    column: $table.previewPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isPressureSensitive => $composableBuilder(
+    column: $table.isPressureSensitive,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$BrushesTableOrderingComposer
+    extends Composer<_$AppDatabase, $BrushesTable> {
+  $$BrushesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nameKey => $composableBuilder(
+    column: $table.nameKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get previewPath => $composableBuilder(
+    column: $table.previewPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isPressureSensitive => $composableBuilder(
+    column: $table.isPressureSensitive,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$BrushesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $BrushesTable> {
+  $$BrushesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get nameKey =>
+      $composableBuilder(column: $table.nameKey, builder: (column) => column);
+
+  GeneratedColumn<String> get previewPath => $composableBuilder(
+    column: $table.previewPath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isPressureSensitive => $composableBuilder(
+    column: $table.isPressureSensitive,
+    builder: (column) => column,
+  );
+}
+
+class $$BrushesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $BrushesTable,
+          Brushe,
+          $$BrushesTableFilterComposer,
+          $$BrushesTableOrderingComposer,
+          $$BrushesTableAnnotationComposer,
+          $$BrushesTableCreateCompanionBuilder,
+          $$BrushesTableUpdateCompanionBuilder,
+          (Brushe, BaseReferences<_$AppDatabase, $BrushesTable, Brushe>),
+          Brushe,
+          PrefetchHooks Function()
+        > {
+  $$BrushesTableTableManager(_$AppDatabase db, $BrushesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$BrushesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$BrushesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$BrushesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> nameKey = const Value.absent(),
+                Value<String> previewPath = const Value.absent(),
+                Value<bool> isPressureSensitive = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => BrushesCompanion(
+                id: id,
+                nameKey: nameKey,
+                previewPath: previewPath,
+                isPressureSensitive: isPressureSensitive,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String nameKey,
+                required String previewPath,
+                required bool isPressureSensitive,
+                Value<int> rowid = const Value.absent(),
+              }) => BrushesCompanion.insert(
+                id: id,
+                nameKey: nameKey,
+                previewPath: previewPath,
+                isPressureSensitive: isPressureSensitive,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$BrushesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $BrushesTable,
+      Brushe,
+      $$BrushesTableFilterComposer,
+      $$BrushesTableOrderingComposer,
+      $$BrushesTableAnnotationComposer,
+      $$BrushesTableCreateCompanionBuilder,
+      $$BrushesTableUpdateCompanionBuilder,
+      (Brushe, BaseReferences<_$AppDatabase, $BrushesTable, Brushe>),
+      Brushe,
       PrefetchHooks Function()
     >;
 typedef $$ContoursTableCreateCompanionBuilder =
@@ -1991,6 +2679,8 @@ class $AppDatabaseManager {
       $$ProjectsTableTableManager(_db, _db.projects);
   $$StrokesTableTableManager get strokes =>
       $$StrokesTableTableManager(_db, _db.strokes);
+  $$BrushesTableTableManager get brushes =>
+      $$BrushesTableTableManager(_db, _db.brushes);
   $$ContoursTableTableManager get contours =>
       $$ContoursTableTableManager(_db, _db.contours);
 }
