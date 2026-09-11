@@ -2,6 +2,7 @@ import 'package:core/core.dart';
 import 'package:core_ui/core_ui.dart';
 import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../bloc/canvas_bloc.dart';
 import '../tool_selector_overlay.dart';
@@ -19,6 +20,7 @@ class EraserButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppColors colors = AppColors.of(context);
     final bool isEraser = context.select(
       (CanvasBloc bloc) => bloc.state.isEraser,
     );
@@ -33,7 +35,14 @@ class EraserButton extends StatelessWidget {
       size: size,
       iconSize: 24,
       backgroundColor: Colors.transparent,
-      icon: const Icon(Icons.auto_fix_normal),
+      icon: SvgPicture.asset(
+        AppImages.eraser,
+        package: AppImages.packageName,
+        colorFilter: ColorFilter.mode(
+          isEraser ? colors.iconActive : colors.iconPrimary,
+          BlendMode.srcIn,
+        ),
+      ),
       isActive: isEraser,
       onPressed: () {
         final bloc = context.read<CanvasBloc>();
@@ -61,7 +70,7 @@ class EraserButton extends StatelessWidget {
         return Align(
           alignment: Alignment.topLeft,
           child: Padding(
-            padding: const EdgeInsets.only(top: 160, left: 48),
+            padding: const EdgeInsets.only(top: 160, left: 64),
             child: ToolSelectorOverlay(
               tools: erasers,
               activeToolId: activeId,

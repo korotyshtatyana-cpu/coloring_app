@@ -6,5 +6,6 @@ class AppImages {
   static const String _basePath = PackageConstants.kImagesPath;
 
   static const String logo = '$_basePath/logo.png';
+  static const String eraser = '${PackageConstants.kIconsPath}/eraser.svg';
 }
 

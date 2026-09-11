@@ -10,10 +10,7 @@ class BrushSizeSlider extends StatelessWidget {
   final double height;
 
   /// Creates a [BrushSizeSlider].
-  const BrushSizeSlider({
-    required this.height,
-    super.key,
-  });
+  const BrushSizeSlider({required this.height, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -26,9 +23,8 @@ class BrushSizeSlider extends StatelessWidget {
       min: Constants.minBrushSize,
       max: Constants.maxBrushSize,
       height: height,
-      onChanged: (double value) => context.read<CanvasBloc>().add(
-            ChangeBrushSize(value),
-          ),
+      onChanged: (double value) =>
+          context.read<CanvasBloc>().add(ChangeBrushSize(value)),
     );
   }
 }

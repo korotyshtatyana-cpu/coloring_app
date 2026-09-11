@@ -64,7 +64,7 @@ class BottomToolbar extends StatelessWidget {
                 color: brushColor,
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: colors.primaryText.withValues(alpha: 0.2),
+                  color: colors.iconPrimary.withValues(alpha: 0.2),
                   width: 1,
                 ),
               ),

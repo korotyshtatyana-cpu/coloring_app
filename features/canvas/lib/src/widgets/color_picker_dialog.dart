@@ -289,7 +289,7 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
                           IconButton(
                             icon: Icon(
                               Icons.colorize,
-                              color: colors.primaryText,
+                              color: colors.iconPrimary,
                               size: 20,
                             ),
                             tooltip: 'eyedropper'.tr(),
@@ -311,7 +311,7 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
                             child: TextField(
                               controller: _textController,
                               focusNode: _textFocusNode,
-                              cursorColor: colors.green,
+                              cursorColor: colors.iconActive,
                               style: AppFonts.normal16.copyWith(
                                 color: colors.primaryText,
                               ),
@@ -340,7 +340,7 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
                           IconButton(
                             icon: Icon(
                               Icons.copy,
-                              color: colors.primaryText,
+                              color: colors.iconPrimary,
                               size: 20,
                             ),
                             tooltip: 'copy'.tr(),
