@@ -42,5 +42,8 @@
   "brush_round_basic": "Round Basic",
   "brush_fine_liner": "Fine Liner",
   "eraser_standard": "Standard Eraser",
-  "eraser_soft": "Soft Eraser"
+  "eraser_soft": "Soft Eraser",
+  "reset_project_confirm_title": "Reset Project",
+  "reset_project_confirm_message": "Are you sure you want to start over? All your progress will be permanently lost.",
+  "cancel": "Cancel"
 }

@@ -33,7 +33,7 @@ class EraserButton extends StatelessWidget {
 
     return AppIconButton(
       size: size,
-      iconSize: 24,
+      iconSize: 18,
       backgroundColor: Colors.transparent,
       icon: SvgPicture.asset(
         AppImages.eraser,

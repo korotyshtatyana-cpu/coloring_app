@@ -42,5 +42,8 @@
   "brush_round_basic": "Базовая кисть",
   "brush_fine_liner": "Художественная",
   "eraser_standard": "Обычный ластик",
-  "eraser_soft": "Мягкий ластик"
+  "eraser_soft": "Мягкий ластик",
+  "reset_project_confirm_title": "Начать заново",
+  "reset_project_confirm_message": "Вы уверены, что хотите начать раскраску заново? Предыдущая версия не будет сохранена.",
+  "cancel": "Отмена"
 }

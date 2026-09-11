@@ -32,26 +32,31 @@ class LeftControls extends StatelessWidget {
 
     // Constrain the panel so it can never overflow, and let LayoutBuilder
     // pick the layout based on the real, bounded height.
-    return ConstrainedBox(
-      constraints: BoxConstraints(maxHeight: availableHeight),
-      child: LayoutBuilder(
-        builder: (BuildContext context, BoxConstraints constraints) {
-          final bool useTwoColumns = singleColumnHeight > constraints.maxHeight;
-          return ToolbarContainer(
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 0),
-            child: useTwoColumns
-                ? const TwoColumnsLayout(
-                    iconButtonSize: iconButtonSize,
-                    gap: gap,
-                    sliderHeight: sliderHeight,
-                  )
-                : const SingleColumnLayout(
-                    iconButtonSize: iconButtonSize,
-                    gap: gap,
-                    sliderHeight: sliderHeight,
-                  ),
-          );
-        },
+    return Container(
+      margin: EdgeInsets.only(
+        left: MediaQuery.of(context).padding.left,
+      ),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: availableHeight),
+        child: LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints constraints) {
+            final bool useTwoColumns = singleColumnHeight > constraints.maxHeight;
+            return ToolbarContainer(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 0),
+              child: useTwoColumns
+                  ? const TwoColumnsLayout(
+                      iconButtonSize: iconButtonSize,
+                      gap: gap,
+                      sliderHeight: sliderHeight,
+                    )
+                  : const SingleColumnLayout(
+                      iconButtonSize: iconButtonSize,
+                      gap: gap,
+                      sliderHeight: sliderHeight,
+                    ),
+            );
+          },
+        ),
       ),
     );
   }

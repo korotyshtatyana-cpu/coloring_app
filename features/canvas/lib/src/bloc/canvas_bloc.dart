@@ -56,6 +56,7 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     on<SelectTool>(_onSelectTool);
     on<SelectBrush>(_onSelectBrush);
     on<SelectEraser>(_onSelectEraser);
+    on<ClearProject>(_onClearProject);
     on<ExportImage>(_onExportImage);
     on<ExportImageFinished>(_onExportImageFinished);
   }
@@ -177,6 +178,36 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
 
   void _onSelectEraser(SelectEraser event, Emitter<CanvasState> emit) {
     emit(state.copyWith(activeEraserId: event.eraserId, isEraser: true));
+  }
+
+  Future<void> _onClearProject(
+    ClearProject event,
+    Emitter<CanvasState> emit,
+  ) async {
+    try {
+      emit(state.copyWith(status: CanvasStatus.saving));
+
+      // 1. Clear strokes in state
+      final newState = state.copyWith(
+        strokes: const <StrokeEntity>[],
+        undoStack: const <StrokeEntity>[],
+        redoStack: const <StrokeEntity>[],
+        thumbnailPath: null,
+      );
+
+      // 2. Persist the empty project (this clears local/remote strokes)
+      await _saveProjectUseCase.execute(
+        _projectEntity(state: newState, thumbnailPath: null),
+      );
+
+      emit(newState.copyWith(status: CanvasStatus.ready));
+    } catch (e, stackTrace) {
+      ErrorHandler.report(e, stackTrace);
+      emit(state.copyWith(
+        status: CanvasStatus.error,
+        error: e.toString(),
+      ));
+    }
   }
 
   Future<void> _onEndDrawing(
@@ -451,13 +482,14 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     return max(Constants.minBrushSize, state.brushSize * clamped);
   }
 
-  ProjectEntity _projectEntity({String? thumbnailPath}) {
+  ProjectEntity _projectEntity({CanvasState? state, String? thumbnailPath}) {
+    final effectiveState = state ?? this.state;
     return ProjectEntity(
       id: _contourId,
       contourId: _contourId,
       userId: '',
       data: <String, dynamic>{
-        'strokes': state.strokes.asMap().entries.map((MapEntry<int, StrokeEntity> entry) {
+        'strokes': effectiveState.strokes.asMap().entries.map((MapEntry<int, StrokeEntity> entry) {
           final StrokeEntity stroke = entry.value;
           return <String, dynamic>{
             'id': '${_contourId}_${entry.key}',
@@ -474,9 +506,9 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
           };
         }).toList(),
         'settings': <String, dynamic>{
-          'contourColor': state.contourColor.toARGB32(),
-          'contourOpacity': state.contourOpacity,
-          'contourWidth': state.contourWidth,
+          'contourColor': effectiveState.contourColor.toARGB32(),
+          'contourOpacity': effectiveState.contourOpacity,
+          'contourWidth': effectiveState.contourWidth,
         },
         if (thumbnailPath != null) 'thumbnailPath': thumbnailPath,
       },

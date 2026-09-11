@@ -229,6 +229,12 @@ class SelectTool extends CanvasEvent {
   List<Object?> get props => <Object?>[tool];
 }
 
+/// Clears all strokes from the project.
+class ClearProject extends CanvasEvent {
+  /// Creates a [ClearProject] event.
+  const ClearProject();
+}
+
 /// Changes the active brush tool within the category.
 class SelectBrush extends CanvasEvent {
   /// Selected brush ID.
