@@ -44,28 +44,17 @@ class ResetProjectButton extends StatelessWidget {
             style: AppFonts.normal16.copyWith(color: colors.primaryText),
           ),
           actions: <Widget>[
-            TextButton(
+            AppButton(
+              text: LocaleKeys.cancel.tr(),
               onPressed: () => Navigator.of(context).pop(),
-              child: Text(
-                LocaleKeys.cancel.tr(),
-                style: AppFonts.normal14.copyWith(
-                  color: colors.secondaryText,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
             ),
-            TextButton(
+            AppButton(
+              text: LocaleKeys.ok.tr(),
+              filled: true,
               onPressed: () {
                 bloc.add(const ClearProject());
                 Navigator.of(context).pop();
               },
-              child: Text(
-                LocaleKeys.ok.tr(),
-                style: AppFonts.normal14.copyWith(
-                  color: colors.accentDark,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
             ),
           ],
         );

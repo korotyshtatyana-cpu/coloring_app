@@ -5,9 +5,11 @@ abstract final class RequestConstants {
   static const String contoursTable = 'contours';
   static const String favoritesTable = 'favorites';
   static const String projectsTable = 'projects';
+  static const String feedbackTable = 'feedback';
 
   // Supabase Storage buckets
   static const String thumbnailsBucket = 'project_thumbnails';
+  static const String feedbackBucket = 'feedback_attachments';
 
   // Supabase Storage file naming
   static const String thumbnailFileExtension = '.png';

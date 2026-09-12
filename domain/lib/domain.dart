@@ -34,3 +34,6 @@ export 'src/use_cases/gallery/get_work_in_progress_use_case.dart';
 export 'src/use_cases/gallery/toggle_favorite_use_case.dart';
 export 'src/use_cases/settings/get_settings_use_case.dart';
 export 'src/use_cases/settings/update_settings_use_case.dart';
+export 'src/use_cases/feedback/submit_feedback_use_case.dart';
+export 'src/entities/feedback_entity.dart';
+export 'src/repositories/feedback_repository.dart';

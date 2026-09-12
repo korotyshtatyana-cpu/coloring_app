@@ -135,5 +135,11 @@ abstract class DomainDI {
         repository: appLocator<SettingsRepository>(),
       ),
     );
+
+    appLocator.registerLazySingleton<SubmitFeedbackUseCase>(
+      () => SubmitFeedbackUseCase(
+        repository: appLocator<FeedbackRepository>(),
+      ),
+    );
   }
 }

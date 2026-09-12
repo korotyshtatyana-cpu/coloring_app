@@ -28,6 +28,8 @@ abstract class AppColors {
 
   Color get error;
 
+  Color get redAccent;
+
   Color get green;
 
   Color get brightAppleGreen;
@@ -102,6 +104,9 @@ class LightColors implements AppColors {
 
   @override
   Color get error => const Color(0xFFFF0000);
+
+  @override
+  Color get redAccent => const Color(0xFFFF5252);
 
   @override
   Color get green => accentLight;

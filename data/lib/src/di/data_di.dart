@@ -52,6 +52,10 @@ abstract class DataDI {
       () => GalleryLocalProvider(database: appLocator<AppDatabase>()),
     );
 
+    appLocator.registerLazySingleton<FeedbackRemoteProvider>(
+      () => FeedbackRemoteProvider(client: appLocator<SupabaseProvider>().client),
+    );
+
     appLocator.registerLazySingleton<CanvasRemoteProvider>(
       () => CanvasRemoteProvider(client: appLocator<SupabaseProvider>().client),
     );
@@ -83,6 +87,12 @@ abstract class DataDI {
     appLocator.registerLazySingleton<SettingsRepository>(
       () =>
           SettingsRepositoryImpl(preferences: appLocator<SharedPreferences>()),
+    );
+
+    appLocator.registerLazySingleton<FeedbackRepository>(
+      () => FeedbackRepositoryImpl(
+        remoteProvider: appLocator<FeedbackRemoteProvider>(),
+      ),
     );
   }
 }

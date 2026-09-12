@@ -59,4 +59,14 @@ abstract class  LocaleKeys {
   static const brush_fine_liner = 'brush_fine_liner';
   static const reset_project_confirm_title = 'reset_project_confirm_title';
   static const reset_project_confirm_message = 'reset_project_confirm_message';
+  static const rate_the_app = 'rate_the_app';
+  static const rate_the_app_message = 'rate_the_app_message';
+  static const go_to_store = 'go_to_store';
+  static const report_a_problem = 'report_a_problem';
+  static const suggest_an_idea = 'suggest_an_idea';
+  static const feedback_sent = 'feedback_sent';
+  static const email = 'email';
+  static const message = 'message';
+  static const submit = 'submit';
+  static const attachments_max = 'attachments_max';
 }

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
 import '../../theme/app_fonts.dart';
-import '../buttons/primary_button.dart';
+import '../buttons/app_button.dart';
 
 /// Error dialog with a title, message and retry action.
 class ErrorDialog extends StatelessWidget {
@@ -64,8 +64,9 @@ class ErrorDialog extends StatelessWidget {
         style: AppFonts.normal16.copyWith(color: colors.primaryText),
       ),
       actions: <Widget>[
-          PrimaryButton(
+          AppButton(
             text: onRetry == null ? LocaleKeys.ok.tr() : retryLabel,
+            filled: true,
             onPressed: onRetry ?? () => Navigator.of(context).pop(),
           ),
       ],

@@ -43,6 +43,8 @@ dependency_overrides:
     path: ./features/canvas
   settings:
     path: ./features/settings
+  feedback:
+    path: ./features/feedback
 
 dev_dependencies:
   flutter_test:

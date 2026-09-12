@@ -56,5 +56,15 @@
   "russian": "Russian",
   "user_placeholder": "User",
   "copied_to_clipboard": "Copied to clipboard",
-  "copy": "Copy"
+  "copy": "Copy",
+  "rate_the_app": "Rate the App",
+  "rate_the_app_message": "Your feedback helps us improve. You can leave a review in the app store.",
+  "go_to_store": "Go to Store",
+  "report_a_problem": "Report a Problem",
+  "suggest_an_idea": "Suggest an Idea",
+  "feedback_sent": "Your feedback has been sent. Thank you!",
+  "email": "Email",
+  "message": "Message",
+  "submit": "Submit",
+  "attachments_max": "Attachments (max 3)"
 }

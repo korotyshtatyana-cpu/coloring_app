@@ -5,6 +5,7 @@ import 'package:core_ui/core_ui.dart';
 import 'package:flutter/material.dart';
 
 import '../bloc/settings_bloc.dart';
+import '../widgets/feedback/feedback_actions.dart';
 import '../widgets/language_picker.dart';
 import '../widgets/profile_user_header.dart';
 
@@ -38,7 +39,6 @@ class SettingsContent extends StatelessWidget {
             ),
           ),
         ),
-
         title: Text(
           LocaleKeys.profile.tr(),
           style: AppFonts.appBarTitle.copyWith(
@@ -94,21 +94,19 @@ class SettingsContent extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
                 Divider(height: 1, thickness: 1, color: colors.accentLight),
+                const SizedBox(height: 24),
 
-                // 3. Delete Account
+                // 3. Feedback Actions
+                FeedbackActions(email: state.user?.email),
+                const SizedBox(height: 24),
+                Divider(height: 1, thickness: 1, color: colors.accentLight),
+
+                // 4. Delete Account
                 const Spacer(),
-                TextButton(
+                AppButton(
+                  text: LocaleKeys.delete_account.tr(),
+                  color: Colors.redAccent,
                   onPressed: () => _showDeleteConfirmation(context),
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.redAccent,
-                  ),
-                  child: Text(
-                    LocaleKeys.delete_account.tr(),
-                    style: AppFonts.normal14.copyWith(
-                      color: Colors.redAccent,
-                      decoration: TextDecoration.underline,
-                    ),
-                  ),
                 ),
                 const SizedBox(height: 16),
               ],
@@ -133,35 +131,32 @@ class SettingsContent extends StatelessWidget {
           ),
           title: Text(
             LocaleKeys.delete_account_confirm_title.tr(),
-            style: AppFonts.semiBold20.copyWith(color: colors.accentDark),
+            style: AppFonts.semiBold20.copyWith(color: colors.primaryText),
           ),
           content: Text(
             LocaleKeys.delete_account_confirm_message.tr(),
             style: AppFonts.normal16.copyWith(color: colors.primaryText),
           ),
+          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(
-                LocaleKeys.cancel.tr(),
-                style: AppFonts.normal14.copyWith(
-                  color: colors.secondaryText,
-                  fontWeight: FontWeight.w600,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                AppButton(
+                  text: LocaleKeys.cancel.tr(),
+                  onPressed: () => Navigator.of(context).pop(),
                 ),
-              ),
-            ),
-            TextButton(
-              onPressed: () {
-                bloc.add(const DeleteAccount());
-                Navigator.of(context).pop();
-              },
-              child: Text(
-                LocaleKeys.confirm.tr(),
-                style: AppFonts.normal14.copyWith(
+                const SizedBox(width: 12),
+                AppButton(
+                  text: LocaleKeys.confirm.tr(),
+                  filled: true,
                   color: Colors.redAccent,
-                  fontWeight: FontWeight.w700,
+                  onPressed: () {
+                    bloc.add(const DeleteAccount());
+                    Navigator.of(context).pop();
+                  },
                 ),
-              ),
+              ],
             ),
           ],
         );
