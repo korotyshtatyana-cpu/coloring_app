@@ -76,25 +76,15 @@ class _AnimatedLogoState extends State<AnimatedLogo>
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        AnimatedContainer(
+        AnimatedOpacity(
           duration: const Duration(milliseconds: 1200),
           curve: Curves.easeInOut,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(30),
-            boxShadow: [
-              if (_showShadow)
-                BoxShadow(
-                  color: colors.accentLight.withValues(alpha: 0.4),
-                  blurRadius: 30,
-                  spreadRadius: 8,
-                ),
-            ],
-          ),
+          opacity: _showShadow ? 1.0 : 0.0,
           child: SvgPicture.asset(
             AppImages.logo,
             package: AppImages.packageName,
-            width: 120,
-            height: 120,
+            width: 80,
+            height: 80,
           ),
         ),
         const SizedBox(height: 32),

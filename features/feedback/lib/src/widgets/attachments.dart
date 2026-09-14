@@ -34,13 +34,13 @@ class _Attachments extends State<Attachments> {
               IconButton(
                 icon: const Icon(Icons.add_a_photo),
                 onPressed: () async {
-                  final XFile? file = await _picker.pickImage(
-                    source: ImageSource.gallery,
+                  final List<XFile> files = await _picker.pickMultipleMedia(
+                    limit: 3 - widget.attachmentPaths.length,
                   );
-                  if (file != null && context.mounted) {
+                  if (files.isNotEmpty && context.mounted) {
                     context.read<FeedbackBloc>().add(
-                      AddAttachments([file.path]),
-                    );
+                          AddAttachments(files.map((f) => f.path).toList()),
+                        );
                   }
                 },
               ),
