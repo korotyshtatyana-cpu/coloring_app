@@ -32,55 +32,57 @@ class BottomToolbar extends StatelessWidget {
     final bloc = context.read<CanvasBloc>();
     final AppColors colors = AppColors.of(context);
 
-    return ToolbarContainer(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: <Widget>[
-          AppIconButton(
-            size: 32,
-            iconSize: 24,
-            backgroundColor: Colors.transparent,
-            icon: const Icon(Icons.undo),
-            onPressed: canUndo ? () => _onUndo(bloc) : null,
-          ),
-          AppIconButton(
-            size: 32,
-            iconSize: 24,
-            backgroundColor: Colors.transparent,
-            icon: const Icon(Icons.redo),
-            onPressed: canRedo ? () => _onRedo(bloc) : null,
-          ),
-          AppIconButton(
-            size: 32,
-            iconSize: 24,
-            backgroundColor: Colors.transparent,
-            icon: Container(
-              width: 20,
-              height: 20,
-              decoration: BoxDecoration(
-                color: brushColor,
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: colors.iconPrimary.withValues(alpha: 0.2),
-                  width: 1,
+    return SafeArea(
+      child: ToolbarContainer(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: <Widget>[
+            AppIconButton(
+              size: 32,
+              iconSize: 24,
+              backgroundColor: Colors.transparent,
+              icon: const Icon(Icons.undo),
+              onPressed: canUndo ? () => _onUndo(bloc) : null,
+            ),
+            AppIconButton(
+              size: 32,
+              iconSize: 24,
+              backgroundColor: Colors.transparent,
+              icon: const Icon(Icons.redo),
+              onPressed: canRedo ? () => _onRedo(bloc) : null,
+            ),
+            AppIconButton(
+              size: 32,
+              iconSize: 24,
+              backgroundColor: Colors.transparent,
+              icon: Container(
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: brushColor,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: colors.iconPrimary.withValues(alpha: 0.2),
+                    width: 1,
+                  ),
                 ),
               ),
+              onPressed: () => _showColorPicker(context),
             ),
-            onPressed: () => _showColorPicker(context),
-          ),
-          AppIconButton(
-            size: 32,
-            iconSize: 24,
-            backgroundColor: Colors.transparent,
-            icon: Icon(
-              Icons.rounded_corner_rounded,
-              color: contourColor,
+            AppIconButton(
+              size: 32,
+              iconSize: 24,
+              backgroundColor: Colors.transparent,
+              icon: Icon(
+                Icons.rounded_corner_rounded,
+                color: contourColor,
+              ),
+              onPressed: () => _showColorPicker(context, isContour: true),
             ),
-            onPressed: () => _showColorPicker(context, isContour: true),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

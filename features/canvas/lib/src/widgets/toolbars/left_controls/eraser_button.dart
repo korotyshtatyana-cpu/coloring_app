@@ -67,16 +67,26 @@ class EraserButton extends StatelessWidget {
       barrierLabel: '',
       barrierColor: Colors.transparent,
       pageBuilder: (dialogContext, anim1, anim2) {
-        return Align(
-          alignment: Alignment.topLeft,
-          child: Padding(
-            padding: const EdgeInsets.only(top: 160, left: 64),
-            child: ToolSelectorOverlay(
-              tools: erasers,
-              activeToolId: activeId,
-              onToolSelected: (id) => bloc.add(SelectEraser(id)),
-            ),
-          ),
+        return OrientationBuilder(
+          builder: (context, orientation) {
+            final MediaQueryData mq = MediaQuery.of(context);
+            final bool isPhone = mq.size.shortestSide < 600;
+            final bool isLandscape = orientation == Orientation.landscape;
+            final double leftPadding = isPhone && isLandscape ? 120 : 64;
+            final double topPadding = isPhone && isLandscape ? 120 : 160;
+
+            return Align(
+              alignment: Alignment.topLeft,
+              child: Padding(
+                padding: EdgeInsets.only(top: topPadding, left: leftPadding),
+                child: ToolSelectorOverlay(
+                  tools: erasers,
+                  activeToolId: activeId,
+                  onToolSelected: (id) => bloc.add(SelectEraser(id)),
+                ),
+              ),
+            );
+          },
         );
       },
     );

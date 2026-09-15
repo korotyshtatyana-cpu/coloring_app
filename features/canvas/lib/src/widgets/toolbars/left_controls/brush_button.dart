@@ -12,10 +12,7 @@ class BrushButton extends StatelessWidget {
   final double size;
 
   /// Creates a [BrushButton].
-  const BrushButton({
-    required this.size,
-    super.key,
-  });
+  const BrushButton({required this.size, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -60,16 +57,26 @@ class BrushButton extends StatelessWidget {
       barrierLabel: '',
       barrierColor: Colors.transparent,
       pageBuilder: (dialogContext, anim1, anim2) {
-        return Align(
-          alignment: Alignment.topLeft,
-          child: Padding(
-            padding: const EdgeInsets.only(top: 120, left: 64),
-            child: ToolSelectorOverlay(
-              tools: brushes,
-              activeToolId: activeId,
-              onToolSelected: (id) => bloc.add(SelectBrush(id)),
-            ),
-          ),
+        return OrientationBuilder(
+          builder: (BuildContext context, Orientation orientation) {
+            final MediaQueryData mq = MediaQuery.of(context);
+            final bool isPhone = mq.size.shortestSide < 600;
+            final bool isLandscape = orientation == Orientation.landscape;
+            final double leftPadding = isPhone && isLandscape ? 120 : 64;
+            final double topPadding = isPhone && isLandscape ? 120 : 120;
+
+            return Align(
+              alignment: Alignment.topLeft,
+              child: Padding(
+                padding: EdgeInsets.only(top: topPadding, left: leftPadding),
+                child: ToolSelectorOverlay(
+                  tools: brushes,
+                  activeToolId: activeId,
+                  onToolSelected: (id) => bloc.add(SelectBrush(id)),
+                ),
+              ),
+            );
+          },
         );
       },
     );

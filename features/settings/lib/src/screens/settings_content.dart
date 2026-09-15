@@ -23,6 +23,7 @@ class SettingsContent extends StatelessWidget {
     return Scaffold(
       backgroundColor: colors.primaryBg,
       appBar: AppBar(
+        centerTitle: false,
         toolbarHeight: 68,
         leadingWidth: 64,
         backgroundColor: colors.primaryBg,
