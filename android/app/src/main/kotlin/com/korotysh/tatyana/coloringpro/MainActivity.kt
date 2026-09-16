@@ -1,4 +1,4 @@
-package com.example.coloring_app
+package com.korotysh.tatyana.coloringpro
 
 import io.flutter.embedding.android.FlutterActivity
 

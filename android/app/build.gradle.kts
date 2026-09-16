@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.coloring_app"
+    namespace = "com.korotysh.tatyana.coloringpro"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -14,7 +14,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.coloring_app"
+        applicationId = "com.korotysh.tatyana.coloringpro"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
