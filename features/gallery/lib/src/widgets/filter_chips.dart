@@ -9,13 +9,15 @@ class FilterChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        MainFilterRow(),
-        SizedBox(height: 8),
-        CategoryFilterRow(),
-      ],
+    return const SafeArea(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          MainFilterRow(),
+          SizedBox(height: 8),
+          CategoryFilterRow(),
+        ],
+      ),
     );
   }
 }

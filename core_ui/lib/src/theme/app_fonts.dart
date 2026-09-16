@@ -135,6 +135,13 @@ class AppFonts {
     package: _packageName,
   );
 
+  static TextStyle normal10 = const TextStyle(
+    fontWeight: FontWeight.w400,
+    fontSize: 10,
+    fontFamily: _montserratFamily,
+    package: _packageName,
+  );
+
   static TextStyle archivoNarroStyle = const TextStyle(
     fontWeight: FontWeight.w400,
     fontSize: 16,

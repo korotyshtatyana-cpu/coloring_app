@@ -38,6 +38,12 @@ class StrokeEntity extends Equatable {
   /// Brush type used for this stroke.
   final BrushType brushType;
 
+  /// Identifier of the specific tool used from the database.
+  final String? brushId;
+
+  /// Whether this specific stroke was drawn with pressure sensitivity.
+  final bool isPressureSensitive;
+
   /// Creates a [StrokeEntity].
   const StrokeEntity({
     required this.points,
@@ -45,6 +51,8 @@ class StrokeEntity extends Equatable {
     required this.size,
     required this.opacity,
     required this.brushType,
+    this.brushId,
+    this.isPressureSensitive = true,
   });
 
   /// Creates a copy with optional new values.
@@ -54,6 +62,8 @@ class StrokeEntity extends Equatable {
     double? size,
     double? opacity,
     BrushType? brushType,
+    String? brushId,
+    bool? isPressureSensitive,
   }) {
     return StrokeEntity(
       points: points ?? this.points,
@@ -61,9 +71,19 @@ class StrokeEntity extends Equatable {
       size: size ?? this.size,
       opacity: opacity ?? this.opacity,
       brushType: brushType ?? this.brushType,
+      brushId: brushId ?? this.brushId,
+      isPressureSensitive: isPressureSensitive ?? this.isPressureSensitive,
     );
   }
 
   @override
-  List<Object?> get props => <Object?>[points, color, size, opacity, brushType];
+  List<Object?> get props => [
+        points,
+        color,
+        size,
+        opacity,
+        brushType,
+        brushId,
+        isPressureSensitive,
+      ];
 }

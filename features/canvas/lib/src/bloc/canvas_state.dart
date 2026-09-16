@@ -83,6 +83,15 @@ class CanvasState extends Equatable {
   /// Error message, if any.
   final String? error;
 
+  /// Available tools from database (shared between brush and eraser modes).
+  final List<ToolEntity> availableTools;
+
+  /// ID of the currently selected brush tool.
+  final String? activeBrushId;
+
+  /// ID of the currently selected eraser tool.
+  final String? activeEraserId;
+
   /// Creates a [CanvasState].
   CanvasState({
     this.status = CanvasStatus.initial,
@@ -104,6 +113,9 @@ class CanvasState extends Equatable {
     this.lastExportType,
     this.thumbnailPath,
     this.error,
+    this.availableTools = const <ToolEntity>[],
+    this.activeBrushId,
+    this.activeEraserId,
   }) : transform = transform ?? Matrix4.identity();
 
   @override
@@ -127,6 +139,9 @@ class CanvasState extends Equatable {
         lastExportType,
         thumbnailPath,
         error,
+        availableTools,
+        activeBrushId,
+        activeEraserId,
       ];
 
   /// Creates a copy with optional new values.
@@ -151,6 +166,9 @@ class CanvasState extends Equatable {
     ExportType? lastExportType,
     String? thumbnailPath,
     String? error,
+    List<ToolEntity>? availableTools,
+    String? activeBrushId,
+    String? activeEraserId,
   }) {
     return CanvasState(
       status: status ?? this.status,
@@ -172,6 +190,9 @@ class CanvasState extends Equatable {
       lastExportType: lastExportType ?? this.lastExportType,
       thumbnailPath: thumbnailPath ?? this.thumbnailPath,
       error: error ?? this.error,
+      availableTools: availableTools ?? this.availableTools,
+      activeBrushId: activeBrushId ?? this.activeBrushId,
+      activeEraserId: activeEraserId ?? this.activeEraserId,
     );
   }
 }

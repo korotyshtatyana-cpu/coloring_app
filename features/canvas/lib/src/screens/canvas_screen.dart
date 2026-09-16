@@ -45,11 +45,13 @@ class CanvasScreen extends StatelessWidget {
         saveImageToGalleryUseCase: appLocator<SaveImageToGalleryUseCase>(),
         renderProjectThumbnailUseCase:
             appLocator<RenderProjectThumbnailUseCase>(),
+        getAvailableToolsUseCase: appLocator<GetAvailableToolsUseCase>(),
       )..add(const LoadProject()),
       child: CanvasContent(
         key: _canvasKey,
         onExport: () => _canvasKey.currentState?.showExportMenu(),
-        onEyedropper: () => _canvasKey.currentState?.enterEyedropperMode(),
+        onEyedropper: ({required bool isContour}) =>
+            _canvasKey.currentState?.enterEyedropperMode(isContour: isContour),
       ),
     );
   }
@@ -60,7 +62,7 @@ class CanvasContent extends StatefulWidget {
   final VoidCallback onExport;
 
   /// Callback invoked when the eyedropper mode is requested.
-  final VoidCallback onEyedropper;
+  final void Function({required bool isContour}) onEyedropper;
 
   /// Creates [CanvasContent].
   const CanvasContent({
@@ -108,6 +110,9 @@ class _CanvasContentState extends State<CanvasContent>
   /// Future for the in-progress eyedropper image capture, if any.
   Future<void>? _eyedropperCaptureFuture;
 
+  /// Whether the eyedropper was triggered for the contour or the brush.
+  bool _isEyedropperForContour = false;
+
   /// Active pointers currently on screen (viewport coordinates).
   final Map<int, Offset> _pointerPositions = <int, Offset>{};
 
@@ -123,6 +128,10 @@ class _CanvasContentState extends State<CanvasContent>
   /// Whether a multi-touch (pinch) gesture is in progress or just finished.
   /// While true, drawing is suppressed until all fingers are lifted.
   bool _drawingLocked = false;
+
+  /// Viewport size seen on the last [build]; used to detect orientation
+  /// (or window size) changes and recenter the canvas.
+  Size? _lastViewportSize;
 
   static const double _minScaleFactor = 0.5; // relative to the fit scale
   static const double _maxScaleFactor = 5.0; // relative to the fit scale
@@ -198,6 +207,17 @@ class _CanvasContentState extends State<CanvasContent>
         (contour == null ? null : SvgUtils.parseViewBoxSize(contour.svgData)) ??
         viewportSize;
     final double fitScale = _fitScaleFor(viewportSize, canvasSize);
+
+    if (_lastViewportSize != viewportSize) {
+      final bool hadViewportSize = _lastViewportSize != null;
+      _lastViewportSize = viewportSize;
+      if (hadViewportSize) {
+        // The viewport size changed (e.g. screen rotation): the stored
+        // transform was computed for the old size, so recenter the canvas
+        // once the frame with the new size is laid out.
+        WidgetsBinding.instance.addPostFrameCallback((_) => _recenterCanvas());
+      }
+    }
 
     return PopScope(
       // Back navigation is triggered explicitly from the toolbar (reliable
@@ -561,6 +581,44 @@ class _CanvasContentState extends State<CanvasContent>
       ..scaleByDouble(scale, scale, scale, 1);
   }
 
+  /// Re-centers the canvas sheet in the viewport after the viewport size
+  /// changed (e.g. on orientation change), preserving the current zoom and
+  /// rotation.
+  void _recenterCanvas() {
+    if (!mounted) return;
+
+    final CanvasState state = context.read<CanvasBloc>().state;
+    final Size viewportSize = MediaQuery.sizeOf(context);
+    final Size canvasSize = (state.contour == null
+            ? null
+            : SvgUtils.parseViewBoxSize(state.contour!.svgData)) ??
+        viewportSize;
+
+    if (state.transform.isIdentity()) {
+      // No user transform: refit the canvas sheet to the new viewport.
+      _transformationController.value = _fitTransform(viewportSize, canvasSize);
+      return;
+    }
+
+    // Shift the current transform so the canvas center lands on the new
+    // viewport center, keeping the user's zoom and rotation untouched.
+    final Matrix4 matrix = _transformationController.value;
+    final Offset canvasCenter = MatrixUtils.transformPoint(
+      matrix,
+      Offset(canvasSize.width / 2, canvasSize.height / 2),
+    );
+    final Offset delta = viewportSize.center(Offset.zero) - canvasCenter;
+    if (delta == Offset.zero) return;
+
+    final Matrix4 recentered = Matrix4.identity()
+      ..translateByDouble(delta.dx, delta.dy, 0, 1)
+      ..multiply(matrix);
+    _transformationController.value = recentered;
+    // Sync the bloc so a later status change can't restore the stale,
+    // off-center transform from the state.
+    context.read<CanvasBloc>().add(UpdateTransform(recentered));
+  }
+
   void _resetTwoFingerGesture() {
     _initialPointerPositions = Map<int, Offset>.from(_pointerPositions);
     _initialTransform = _transformationController.value;
@@ -753,7 +811,12 @@ class _CanvasContentState extends State<CanvasContent>
             ? _readColorAt(_eyedropperPosition!)
             : null);
     if (color != null) {
-      context.read<CanvasBloc>().add(ChangeColor(color));
+      final bloc = context.read<CanvasBloc>();
+      if (_isEyedropperForContour) {
+        bloc.add(ChangeContourSettings(color: color));
+      } else {
+        bloc.add(ChangeColor(color));
+      }
     }
     _disposeEyedropperImage();
     setState(() {
@@ -784,9 +847,10 @@ class _CanvasContentState extends State<CanvasContent>
     _eyedropperByteData = null;
   }
 
-  void enterEyedropperMode() {
+  void enterEyedropperMode({required bool isContour}) {
     setState(() {
       _isEyedropperActive = true;
+      _isEyedropperForContour = isContour;
     });
 
     _eyedropperCaptureFuture = _captureEyedropperImage();

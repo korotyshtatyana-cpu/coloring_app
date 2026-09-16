@@ -60,6 +60,30 @@ class Strokes extends Table {
   /// Brush type name.
   TextColumn get brushType => text()();
 
+  /// Specific tool identifier.
+  TextColumn get brushId => text().nullable()();
+
+  /// Whether the stroke reacts to pressure.
+  BoolColumn get isPressureSensitive => boolean().withDefault(const Constant(true))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Local tools/brushes table.
+class Brushes extends Table {
+  /// Unique tool identifier.
+  TextColumn get id => text()();
+
+  /// Localized name key.
+  TextColumn get nameKey => text()();
+
+  /// Path or URL to the preview image.
+  TextColumn get previewPath => text()();
+
+  /// Whether the tool reacts to pressure.
+  BoolColumn get isPressureSensitive => boolean()();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -123,14 +147,28 @@ class PointsConverter extends TypeConverter<List<List<double>>, String> {
 }
 
 /// Drift database for local project, stroke and contour storage.
-@DriftDatabase(tables: <Type>[Projects, Strokes, Contours])
+@DriftDatabase(tables: <Type>[Projects, Strokes, Brushes, Contours])
 class AppDatabase extends _$AppDatabase {
   /// Creates a database instance.
   AppDatabase() : super(_openConnection());
 
   /// Current database schema version.
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onCreate: (m) => m.createAll(),
+        onUpgrade: (m, from, to) async {
+          if (from < 2) {
+            // Create the new brushes table
+            await m.createTable(brushes);
+            // Add missing columns to strokes
+            await m.addColumn(strokes, strokes.brushId);
+            await m.addColumn(strokes, strokes.isPressureSensitive);
+          }
+        },
+      );
 
   static LazyDatabase _openConnection() {
     return LazyDatabase(() async {

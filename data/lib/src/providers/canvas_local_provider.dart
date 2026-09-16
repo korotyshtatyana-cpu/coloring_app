@@ -1,5 +1,5 @@
-import 'dart:convert';
-
+import 'package:drift/drift.dart';
+import 'package:core/core.dart';
 import 'package:domain/domain.dart';
 
 import '../../data.dart';
@@ -50,6 +50,45 @@ class CanvasLocalProvider {
         .toList();
   }
 
+  /// Loads available tools from the database.
+  Future<List<ToolEntity>> getAvailableTools() async {
+    final List<Brushe> rows = await _database.select(_database.brushes).get();
+    
+    // Seed database if empty
+    if (rows.isEmpty) {
+      await _seedBrushes();
+      return getAvailableTools();
+    }
+
+    return rows.map((row) => ToolEntity(
+      id: row.id,
+      nameKey: row.nameKey,
+      previewPath: row.previewPath,
+      isPressureSensitive: row.isPressureSensitive,
+    )).toList();
+  }
+
+  Future<void> _seedBrushes() async {
+    final seeds = [
+      BrushesCompanion.insert(
+        id: 'round_basic',
+        nameKey: LocaleKeys.brush_round_basic,
+        previewPath: '',
+        isPressureSensitive: false,
+      ),
+      BrushesCompanion.insert(
+        id: 'fine_liner',
+        nameKey: LocaleKeys.brush_fine_liner,
+        previewPath: '',
+        isPressureSensitive: true,
+      ),
+    ];
+
+    for (final companion in seeds) {
+      await _database.into(_database.brushes).insert(companion);
+    }
+  }
+
   /// Deletes all strokes for the given project.
   Future<void> clearStrokes(String projectId) async {
     await (_database.delete(_database.strokes)
@@ -62,7 +101,7 @@ class CanvasLocalProvider {
       id: project.id,
       contourId: project.contourId,
       userId: project.userId,
-      data: jsonEncode(project.data),
+      data: project.data,
       lastOpened: project.lastOpened,
       createdAt: project.createdAt,
     );
@@ -73,7 +112,7 @@ class CanvasLocalProvider {
       id: row.id,
       contourId: row.contourId,
       userId: row.userId,
-      data: jsonDecode(row.data) as Map<String, dynamic>,
+      data: row.data,
       lastOpened: row.lastOpened,
       createdAt: row.createdAt,
     );
@@ -83,11 +122,13 @@ class CanvasLocalProvider {
     return StrokesCompanion.insert(
       id: model.id,
       projectId: model.projectId,
-      points: jsonEncode(model.points),
+      points: model.points,
       color: model.color,
       size: model.size,
       opacity: model.opacity,
       brushType: model.brushType.name,
+      brushId: Value(model.brushId),
+      isPressureSensitive: Value(model.isPressureSensitive),
     );
   }
 
@@ -95,13 +136,13 @@ class CanvasLocalProvider {
     return StrokeModel(
       id: row.id,
       projectId: row.projectId,
-      points: (jsonDecode(row.points) as List<dynamic>)
-          .map((dynamic e) => (e as List<dynamic>).cast<double>())
-          .toList(),
+      points: row.points,
       color: row.color,
       size: row.size,
       opacity: row.opacity,
       brushType: BrushType.values.byName(row.brushType),
+      brushId: row.brushId,
+      isPressureSensitive: row.isPressureSensitive,
     );
   }
 }

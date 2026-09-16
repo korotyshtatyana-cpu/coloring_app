@@ -11,14 +11,19 @@ part 'settings_state.dart';
 class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   final GetSettingsUseCase _getSettingsUseCase;
   final UpdateSettingsUseCase _updateSettingsUseCase;
+  final GetCurrentUserUseCase _getCurrentUserUseCase;
+  final DeleteAccountUseCase _deleteAccountUseCase;
 
   /// Creates a [SettingsBloc] with the required use cases.
   SettingsBloc({
     required this._getSettingsUseCase,
     required this._updateSettingsUseCase,
-  })  : super(const SettingsState()) {
+    required this._getCurrentUserUseCase,
+    required this._deleteAccountUseCase,
+  }) : super(const SettingsState()) {
     on<LoadSettings>(_onLoadSettings);
     on<ChangeLanguage>(_onChangeLanguage);
+    on<DeleteAccount>(_onDeleteAccount);
   }
 
   Future<void> _onLoadSettings(
@@ -27,6 +32,8 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   ) async {
     try {
       emit(state.copyWith(status: SettingsStatus.loading, error: null));
+
+      final user = await _getCurrentUserUseCase.execute();
       String? code = await _getSettingsUseCase.execute();
 
       // Normalize existing codes
@@ -35,6 +42,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       emit(state.copyWith(
         status: SettingsStatus.success,
         locale: code ?? state.locale,
+        user: user,
       ));
     } catch (e, stackTrace) {
       ErrorHandler.report(e, stackTrace);
@@ -64,6 +72,23 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     } catch (e, stackTrace) {
       ErrorHandler.report(e, stackTrace);
       emit(state.copyWith(error: e.toString()));
+    }
+  }
+
+  Future<void> _onDeleteAccount(
+    DeleteAccount event,
+    Emitter<SettingsState> emit,
+  ) async {
+    try {
+      emit(state.copyWith(status: SettingsStatus.loading, error: null));
+      await _deleteAccountUseCase.execute();
+      emit(state.copyWith(status: SettingsStatus.success, isDeleted: true));
+    } catch (e, stackTrace) {
+      ErrorHandler.report(e, stackTrace);
+      emit(state.copyWith(
+        status: SettingsStatus.failure,
+        error: e.toString(),
+      ));
     }
   }
 }

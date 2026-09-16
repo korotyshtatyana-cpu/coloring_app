@@ -1,18 +1,28 @@
-import 'package:core_ui/core_ui.dart';
 import 'package:flutter/widgets.dart';
 
+import '../../theme/app_colors.dart';
+
+/// A styled container for toolbar items with a soft shadow and rounded corners.
 class ToolbarContainer extends StatelessWidget {
+  /// The widget to display inside the container.
   final Widget child;
+
+  /// Optional padding inside the container.
   final EdgeInsets? padding;
+
+  /// Optional background color. Defaults to [AppColors.primaryBg].
   final Color? backgroundColor;
+
+  /// Whether the container should be square-ish (radius 16) or pill-shaped (radius 32).
   final bool isSquare;
 
+  /// Creates a [ToolbarContainer].
   const ToolbarContainer({
-    super.key,
     required this.child,
     this.padding,
     this.backgroundColor,
     this.isSquare = false,
+    super.key,
   });
 
   @override

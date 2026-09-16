@@ -33,11 +33,13 @@ class GalleryRemoteProvider {
         .toList();
   }
 
-  /// Fetches a paginated list of contours by their identifiers from Supabase.
+  /// Fetches contours by their identifiers from Supabase.
+  ///
+  /// The result is not ordered and not paginated: the repository sorts the
+  /// contours by the given [ids] order and paginates afterwards, so lists
+  /// like "work in progress" keep their intended order.
   Future<List<ContourModel>> getContoursByIds({
     required List<String> ids,
-    required int limit,
-    required int offset,
     ContourCategory? category,
   }) async {
     if (ids.isEmpty) {
@@ -53,38 +55,43 @@ class GalleryRemoteProvider {
       query = query.eq(RequestConstants.categoryColumn, category.name);
     }
 
-    final List<Map<String, dynamic>> response = await query
-        .order(RequestConstants.createdAtColumn, ascending: false)
-        .range(offset, offset + limit - 1);
+    final List<Map<String, dynamic>> response = await query;
 
     return response
         .map((Map<String, dynamic> json) => ContourModel.fromJson(json))
         .toList();
   }
 
-  /// Returns thumbnail URLs of the current user's projects, keyed by
-  /// contour id. Projects without an uploaded thumbnail are included with
-  /// a null value so they still count as "in progress".
-  Future<Map<String, String?>> getWorkInProgressThumbnails() async {
+  /// Returns the current user's started (work in progress) projects ordered
+  /// by the date of the last change, most recent first. Projects without an
+  /// uploaded thumbnail are included with a null thumbnail.
+  Future<List<WorkInProgressEntity>> getWorkInProgress() async {
     final User? user = _client.auth.currentUser;
     if (user == null) {
-      return <String, String?>{};
+      return <WorkInProgressEntity>[];
     }
 
     final List<Map<String, dynamic>> response = await _client
         .from(RequestConstants.projectsTable)
         .select(RequestConstants.selectProjectThumbnails)
-        .eq(RequestConstants.userIdColumn, user.id);
+        .eq(RequestConstants.userIdColumn, user.id)
+        .order(RequestConstants.lastOpenedColumn, ascending: false);
 
-    final Map<String, String?> result = <String, String?>{};
-    for (final Map<String, dynamic> row in response) {
-      result[row[RequestConstants.contourIdColumn] as String] =
-          row[RequestConstants.thumbnailUrlColumn] as String?;
-    }
-    return result;
+    return response
+        .map(
+          (Map<String, dynamic> row) => WorkInProgressEntity(
+            contourId: row[RequestConstants.contourIdColumn] as String,
+            thumbnailPath: row[RequestConstants.thumbnailUrlColumn] as String?,
+            lastOpened: DateTime.parse(
+              row[RequestConstants.lastOpenedColumn] as String,
+            ),
+          ),
+        )
+        .toList();
   }
 
-  /// Returns favorite contour ids for the current user.
+  /// Returns favorite contour ids for the current user, most recently
+  /// favorited first.
   Future<List<String>> getFavoriteIds() async {
     final User? user = _client.auth.currentUser;
     if (user == null) {
@@ -94,7 +101,8 @@ class GalleryRemoteProvider {
     final List<Map<String, dynamic>> response = await _client
         .from(RequestConstants.favoritesTable)
         .select(RequestConstants.selectContourId)
-        .eq(RequestConstants.userIdColumn, user.id);
+        .eq(RequestConstants.userIdColumn, user.id)
+        .order(RequestConstants.createdAtColumn, ascending: false);
 
     return response
         .map(

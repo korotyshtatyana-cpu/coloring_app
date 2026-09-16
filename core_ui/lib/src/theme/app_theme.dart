@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'app_colors.dart';
 import 'app_dimens.dart';
@@ -11,6 +12,18 @@ final ThemeData lightTheme = ThemeData.light().copyWith(
   textTheme: _getTextTheme(),
   inputDecorationTheme: _getInputDecorationTheme(),
   primaryColor: _appColors.primaryBg,
+  appBarTheme: AppBarTheme(
+    backgroundColor: _appColors.primaryBg,
+    elevation: 0,
+    centerTitle: true,
+    titleTextStyle: AppFonts.appBarTitle.copyWith(color: _appColors.primaryText),
+    systemOverlayStyle: const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      systemNavigationBarColor: Color(0xFFF9F8F6),
+      statusBarIconBrightness: Brightness.dark,
+      statusBarBrightness: Brightness.light,
+    ),
+  ),
   colorScheme: ColorScheme.fromSwatch().copyWith(
     secondary: _appColors.secondaryBg,
     primary: _appColors.primaryBg,

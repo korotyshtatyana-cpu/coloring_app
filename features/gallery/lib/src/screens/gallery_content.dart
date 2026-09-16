@@ -22,6 +22,7 @@ class GalleryContent extends StatelessWidget {
     return Scaffold(
       backgroundColor: colors.primaryBg,
       appBar: AppBar(
+        centerTitle: false,
         backgroundColor: colors.primaryBg,
         title: Text(
           context.tr(LocaleKeys.gallery),

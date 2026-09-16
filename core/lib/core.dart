@@ -13,3 +13,4 @@ export 'src/localization/generated/locale_keys.g.dart';
 export 'src/utils/logger.dart';
 export 'src/utils/result.dart';
 export 'src/utils/svg_utils.dart';
+export 'src/utils/url_utils.dart';

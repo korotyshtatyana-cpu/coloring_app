@@ -5,9 +5,11 @@ abstract final class RequestConstants {
   static const String contoursTable = 'contours';
   static const String favoritesTable = 'favorites';
   static const String projectsTable = 'projects';
+  static const String feedbackTable = 'feedback';
 
   // Supabase Storage buckets
   static const String thumbnailsBucket = 'project_thumbnails';
+  static const String feedbackBucket = 'feedback_attachments';
 
   // Supabase Storage file naming
   static const String thumbnailFileExtension = '.png';
@@ -17,7 +19,8 @@ abstract final class RequestConstants {
   static const String selectAll = '*';
   static const String selectContourId = 'contour_id';
   static const String selectProjectData = 'contour_id, data, last_opened';
-  static const String selectProjectThumbnails = 'contour_id, thumbnail_url';
+  static const String selectProjectThumbnails =
+      'contour_id, thumbnail_url, last_opened';
 
   // Supabase columns
   static const String createdAtColumn = 'created_at';

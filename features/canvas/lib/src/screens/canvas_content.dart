@@ -40,6 +40,9 @@ class _CanvasContentState extends State<CanvasContent>
   ByteData? _eyedropperByteData;
   Future<void>? _eyedropperCaptureFuture;
 
+  /// Whether the eyedropper was triggered for the contour or the brush.
+  bool _isEyedropperForContour = false;
+
   final Map<int, Offset> _pointerPositions = <int, Offset>{};
   Map<int, Offset>? _initialPointerPositions;
   Matrix4? _initialTransform;
@@ -106,7 +109,10 @@ class _CanvasContentState extends State<CanvasContent>
               left: 0,
               right: 0,
               bottom: 0,
-              child: BottomToolbar(onEyedropper: _enterEyedropperMode),
+              child: BottomToolbar(
+                onEyedropper: ({required bool isContour}) =>
+                    _enterEyedropperMode(isContour: isContour),
+              ),
             ),
             EyedropperLayer(
               position: _eyedropperPosition,
@@ -389,7 +395,14 @@ class _CanvasContentState extends State<CanvasContent>
         (_eyedropperPosition != null
             ? _readColorAt(_eyedropperPosition!)
             : null);
-    if (color != null) context.read<CanvasBloc>().add(ChangeColor(color));
+    if (color != null) {
+      final bloc = context.read<CanvasBloc>();
+      if (_isEyedropperForContour) {
+        bloc.add(ChangeContourSettings(color: color));
+      } else {
+        bloc.add(ChangeColor(color));
+      }
+    }
     _disposeEyedropperImage();
     setState(() {
       _isEyedropperActive = false;
@@ -417,8 +430,11 @@ class _CanvasContentState extends State<CanvasContent>
     _eyedropperByteData = null;
   }
 
-  void _enterEyedropperMode() {
-    setState(() => _isEyedropperActive = true);
+  void _enterEyedropperMode({required bool isContour}) {
+    setState(() {
+      _isEyedropperActive = true;
+      _isEyedropperForContour = isContour;
+    });
     _eyedropperCaptureFuture = _captureEyedropperImage();
     _eyedropperCaptureFuture!
         .whenComplete(() => _eyedropperCaptureFuture = null);

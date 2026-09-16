@@ -19,4 +19,6 @@ export 'src/repositories/auth_repository_impl.dart';
 export 'src/repositories/canvas_repository_impl.dart';
 export 'src/repositories/gallery_repository_impl.dart';
 export 'src/repositories/settings_repository_impl.dart';
+export 'src/repositories/feedback_repository_impl.dart';
+export 'src/providers/feedback_remote_provider.dart';
 export 'src/repositories/share_repository_impl.dart';

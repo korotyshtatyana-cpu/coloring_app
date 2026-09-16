@@ -9,7 +9,8 @@ import '../bloc/canvas_bloc.dart';
 /// Color picker dialog with color wheel, format selector, and input field.
 class ColorPickerDialog extends StatefulWidget {
   /// Callback invoked when the eyedropper mode is requested.
-  final VoidCallback? onEyedropper;
+  /// Pass [isContour] to let the caller know which layer to update.
+  final void Function({required bool isContour})? onEyedropper;
 
   /// Whether the picker is being used for contour color.
   final bool isContour;
@@ -144,7 +145,7 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'copied_to_clipboard'.tr(),
+            LocaleKeys.copied_to_clipboard.tr(),
             style: AppFonts.normal16.copyWith(color: Colors.white),
           ),
           duration: const Duration(seconds: 1),
@@ -166,8 +167,14 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
   @override
   Widget build(BuildContext context) {
     final AppColors colors = AppColors.of(context);
-    final Color currentColor = context.select((CanvasBloc bloc) =>
-    widget.isContour ? bloc.state.contourColor : bloc.state.color);
+    final Color currentColor = context.select(
+      (CanvasBloc bloc) =>
+          widget.isContour ? bloc.state.contourColor : bloc.state.color,
+    );
+
+    final double contourOpacity = widget.isContour
+        ? context.select((CanvasBloc bloc) => bloc.state.contourOpacity)
+        : 1.0;
 
     if (_hsvColor == null ||
         (_hsvColor!.toColor().toARGB32() != currentColor.toARGB32() &&
@@ -188,7 +195,9 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
               Text(
-                LocaleKeys.color.tr(),
+                widget.isContour
+                    ? LocaleKeys.contour.tr()
+                    : LocaleKeys.color.tr(),
                 style: AppFonts.semiBold20.copyWith(color: colors.primaryText),
               ),
               const SizedBox(height: 12),
@@ -217,39 +226,61 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
                       const SizedBox(height: 8),
                       // Hue slider
                       SizedBox(
-                        height: 32,
+                        height: 40,
                         width: 200,
                         child: ColorPickerSlider(
                           TrackType.hue,
                           _hsvColor!,
                           _onColorChanged,
-                          displayThumbColor: true,
+                          displayThumbColor: false,
                         ),
                       ),
                       const SizedBox(height: 8),
                       // Saturation slider
                       SizedBox(
-                        height: 32,
+                        height: 40,
                         width: 200,
                         child: ColorPickerSlider(
                           TrackType.saturation,
                           _hsvColor!,
                           _onColorChanged,
-                          displayThumbColor: true,
+                          displayThumbColor: false,
                         ),
                       ),
                       const SizedBox(height: 8),
                       // Value/Brightness slider
                       SizedBox(
-                        height: 32,
+                        height: 40,
                         width: 200,
                         child: ColorPickerSlider(
                           TrackType.value,
                           _hsvColor!,
                           _onColorChanged,
-                          displayThumbColor: true,
+                          displayThumbColor: false,
                         ),
                       ),
+                      if (widget.isContour) ...[
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: 200,
+                          height: 40,
+                          child: GradientSlider(
+                            value: contourOpacity,
+                            thumbColor: colors.white,
+                            onChanged: (double value) {
+                              context.read<CanvasBloc>().add(
+                                ChangeContourSettings(opacity: value),
+                              );
+                            },
+                            gradient: LinearGradient(
+                              colors: [
+                                currentColor.withValues(alpha: 0),
+                                currentColor.withValues(alpha: 1),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 12),
                       // Row with eyedropper, text input, and copy button
                       Row(
@@ -258,13 +289,15 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
                           IconButton(
                             icon: Icon(
                               Icons.colorize,
-                              color: colors.primaryText,
+                              color: colors.iconPrimary,
                               size: 20,
                             ),
-                            tooltip: 'eyedropper'.tr(),
+                            tooltip: LocaleKeys.eyedropper.tr(),
                             onPressed: () {
                               Navigator.of(context).pop();
-                              widget.onEyedropper?.call();
+                              widget.onEyedropper?.call(
+                                isContour: widget.isContour,
+                              );
                             },
                             padding: const EdgeInsets.all(4),
                             constraints: const BoxConstraints(
@@ -278,7 +311,7 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
                             child: TextField(
                               controller: _textController,
                               focusNode: _textFocusNode,
-                              cursorColor: colors.green,
+                              cursorColor: colors.iconActive,
                               style: AppFonts.normal16.copyWith(
                                 color: colors.primaryText,
                               ),
@@ -307,10 +340,10 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
                           IconButton(
                             icon: Icon(
                               Icons.copy,
-                              color: colors.primaryText,
+                              color: colors.iconPrimary,
                               size: 20,
                             ),
-                            tooltip: 'copy'.tr(),
+                            tooltip: LocaleKeys.copy.tr(),
                             onPressed: _copyValueToClipboard,
                             padding: const EdgeInsets.all(4),
                             constraints: const BoxConstraints(

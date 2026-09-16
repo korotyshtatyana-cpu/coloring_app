@@ -43,14 +43,35 @@ dependency_overrides:
     path: ./features/canvas
   settings:
     path: ./features/settings
+  feedback:
+    path: ./features/feedback
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.2
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  remove_alpha_ios: true
+  image_path: "core_ui/resources/images/app_icon.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#FBFBF9"
+  adaptive_icon_foreground: "core_ui/resources/images/app_icon.png"
 
 flutter:
   uses-material-design: true
   assets:
     - .env.dev
     - .env.prod
+
+flutter_native_splash:
+  color: "#F9F8F6"
+  # Transparent pixel to avoid default black square if image is missing
+  image: core_ui/resources/images/splash_pixel.png
+  android_12:
+    color: "#F9F8F6"
+    image: core_ui/resources/images/splash_pixel.png
+  fullscreen: true

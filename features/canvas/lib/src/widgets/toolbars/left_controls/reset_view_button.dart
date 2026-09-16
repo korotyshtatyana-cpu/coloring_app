@@ -21,7 +21,7 @@ class ResetViewButton extends StatelessWidget {
       size: size,
       iconSize: 24,
       backgroundColor: Colors.transparent,
-      icon: const Icon(Icons.refresh),
+      icon: const Icon(Icons.center_focus_weak),
       onPressed: () => context.read<CanvasBloc>().add(
             const ResetView(),
           ),

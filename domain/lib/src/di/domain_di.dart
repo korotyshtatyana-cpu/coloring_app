@@ -34,6 +34,12 @@ abstract class DomainDI {
       ),
     );
 
+    appLocator.registerLazySingleton<DeleteAccountUseCase>(
+      () => DeleteAccountUseCase(
+        repository: appLocator<AuthRepository>(),
+      ),
+    );
+
     appLocator.registerLazySingleton<GetContoursUseCase>(
       () => GetContoursUseCase(
         repository: appLocator<GalleryRepository>(),
@@ -67,6 +73,12 @@ abstract class DomainDI {
     appLocator.registerLazySingleton<GetContourByIdUseCase>(
       () => GetContourByIdUseCase(
         repository: appLocator<GalleryRepository>(),
+      ),
+    );
+
+    appLocator.registerLazySingleton<GetAvailableToolsUseCase>(
+      () => GetAvailableToolsUseCase(
+        repository: appLocator<CanvasRepository>(),
       ),
     );
 
@@ -121,6 +133,12 @@ abstract class DomainDI {
     appLocator.registerLazySingleton<UpdateSettingsUseCase>(
       () => UpdateSettingsUseCase(
         repository: appLocator<SettingsRepository>(),
+      ),
+    );
+
+    appLocator.registerLazySingleton<SubmitFeedbackUseCase>(
+      () => SubmitFeedbackUseCase(
+        repository: appLocator<FeedbackRepository>(),
       ),
     );
   }

@@ -4,6 +4,7 @@ import 'brush_button.dart';
 import 'brush_size_slider.dart';
 import 'eraser_button.dart';
 import 'opacity_slider.dart';
+import 'reset_project_button.dart';
 import 'reset_view_button.dart';
 
 /// Single column layout for left controls.
@@ -28,7 +29,7 @@ class SingleColumnLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         BrushButton(size: iconButtonSize),
@@ -39,6 +40,8 @@ class SingleColumnLayout extends StatelessWidget {
         OpacitySlider(height: sliderHeight),
         SizedBox(height: gap),
         ResetViewButton(size: iconButtonSize),
+        SizedBox(height: gap),
+        ResetProjectButton(size: iconButtonSize),
       ],
     );
   }

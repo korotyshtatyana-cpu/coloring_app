@@ -20,7 +20,15 @@ abstract class AppColors {
 
   Color get accentDark;
 
+  Color get iconPrimary;
+
+  Color get iconActive;
+
+  Color get iconDisabled;
+
   Color get error;
+
+  Color get redAccent;
 
   Color get green;
 
@@ -83,10 +91,22 @@ class LightColors implements AppColors {
   Color get accentDark => const Color(0xFFA0AA8E);
 
   @override
+  Color get iconPrimary => primaryText;
+
+  @override
+  Color get iconActive => accentDark;
+
+  @override
+  Color get iconDisabled => const Color(0xFFE0E0DE);
+
+  @override
   Color get transparent => const Color(0x00000000);
 
   @override
   Color get error => const Color(0xFFFF0000);
+
+  @override
+  Color get redAccent => const Color(0xFFFF5252);
 
   @override
   Color get green => accentLight;
