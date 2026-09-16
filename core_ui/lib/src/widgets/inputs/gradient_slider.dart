@@ -34,6 +34,12 @@ class GradientSlider extends StatelessWidget {
   /// Whether to render the slider vertically.
   final bool isVertical;
 
+  /// Callback when interaction starts.
+  final VoidCallback? onStarted;
+
+  /// Callback when interaction stops.
+  final VoidCallback? onStopped;
+
   /// Creates a [GradientSlider].
   const GradientSlider({
     required this.value,
@@ -46,6 +52,8 @@ class GradientSlider extends StatelessWidget {
     this.thumbRadius = 10,
     this.thumbColor,
     this.isVertical = false,
+    this.onStarted,
+    this.onStopped,
     super.key,
   });
 
@@ -66,6 +74,7 @@ class GradientSlider extends StatelessWidget {
         final double trackLength = totalLength - (sidePadding * 2);
 
         return GestureDetector(
+          onPanStart: (_) => onStarted?.call(),
           onPanUpdate: (DragUpdateDetails d) {
             final double localPos = isVertical ? d.localPosition.dy : d.localPosition.dx;
             final double relativePos = localPos - sidePadding;
@@ -77,7 +86,9 @@ class GradientSlider extends StatelessWidget {
             }
             onChanged(newValue.clamp(0.0, 1.0));
           },
+          onPanEnd: (_) => onStopped?.call(),
           onTapDown: (TapDownDetails d) {
+            onStarted?.call();
             final double localPos = isVertical ? d.localPosition.dy : d.localPosition.dx;
             final double relativePos = localPos - sidePadding;
             double newValue;
@@ -88,6 +99,8 @@ class GradientSlider extends StatelessWidget {
             }
             onChanged(newValue.clamp(0.0, 1.0));
           },
+          onTapUp: (_) => onStopped?.call(),
+          onTapCancel: () => onStopped?.call(),
           child: Container(
             width: isVertical ? crossAxisLength : totalLength,
             height: isVertical ? totalLength : crossAxisLength,

@@ -2,6 +2,7 @@ import 'package:core/core.dart';
 import 'package:flutter/material.dart';
 
 import '../../../bloc/canvas_bloc.dart';
+import 'slider_overlay.dart';
 import 'vertical_control_slider.dart';
 
 /// Slider to change the brush opacity.
@@ -20,15 +21,28 @@ class OpacitySlider extends StatelessWidget {
     final double opacity = context.select(
       (CanvasBloc bloc) => bloc.state.opacity,
     );
+    final double brushSize = context.select(
+      (CanvasBloc bloc) => bloc.state.brushSize,
+    );
+    final Color color = context.select(
+      (CanvasBloc bloc) => bloc.state.color,
+    );
 
     return VerticalControlSlider(
       value: opacity,
       min: 0.0,
       max: 1.0,
       height: height,
-      onChanged: (double value) => context.read<CanvasBloc>().add(
-            ChangeOpacity(value),
-          ),
+      onChanged: (double value) =>
+          context.read<CanvasBloc>().add(ChangeOpacity(value)),
+      overlayBuilder: (context, value) {
+        return SliderOverlay(
+          valueText: '${(value * 100).round()}%',
+          circleSize: brushSize,
+          opacity: value,
+          color: color,
+        );
+      },
     );
   }
 }

@@ -2,6 +2,7 @@ import 'package:core/core.dart';
 import 'package:flutter/material.dart';
 
 import '../../../bloc/canvas_bloc.dart';
+import 'slider_overlay.dart';
 import 'vertical_control_slider.dart';
 
 /// Slider to change the brush size.
@@ -17,14 +18,27 @@ class BrushSizeSlider extends StatelessWidget {
     final double brushSize = context.select(
       (CanvasBloc bloc) => bloc.state.brushSize,
     );
+    final double opacity = context.select(
+      (CanvasBloc bloc) => bloc.state.opacity,
+    );
+    final Color color = context.select((CanvasBloc bloc) => bloc.state.color);
 
     return VerticalControlSlider(
       value: brushSize,
       min: Constants.minBrushSize,
       max: Constants.maxBrushSize,
       height: height,
-      onChanged: (double value) =>
-          context.read<CanvasBloc>().add(ChangeBrushSize(value)),
+      onChanged: (double value) {
+        context.read<CanvasBloc>().add(ChangeBrushSize(value));
+      },
+      overlayBuilder: (context, value) {
+        return SliderOverlay(
+          valueText: value.toStringAsFixed(1),
+          circleSize: value,
+          opacity: opacity,
+          color: color,
+        );
+      },
     );
   }
 }
