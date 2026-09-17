@@ -23,6 +23,9 @@ class GalleryState extends Equatable {
   /// Loaded contours.
   final List<ContourEntity> contours;
 
+  /// Categories that have at least one contour.
+  final List<ContourCategory> availableCategories;
+
   /// Error message, if any.
   final String? error;
 
@@ -51,6 +54,7 @@ class GalleryState extends Equatable {
   const GalleryState({
     this.status = GalleryStatus.initial,
     this.contours = const <ContourEntity>[],
+    this.availableCategories = const <ContourCategory>[],
     this.error,
     this.activeFilter = FilterType.all,
     this.selectedCategory = ContourCategory.all,
@@ -65,6 +69,7 @@ class GalleryState extends Equatable {
   List<Object?> get props => <Object?>[
     status,
     contours,
+    availableCategories,
     error,
     activeFilter,
     selectedCategory,
@@ -80,6 +85,7 @@ class GalleryState extends Equatable {
   GalleryState copyWith({
     GalleryStatus? status,
     List<ContourEntity>? contours,
+    List<ContourCategory>? availableCategories,
     String? error,
     FilterType? activeFilter,
     ContourCategory? selectedCategory,
@@ -92,6 +98,7 @@ class GalleryState extends Equatable {
     return GalleryState(
       status: status ?? this.status,
       contours: contours ?? this.contours,
+      availableCategories: availableCategories ?? this.availableCategories,
       error: error ?? this.error,
       activeFilter: activeFilter ?? this.activeFilter,
       selectedCategory: selectedCategory ?? this.selectedCategory,

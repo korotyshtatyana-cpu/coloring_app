@@ -177,4 +177,14 @@ class GalleryRepositoryImpl implements GalleryRepository {
     }
     return null;
   }
+
+  @override
+  Future<List<ContourCategory>> getUsedCategories() async {
+    try {
+      return await _remoteProvider.getUsedCategories();
+    } catch (_) {
+      final cached = await _localProvider.getCachedContours();
+      return cached.map((ContourModel contour) => contour.category).toSet().toList();
+    }
+  }
 }

@@ -33,8 +33,8 @@ abstract class  LocaleKeys {
   static const nature = 'nature';
   static const fantasy = 'fantasy';
   static const mandala = 'mandala';
-  static const transport = 'transport';
-  static const cities = 'cities';
+  static const kids = 'kids';
+  static const fun = 'fun';
   static const people = 'people';
   static const flowers = 'flowers';
   static const patterns = 'patterns';
@@ -44,21 +44,23 @@ abstract class  LocaleKeys {
   static const saved_to_gallery = 'saved_to_gallery';
   static const contour_color = 'contour_color';
   static const eyedropper = 'eyedropper';
-  static const english = 'english';
-  static const russian = 'russian';
-  static const delete_account = 'delete_account';
+  static const brush_round_basic = 'brush_round_basic';
+  static const brush_fine_liner = 'brush_fine_liner';
+  static const eraser_standard = 'eraser_standard';
+  static const eraser_soft = 'eraser_soft';
+  static const reset_project_confirm_title = 'reset_project_confirm_title';
+  static const reset_project_confirm_message = 'reset_project_confirm_message';
+  static const cancel = 'cancel';
   static const hi_user = 'hi_user';
+  static const delete_account = 'delete_account';
   static const delete_account_confirm_title = 'delete_account_confirm_title';
   static const delete_account_confirm_message = 'delete_account_confirm_message';
-  static const cancel = 'cancel';
   static const confirm = 'confirm';
+  static const english = 'english';
+  static const russian = 'russian';
   static const user_placeholder = 'user_placeholder';
   static const copied_to_clipboard = 'copied_to_clipboard';
   static const copy = 'copy';
-  static const brush_round_basic = 'brush_round_basic';
-  static const brush_fine_liner = 'brush_fine_liner';
-  static const reset_project_confirm_title = 'reset_project_confirm_title';
-  static const reset_project_confirm_message = 'reset_project_confirm_message';
   static const rate_the_app = 'rate_the_app';
   static const rate_the_app_message = 'rate_the_app_message';
   static const go_to_store = 'go_to_store';
@@ -69,4 +71,5 @@ abstract class  LocaleKeys {
   static const message = 'message';
   static const submit = 'submit';
   static const attachments_max = 'attachments_max';
+
 }

@@ -174,14 +174,11 @@ class ChangeContourSettings extends CanvasEvent {
   /// New contour opacity.
   final double? opacity;
 
-  /// New contour width.
-  final double? width;
-
   /// Creates a [ChangeContourSettings] event.
-  const ChangeContourSettings({this.color, this.opacity, this.width});
+  const ChangeContourSettings({this.color, this.opacity});
 
   @override
-  List<Object?> get props => <Object?>[color, opacity, width];
+  List<Object?> get props => <Object?>[color, opacity];
 }
 
 /// Resets the canvas view transformation.

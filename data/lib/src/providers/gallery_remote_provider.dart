@@ -135,4 +135,18 @@ class GalleryRemoteProvider {
       }
     }
   }
+
+  /// Returns the list of categories that have at least one contour.
+  Future<List<ContourCategory>> getUsedCategories() async {
+    final List<Map<String, dynamic>> response = await _client
+        .from(RequestConstants.contoursTable)
+        .select(RequestConstants.categoryColumn);
+
+    return response
+        .map((Map<String, dynamic> row) =>
+            row[RequestConstants.categoryColumn] as String)
+        .toSet()
+        .map((String name) => ContourCategory.values.byName(name))
+        .toList();
+  }
 }

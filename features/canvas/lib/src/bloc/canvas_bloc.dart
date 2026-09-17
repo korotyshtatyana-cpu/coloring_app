@@ -83,7 +83,6 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
           ? Color(settings!['contourColor'] as int)
           : null;
       final double? loadedOpacity = settings?['contourOpacity']?.toDouble();
-      final double? loadedWidth = settings?['contourWidth']?.toDouble();
       final String? thumbnailPath = project?.data['thumbnailPath'] as String?;
 
       emit(state.copyWith(
@@ -94,7 +93,6 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
         redoStack: const <StrokeEntity>[],
         contourColor: loadedColor ?? state.contourColor,
         contourOpacity: loadedOpacity ?? state.contourOpacity,
-        contourWidth: loadedWidth ?? state.contourWidth,
         thumbnailPath: thumbnailPath,
         availableTools: allTools,
         activeBrushId: allTools.isNotEmpty ? allTools.first.id : null,
@@ -346,7 +344,6 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
                 contourSvg: state.contour!.svgData,
                 contourColor: state.contourColor,
                 contourOpacity: state.contourOpacity,
-                contourWidth: state.contourWidth,
                 strokes: state.strokes,
               ),
             ) ??
@@ -407,7 +404,6 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     emit(state.copyWith(
       contourColor: event.color ?? state.contourColor,
       contourOpacity: event.opacity ?? state.contourOpacity,
-      contourWidth: event.width ?? state.contourWidth,
     ));
     _scheduleAutosave();
   }
@@ -446,7 +442,6 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
           contourSvg: state.contour!.svgData,
           contourColor: state.contourColor,
           contourOpacity: state.contourOpacity,
-          contourWidth: state.contourWidth,
         ),
       );
 
@@ -514,7 +509,6 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
         'settings': <String, dynamic>{
           'contourColor': effectiveState.contourColor.toARGB32(),
           'contourOpacity': effectiveState.contourOpacity,
-          'contourWidth': effectiveState.contourWidth,
         },
         if (thumbnailPath != null) 'thumbnailPath': thumbnailPath,
       },

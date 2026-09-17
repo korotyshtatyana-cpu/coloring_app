@@ -33,13 +33,10 @@ class _ContourLayerState extends State<ContourLayer> {
       return const SizedBox.shrink();
     }
 
-    final String key = '${contour.id}:${state.contourWidth}';
+    final String key = contour.id;
     if (_loadedContourKey != key) {
       _loadedContourKey = key;
-      final String svgData = SvgUtils.applyStrokeWidth(
-        contour.svgData,
-        state.contourWidth,
-      );
+      final String svgData = contour.svgData;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _loadContourPicture(svgData, key);
       });

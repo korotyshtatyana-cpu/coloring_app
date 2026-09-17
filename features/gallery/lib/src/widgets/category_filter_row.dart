@@ -11,15 +11,11 @@ class CategoryFilterRow extends StatelessWidget {
   /// Creates [CategoryFilterRow].
   const CategoryFilterRow({super.key});
 
-  static final List<ContourCategory> _categories = ContourCategory.values
-      .where((ContourCategory c) => c != ContourCategory.all)
-      .toList();
-
   @override
   Widget build(BuildContext context) {
-    final ContourCategory selectedCategory = context.select(
-      (GalleryBloc bloc) => bloc.state.selectedCategory,
-    );
+    final state = context.watch<GalleryBloc>().state;
+    final ContourCategory selectedCategory = state.selectedCategory;
+    final List<ContourCategory> availableCategories = state.availableCategories;
 
     const EdgeInsets padding = EdgeInsets.symmetric(horizontal: 16);
 
@@ -34,7 +30,7 @@ class CategoryFilterRow extends StatelessWidget {
             onTap: () => _onCategoryChanged(context, ContourCategory.all),
           ),
           const SizedBox(width: 8),
-          ..._categories.map((ContourCategory category) {
+          ...availableCategories.map((ContourCategory category) {
             final bool isSelected = selectedCategory == category;
             return Padding(
               padding: const EdgeInsets.only(right: 8),

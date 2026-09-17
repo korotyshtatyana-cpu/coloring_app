@@ -79,6 +79,7 @@ class _GalleryScreenState extends State<GalleryScreen> with AutoRouteAware {
   GalleryBloc _createBloc() {
     return GalleryBloc(
       getContoursUseCase: appLocator<GetContoursUseCase>(),
+      getUsedCategoriesUseCase: appLocator<GetUsedCategoriesUseCase>(),
       getContoursByIdsUseCase: appLocator<GetContoursByIdsUseCase>(),
       toggleFavoriteUseCase: appLocator<ToggleFavoriteUseCase>(),
       getFavoriteIdsUseCase: appLocator<GetFavoriteIdsUseCase>(),

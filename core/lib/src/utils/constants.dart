@@ -24,15 +24,6 @@ abstract final class Constants {
   /// Default contour opacity (0.0 - 1.0).
   static const double contourDefaultOpacity = 1.0;
 
-  /// Default contour stroke width.
-  static const double contourDefaultWidth = 2.0;
-
-  /// Minimum contour stroke width.
-  static const double minContourWidth = 0.5;
-
-  /// Maximum contour stroke width.
-  static const double maxContourWidth = 10.0;
-
   /// Debounce duration for autosave after a stroke.
   static const Duration autosaveDebounce = Duration(milliseconds: 500);
 }

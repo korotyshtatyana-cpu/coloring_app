@@ -303,8 +303,7 @@ class _CanvasContentState extends State<CanvasContent>
                                   previous.contourColor !=
                                       current.contourColor ||
                                   previous.contourOpacity !=
-                                      current.contourOpacity ||
-                                  previous.contourWidth != current.contourWidth,
+                                      current.contourOpacity,
                               builder: (context, state) {
                                 return SizedBox(
                                   width: canvasSize.width,

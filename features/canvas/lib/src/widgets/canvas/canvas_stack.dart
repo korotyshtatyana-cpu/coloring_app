@@ -17,8 +17,7 @@ class CanvasStack extends StatelessWidget {
           previous.strokes != current.strokes ||
           previous.contour != current.contour ||
           previous.contourColor != current.contourColor ||
-          previous.contourOpacity != current.contourOpacity ||
-          previous.contourWidth != current.contourWidth,
+          previous.contourOpacity != current.contourOpacity,
       builder: (BuildContext context, CanvasState state) {
         return ClipRect(
           child: Stack(

@@ -65,9 +65,6 @@ class CanvasState extends Equatable {
   /// Contour display opacity.
   final double contourOpacity;
 
-  /// Contour display width.
-  final double contourWidth;
-
   /// Canvas transformation matrix.
   final Matrix4 transform;
 
@@ -107,7 +104,6 @@ class CanvasState extends Equatable {
     this.isEraser = false,
     this.contourColor = Colors.black,
     this.contourOpacity = Constants.contourDefaultOpacity,
-    this.contourWidth = Constants.contourDefaultWidth,
     Matrix4? transform,
     this.exportedFilePath,
     this.lastExportType,
@@ -133,7 +129,6 @@ class CanvasState extends Equatable {
         isEraser,
         contourColor,
         contourOpacity,
-        contourWidth,
         transform,
         exportedFilePath,
         lastExportType,
@@ -160,7 +155,6 @@ class CanvasState extends Equatable {
     bool? isEraser,
     Color? contourColor,
     double? contourOpacity,
-    double? contourWidth,
     Matrix4? transform,
     String? exportedFilePath,
     ExportType? lastExportType,
@@ -184,7 +178,6 @@ class CanvasState extends Equatable {
       isEraser: isEraser ?? this.isEraser,
       contourColor: contourColor ?? this.contourColor,
       contourOpacity: contourOpacity ?? this.contourOpacity,
-      contourWidth: contourWidth ?? this.contourWidth,
       transform: transform ?? this.transform,
       exportedFilePath: exportedFilePath ?? this.exportedFilePath,
       lastExportType: lastExportType ?? this.lastExportType,

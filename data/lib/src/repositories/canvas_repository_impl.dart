@@ -173,7 +173,6 @@ class CanvasRepositoryImpl implements CanvasRepository {
       contourSvg: params.contourSvg,
       contourColor: params.contourColor,
       contourOpacity: params.contourOpacity,
-      contourWidth: params.contourWidth,
       strokes: strokes,
       targetSize: targetSize,
     );

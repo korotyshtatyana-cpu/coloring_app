@@ -7,8 +7,7 @@ class SubmitFeedbackUseCase implements FutureUseCase<FeedbackEntity, void> {
   final FeedbackRepository _repository;
 
   /// Creates a [SubmitFeedbackUseCase] with the given [_repository].
-  const SubmitFeedbackUseCase({required FeedbackRepository repository})
-      : _repository = repository;
+  const SubmitFeedbackUseCase({required this._repository});
 
   @override
   Future<void> execute([FeedbackEntity? params]) {

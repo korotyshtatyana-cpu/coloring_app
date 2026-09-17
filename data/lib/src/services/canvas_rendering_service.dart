@@ -15,7 +15,6 @@ abstract final class CanvasRenderingService {
     required String contourSvg,
     required Color contourColor,
     required double contourOpacity,
-    required double contourWidth,
     required List<StrokeEntity> strokes,
     required double targetSize,
   }) async {
@@ -45,10 +44,9 @@ abstract final class CanvasRenderingService {
 
     await _drawContour(
       canvas,
-      svgData: SvgUtils.applyStrokeWidth(contourSvg, contourWidth),
+      svgData: contourSvg,
       color: contourColor,
       opacity: contourOpacity,
-      width: contourWidth,
       size: canvasSize,
     );
 
@@ -113,7 +111,6 @@ abstract final class CanvasRenderingService {
     required String svgData,
     required Color color,
     required double opacity,
-    required double width,
     required Size size,
   }) async {
     final PictureInfo pictureInfo = await vg.loadPicture(

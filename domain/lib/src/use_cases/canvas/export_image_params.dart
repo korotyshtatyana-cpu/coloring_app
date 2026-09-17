@@ -16,9 +16,6 @@ class ExportImageParams {
   /// Opacity of the contour layer.
   final double contourOpacity;
 
-  /// Stroke width of the contour.
-  final double contourWidth;
-
   /// Explicit strokes to render. When null, strokes are loaded from storage.
   final List<StrokeEntity>? strokes;
 
@@ -28,7 +25,6 @@ class ExportImageParams {
     required this.contourSvg,
     required this.contourColor,
     required this.contourOpacity,
-    required this.contourWidth,
     this.strokes,
   });
 }

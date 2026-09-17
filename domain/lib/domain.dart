@@ -29,6 +29,7 @@ export 'src/use_cases/canvas/share_file_use_case.dart';
 export 'src/use_cases/gallery/get_contour_by_id_use_case.dart';
 export 'src/use_cases/gallery/get_contours_use_case.dart';
 export 'src/use_cases/gallery/get_contours_by_ids_use_case.dart';
+export 'src/use_cases/gallery/get_used_categories_use_case.dart';
 export 'src/use_cases/gallery/get_favorite_ids_use_case.dart';
 export 'src/use_cases/gallery/get_work_in_progress_use_case.dart';
 export 'src/use_cases/gallery/toggle_favorite_use_case.dart';

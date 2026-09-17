@@ -46,6 +46,12 @@ abstract class DomainDI {
       ),
     );
 
+    appLocator.registerLazySingleton<GetUsedCategoriesUseCase>(
+      () => GetUsedCategoriesUseCase(
+        repository: appLocator<GalleryRepository>(),
+      ),
+    );
+
     appLocator.registerLazySingleton<GetContoursByIdsUseCase>(
       () => GetContoursByIdsUseCase(
         repository: appLocator<GalleryRepository>(),

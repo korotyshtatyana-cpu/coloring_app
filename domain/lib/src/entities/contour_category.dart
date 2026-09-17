@@ -15,11 +15,11 @@ enum ContourCategory {
   /// Mandala category.
   mandala,
 
-  /// Transport category.
-  transport,
+  /// Kids category.
+  kids,
 
-  /// Cities category.
-  cities,
+  /// Fun category.
+  fun,
 
   /// People category.
   people,
