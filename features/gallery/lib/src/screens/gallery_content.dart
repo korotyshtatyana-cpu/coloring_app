@@ -37,6 +37,7 @@ class GalleryContent extends StatelessWidget {
         ],
       ),
       body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           const SizedBox(height: 8),
           const FilterChips(),

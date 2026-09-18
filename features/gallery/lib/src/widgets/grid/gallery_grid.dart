@@ -1,3 +1,4 @@
+import 'package:core_ui/core_ui.dart';
 import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 
@@ -17,12 +18,21 @@ class GalleryGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
+    final Size size = MediaQuery.sizeOf(context);
+    final bool isPortrait = size.height > size.width;
+    final bool isTablet = ResponsiveHelper.isTablet(context);
+
+    int crossAxisCount;
+    if (isPortrait) {
+      crossAxisCount = isTablet ? 3 : 2;
+    } else {
+      crossAxisCount = 4;
+    }
 
     return GridView.builder(
       padding: const EdgeInsets.all(16),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: isPortrait ? 2 : 4,
+        crossAxisCount: crossAxisCount,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
         childAspectRatio: 0.85,
