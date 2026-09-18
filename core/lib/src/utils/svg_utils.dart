@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:http/http.dart' as http;
 
 /// Utilities for manipulating SVG data strings.
 abstract final class SvgUtils {
@@ -21,5 +22,18 @@ abstract final class SvgUtils {
       return null;
     }
     return Size(width, height);
+  }
+
+  /// Fetches SVG content from a URL.
+  static Future<String?> fetchSvgContent(String url) async {
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        return response.body;
+      }
+    } catch (_) {
+      // Ignore errors, return null
+    }
+    return null;
   }
 }

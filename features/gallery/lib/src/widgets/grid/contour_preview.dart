@@ -12,11 +12,11 @@ class ContourPreview extends StatefulWidget {
   /// The image URL (remote or local) to display.
   final String? previewUrl;
 
-  /// Raw SVG data for the fallback vector rendering.
-  final String? svgData;
+  /// URL to the SVG file.
+  final String? svgUrl;
 
   /// Creates a [ContourPreview].
-  const ContourPreview({super.key, this.previewUrl, this.svgData});
+  const ContourPreview({super.key, this.previewUrl, this.svgUrl});
 
   @override
   State<ContourPreview> createState() => _ContourPreviewState();
@@ -30,9 +30,8 @@ class _ContourPreviewState extends State<ContourPreview> {
   @override
   void initState() {
     super.initState();
-    // Always start with null (fallback SVG) to force a cross-fade to the
-    // real image once the screen is loaded. This creates a cinematic
-    // "coloring" effect when the gallery opens.
+    // Always start with null (fallback SVG or placeholder) to force a
+    // cross-fade to the real image once the screen is loaded.
     _displayedUrl = null;
 
     if (widget.previewUrl != null && widget.previewUrl!.isNotEmpty) {
@@ -85,7 +84,7 @@ class _ContourPreviewState extends State<ContourPreview> {
       switchOutCurve: Curves.easeInOutCubic,
       child: ContourPreviewContent(
         url: _displayedUrl,
-        svgData: widget.svgData,
+        svgUrl: widget.svgUrl,
         key: ValueKey<String?>(_displayedUrl ?? 'fallback'),
       ),
     );

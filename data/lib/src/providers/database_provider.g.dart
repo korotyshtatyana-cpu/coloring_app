@@ -1379,12 +1379,10 @@ class $ContoursTable extends Contours with TableInfo<$ContoursTable, Contour> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _svgDataMeta = const VerificationMeta(
-    'svgData',
-  );
+  static const VerificationMeta _svgUrlMeta = const VerificationMeta('svgUrl');
   @override
-  late final GeneratedColumn<String> svgData = GeneratedColumn<String>(
-    'svg_data',
+  late final GeneratedColumn<String> svgUrl = GeneratedColumn<String>(
+    'svg_url',
     aliasedName,
     false,
     type: DriftSqlType.string,
@@ -1417,7 +1415,7 @@ class $ContoursTable extends Contours with TableInfo<$ContoursTable, Contour> {
     id,
     title,
     category,
-    svgData,
+    svgUrl,
     previewUrl,
     createdAt,
   ];
@@ -1454,13 +1452,13 @@ class $ContoursTable extends Contours with TableInfo<$ContoursTable, Contour> {
     } else if (isInserting) {
       context.missing(_categoryMeta);
     }
-    if (data.containsKey('svg_data')) {
+    if (data.containsKey('svg_url')) {
       context.handle(
-        _svgDataMeta,
-        svgData.isAcceptableOrUnknown(data['svg_data']!, _svgDataMeta),
+        _svgUrlMeta,
+        svgUrl.isAcceptableOrUnknown(data['svg_url']!, _svgUrlMeta),
       );
     } else if (isInserting) {
-      context.missing(_svgDataMeta);
+      context.missing(_svgUrlMeta);
     }
     if (data.containsKey('preview_url')) {
       context.handle(
@@ -1499,9 +1497,9 @@ class $ContoursTable extends Contours with TableInfo<$ContoursTable, Contour> {
         DriftSqlType.string,
         data['${effectivePrefix}category'],
       )!,
-      svgData: attachedDatabase.typeMapping.read(
+      svgUrl: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}svg_data'],
+        data['${effectivePrefix}svg_url'],
       )!,
       previewUrl: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -1530,8 +1528,8 @@ class Contour extends DataClass implements Insertable<Contour> {
   /// Contour category.
   final String category;
 
-  /// SVG data describing the contour.
-  final String svgData;
+  /// URL to the SVG file describing the contour.
+  final String svgUrl;
 
   /// Preview image URL.
   final String previewUrl;
@@ -1542,7 +1540,7 @@ class Contour extends DataClass implements Insertable<Contour> {
     required this.id,
     required this.title,
     required this.category,
-    required this.svgData,
+    required this.svgUrl,
     required this.previewUrl,
     required this.createdAt,
   });
@@ -1552,7 +1550,7 @@ class Contour extends DataClass implements Insertable<Contour> {
     map['id'] = Variable<String>(id);
     map['title'] = Variable<String>(title);
     map['category'] = Variable<String>(category);
-    map['svg_data'] = Variable<String>(svgData);
+    map['svg_url'] = Variable<String>(svgUrl);
     map['preview_url'] = Variable<String>(previewUrl);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
@@ -1563,7 +1561,7 @@ class Contour extends DataClass implements Insertable<Contour> {
       id: Value(id),
       title: Value(title),
       category: Value(category),
-      svgData: Value(svgData),
+      svgUrl: Value(svgUrl),
       previewUrl: Value(previewUrl),
       createdAt: Value(createdAt),
     );
@@ -1578,7 +1576,7 @@ class Contour extends DataClass implements Insertable<Contour> {
       id: serializer.fromJson<String>(json['id']),
       title: serializer.fromJson<String>(json['title']),
       category: serializer.fromJson<String>(json['category']),
-      svgData: serializer.fromJson<String>(json['svgData']),
+      svgUrl: serializer.fromJson<String>(json['svgUrl']),
       previewUrl: serializer.fromJson<String>(json['previewUrl']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
@@ -1590,7 +1588,7 @@ class Contour extends DataClass implements Insertable<Contour> {
       'id': serializer.toJson<String>(id),
       'title': serializer.toJson<String>(title),
       'category': serializer.toJson<String>(category),
-      'svgData': serializer.toJson<String>(svgData),
+      'svgUrl': serializer.toJson<String>(svgUrl),
       'previewUrl': serializer.toJson<String>(previewUrl),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
@@ -1600,14 +1598,14 @@ class Contour extends DataClass implements Insertable<Contour> {
     String? id,
     String? title,
     String? category,
-    String? svgData,
+    String? svgUrl,
     String? previewUrl,
     DateTime? createdAt,
   }) => Contour(
     id: id ?? this.id,
     title: title ?? this.title,
     category: category ?? this.category,
-    svgData: svgData ?? this.svgData,
+    svgUrl: svgUrl ?? this.svgUrl,
     previewUrl: previewUrl ?? this.previewUrl,
     createdAt: createdAt ?? this.createdAt,
   );
@@ -1616,7 +1614,7 @@ class Contour extends DataClass implements Insertable<Contour> {
       id: data.id.present ? data.id.value : this.id,
       title: data.title.present ? data.title.value : this.title,
       category: data.category.present ? data.category.value : this.category,
-      svgData: data.svgData.present ? data.svgData.value : this.svgData,
+      svgUrl: data.svgUrl.present ? data.svgUrl.value : this.svgUrl,
       previewUrl: data.previewUrl.present
           ? data.previewUrl.value
           : this.previewUrl,
@@ -1630,7 +1628,7 @@ class Contour extends DataClass implements Insertable<Contour> {
           ..write('id: $id, ')
           ..write('title: $title, ')
           ..write('category: $category, ')
-          ..write('svgData: $svgData, ')
+          ..write('svgUrl: $svgUrl, ')
           ..write('previewUrl: $previewUrl, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -1639,7 +1637,7 @@ class Contour extends DataClass implements Insertable<Contour> {
 
   @override
   int get hashCode =>
-      Object.hash(id, title, category, svgData, previewUrl, createdAt);
+      Object.hash(id, title, category, svgUrl, previewUrl, createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1647,7 +1645,7 @@ class Contour extends DataClass implements Insertable<Contour> {
           other.id == this.id &&
           other.title == this.title &&
           other.category == this.category &&
-          other.svgData == this.svgData &&
+          other.svgUrl == this.svgUrl &&
           other.previewUrl == this.previewUrl &&
           other.createdAt == this.createdAt);
 }
@@ -1656,7 +1654,7 @@ class ContoursCompanion extends UpdateCompanion<Contour> {
   final Value<String> id;
   final Value<String> title;
   final Value<String> category;
-  final Value<String> svgData;
+  final Value<String> svgUrl;
   final Value<String> previewUrl;
   final Value<DateTime> createdAt;
   final Value<int> rowid;
@@ -1664,7 +1662,7 @@ class ContoursCompanion extends UpdateCompanion<Contour> {
     this.id = const Value.absent(),
     this.title = const Value.absent(),
     this.category = const Value.absent(),
-    this.svgData = const Value.absent(),
+    this.svgUrl = const Value.absent(),
     this.previewUrl = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -1673,21 +1671,21 @@ class ContoursCompanion extends UpdateCompanion<Contour> {
     required String id,
     required String title,
     required String category,
-    required String svgData,
+    required String svgUrl,
     required String previewUrl,
     required DateTime createdAt,
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        title = Value(title),
        category = Value(category),
-       svgData = Value(svgData),
+       svgUrl = Value(svgUrl),
        previewUrl = Value(previewUrl),
        createdAt = Value(createdAt);
   static Insertable<Contour> custom({
     Expression<String>? id,
     Expression<String>? title,
     Expression<String>? category,
-    Expression<String>? svgData,
+    Expression<String>? svgUrl,
     Expression<String>? previewUrl,
     Expression<DateTime>? createdAt,
     Expression<int>? rowid,
@@ -1696,7 +1694,7 @@ class ContoursCompanion extends UpdateCompanion<Contour> {
       if (id != null) 'id': id,
       if (title != null) 'title': title,
       if (category != null) 'category': category,
-      if (svgData != null) 'svg_data': svgData,
+      if (svgUrl != null) 'svg_url': svgUrl,
       if (previewUrl != null) 'preview_url': previewUrl,
       if (createdAt != null) 'created_at': createdAt,
       if (rowid != null) 'rowid': rowid,
@@ -1707,7 +1705,7 @@ class ContoursCompanion extends UpdateCompanion<Contour> {
     Value<String>? id,
     Value<String>? title,
     Value<String>? category,
-    Value<String>? svgData,
+    Value<String>? svgUrl,
     Value<String>? previewUrl,
     Value<DateTime>? createdAt,
     Value<int>? rowid,
@@ -1716,7 +1714,7 @@ class ContoursCompanion extends UpdateCompanion<Contour> {
       id: id ?? this.id,
       title: title ?? this.title,
       category: category ?? this.category,
-      svgData: svgData ?? this.svgData,
+      svgUrl: svgUrl ?? this.svgUrl,
       previewUrl: previewUrl ?? this.previewUrl,
       createdAt: createdAt ?? this.createdAt,
       rowid: rowid ?? this.rowid,
@@ -1735,8 +1733,8 @@ class ContoursCompanion extends UpdateCompanion<Contour> {
     if (category.present) {
       map['category'] = Variable<String>(category.value);
     }
-    if (svgData.present) {
-      map['svg_data'] = Variable<String>(svgData.value);
+    if (svgUrl.present) {
+      map['svg_url'] = Variable<String>(svgUrl.value);
     }
     if (previewUrl.present) {
       map['preview_url'] = Variable<String>(previewUrl.value);
@@ -1756,7 +1754,7 @@ class ContoursCompanion extends UpdateCompanion<Contour> {
           ..write('id: $id, ')
           ..write('title: $title, ')
           ..write('category: $category, ')
-          ..write('svgData: $svgData, ')
+          ..write('svgUrl: $svgUrl, ')
           ..write('previewUrl: $previewUrl, ')
           ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
@@ -2461,7 +2459,7 @@ typedef $$ContoursTableCreateCompanionBuilder =
       required String id,
       required String title,
       required String category,
-      required String svgData,
+      required String svgUrl,
       required String previewUrl,
       required DateTime createdAt,
       Value<int> rowid,
@@ -2471,7 +2469,7 @@ typedef $$ContoursTableUpdateCompanionBuilder =
       Value<String> id,
       Value<String> title,
       Value<String> category,
-      Value<String> svgData,
+      Value<String> svgUrl,
       Value<String> previewUrl,
       Value<DateTime> createdAt,
       Value<int> rowid,
@@ -2501,8 +2499,8 @@ class $$ContoursTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get svgData => $composableBuilder(
-    column: $table.svgData,
+  ColumnFilters<String> get svgUrl => $composableBuilder(
+    column: $table.svgUrl,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2541,8 +2539,8 @@ class $$ContoursTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get svgData => $composableBuilder(
-    column: $table.svgData,
+  ColumnOrderings<String> get svgUrl => $composableBuilder(
+    column: $table.svgUrl,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -2575,8 +2573,8 @@ class $$ContoursTableAnnotationComposer
   GeneratedColumn<String> get category =>
       $composableBuilder(column: $table.category, builder: (column) => column);
 
-  GeneratedColumn<String> get svgData =>
-      $composableBuilder(column: $table.svgData, builder: (column) => column);
+  GeneratedColumn<String> get svgUrl =>
+      $composableBuilder(column: $table.svgUrl, builder: (column) => column);
 
   GeneratedColumn<String> get previewUrl => $composableBuilder(
     column: $table.previewUrl,
@@ -2618,7 +2616,7 @@ class $$ContoursTableTableManager
                 Value<String> id = const Value.absent(),
                 Value<String> title = const Value.absent(),
                 Value<String> category = const Value.absent(),
-                Value<String> svgData = const Value.absent(),
+                Value<String> svgUrl = const Value.absent(),
                 Value<String> previewUrl = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -2626,7 +2624,7 @@ class $$ContoursTableTableManager
                 id: id,
                 title: title,
                 category: category,
-                svgData: svgData,
+                svgUrl: svgUrl,
                 previewUrl: previewUrl,
                 createdAt: createdAt,
                 rowid: rowid,
@@ -2636,7 +2634,7 @@ class $$ContoursTableTableManager
                 required String id,
                 required String title,
                 required String category,
-                required String svgData,
+                required String svgUrl,
                 required String previewUrl,
                 required DateTime createdAt,
                 Value<int> rowid = const Value.absent(),
@@ -2644,7 +2642,7 @@ class $$ContoursTableTableManager
                 id: id,
                 title: title,
                 category: category,
-                svgData: svgData,
+                svgUrl: svgUrl,
                 previewUrl: previewUrl,
                 createdAt: createdAt,
                 rowid: rowid,

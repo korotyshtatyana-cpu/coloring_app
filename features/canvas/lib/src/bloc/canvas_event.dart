@@ -226,6 +226,12 @@ class SelectTool extends CanvasEvent {
   List<Object?> get props => <Object?>[tool];
 }
 
+/// Notifies that the contour SVG has been successfully compiled into a PictureInfo.
+class ContourCompiled extends CanvasEvent {
+  /// Creates a [ContourCompiled] event.
+  const ContourCompiled();
+}
+
 /// Clears all strokes from the project.
 class ClearProject extends CanvasEvent {
   /// Creates a [ClearProject] event.

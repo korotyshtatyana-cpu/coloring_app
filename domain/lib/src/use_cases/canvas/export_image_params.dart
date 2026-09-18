@@ -7,7 +7,7 @@ class ExportImageParams {
   /// Project identifier (matches the contour id).
   final String projectId;
 
-  /// SVG data of the contour to draw on top.
+  /// SVG XML content of the contour to draw on top.
   final String contourSvg;
 
   /// Color applied to the contour.

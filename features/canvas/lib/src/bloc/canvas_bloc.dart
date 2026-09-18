@@ -59,6 +59,7 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     on<ClearProject>(_onClearProject);
     on<ExportImage>(_onExportImage);
     on<ExportImageFinished>(_onExportImageFinished);
+    on<ContourCompiled>(_onContourCompiled);
   }
 
   Future<void> _onLoadProject(
@@ -85,9 +86,19 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
       final double? loadedOpacity = settings?['contourOpacity']?.toDouble();
       final String? thumbnailPath = project?.data['thumbnailPath'] as String?;
 
+      Size? contourSize;
+      String? contourSvg;
+      if (contour != null) {
+        contourSvg = await SvgUtils.fetchSvgContent(contour.svgUrl);
+        if (contourSvg != null) {
+          contourSize = SvgUtils.parseViewBoxSize(contourSvg);
+        }
+      }
+
       emit(state.copyWith(
-        status: CanvasStatus.ready,
         contour: contour,
+        contourSize: contourSize,
+        contourSvg: contourSvg,
         strokes: strokes,
         undoStack: strokes,
         redoStack: const <StrokeEntity>[],
@@ -99,6 +110,15 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
         activeEraserId: allTools.isNotEmpty ? allTools.first.id : null,
       ));
 
+      // If the contour was not fetched correctly or doesn't exist, we don't
+      // wait for compilation and switch to ready immediately.
+      if (contourSvg == null) {
+        emit(state.copyWith(
+          status: CanvasStatus.ready,
+          isContourReady: true,
+        ));
+      }
+
       // Automatically update last_opened timestamp when project is opened
       unawaited(saveProject(withThumbnail: false));
     } catch (e, stackTrace) {
@@ -108,6 +128,16 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
         error: e.toString(),
       ));
     }
+  }
+
+  void _onContourCompiled(
+    ContourCompiled event,
+    Emitter<CanvasState> emit,
+  ) {
+    emit(state.copyWith(
+      status: CanvasStatus.ready,
+      isContourReady: true,
+    ));
   }
 
   void _onStartDrawing(
@@ -337,11 +367,11 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
       if (!isClosed) emit?.call(state.copyWith(status: CanvasStatus.saving));
 
       String? thumbnailPath = state.thumbnailPath;
-      if (withThumbnail && state.contour != null) {
+      if (withThumbnail && state.contour != null && state.contourSvg != null) {
         thumbnailPath = await _renderProjectThumbnailUseCase.execute(
               ExportImageParams(
                 projectId: _contourId,
-                contourSvg: state.contour!.svgData,
+                contourSvg: state.contourSvg!,
                 contourColor: state.contourColor,
                 contourOpacity: state.contourOpacity,
                 strokes: state.strokes,
@@ -431,7 +461,7 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     ExportImage event,
     Emitter<CanvasState> emit,
   ) async {
-    if (state.contour == null) return;
+    if (state.contour == null || state.contourSvg == null) return;
 
     try {
       emit(state.copyWith(status: CanvasStatus.exporting, error: null));
@@ -439,7 +469,7 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
       final filePath = await _exportImageUseCase.execute(
         ExportImageParams(
           projectId: state.contour!.id,
-          contourSvg: state.contour!.svgData,
+          contourSvg: state.contourSvg!,
           contourColor: state.contourColor,
           contourOpacity: state.contourOpacity,
         ),

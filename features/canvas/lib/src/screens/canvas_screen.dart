@@ -196,16 +196,14 @@ class _CanvasContentState extends State<CanvasContent>
   Widget build(BuildContext context) {
     final Size viewportSize = MediaQuery.sizeOf(context);
     final state = context.watch<CanvasBloc>().state;
-    final contour = state.contour;
     final status = state.status;
 
+    final bool isInitial = status == CanvasStatus.initial;
     final bool isLoading =
-        status == CanvasStatus.initial || status == CanvasStatus.loading;
+        status == CanvasStatus.loading || !state.isContourReady;
     final AppColors colors = AppColors.of(context);
 
-    final Size canvasSize =
-        (contour == null ? null : SvgUtils.parseViewBoxSize(contour.svgData)) ??
-        viewportSize;
+    final Size canvasSize = state.contourSize ?? viewportSize;
     final double fitScale = _fitScaleFor(viewportSize, canvasSize);
 
     if (_lastViewportSize != viewportSize) {
@@ -230,158 +228,166 @@ class _CanvasContentState extends State<CanvasContent>
         _saveAndPop();
       },
       child: Scaffold(
-        body: BlocListener<CanvasBloc, CanvasState>(
-          listenWhen: (CanvasState previous, CanvasState current) =>
-              previous.exportedFilePath != current.exportedFilePath &&
-              current.lastExportType == ExportType.gallery,
-          listener: (context, state) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  LocaleKeys.saved_to_gallery.tr(),
-                  style: AppFonts.normal16.copyWith(color: Colors.white),
-                ),
-                duration: const Duration(seconds: 1),
-              ),
-            );
-          },
-          child: BlocListener<CanvasBloc, CanvasState>(
-            listenWhen: (CanvasState previous, CanvasState current) =>
-                previous.status != current.status ||
-                previous.transform != current.transform,
-            listener: (context, state) {
-              final Matrix4 transform = state.transform;
-              if (transform.isIdentity()) {
-                // Identity means "no user transform": fit the canvas sheet
-                // into the viewport.
-                final Size viewport = MediaQuery.sizeOf(context);
-                final Size? svgSize = state.contour == null
-                    ? null
-                    : SvgUtils.parseViewBoxSize(state.contour!.svgData);
-                _transformationController.value = _fitTransform(
-                  viewport,
-                  svgSize ?? viewport,
+        body: MultiBlocListener(
+          listeners: [
+            BlocListener<CanvasBloc, CanvasState>(
+              listenWhen: (CanvasState previous, CanvasState current) =>
+                  previous.exportedFilePath != current.exportedFilePath &&
+                  current.lastExportType == ExportType.gallery,
+              listener: (context, state) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      LocaleKeys.saved_to_gallery.tr(),
+                      style: AppFonts.normal16.copyWith(color: Colors.white),
+                    ),
+                    duration: const Duration(seconds: 1),
+                  ),
                 );
-              } else {
-                _transformationController.value = transform;
-              }
+              },
+            ),
+            BlocListener<CanvasBloc, CanvasState>(
+              listenWhen: (CanvasState previous, CanvasState current) =>
+                  previous.status != current.status ||
+                  previous.transform != current.transform ||
+                  previous.contourSize != current.contourSize,
+              listener: (context, state) {
+                final Matrix4 transform = state.transform;
+                if (transform.isIdentity()) {
+                  // Identity means "no user transform": fit the canvas sheet
+                  // into the viewport.
+                  final Size viewport = MediaQuery.sizeOf(context);
+                  final Size? svgSize = state.contourSize;
+                  _transformationController.value = _fitTransform(
+                    viewport,
+                    svgSize ?? viewport,
+                  );
+                } else {
+                  _transformationController.value = transform;
+                }
 
-              if (state.status == CanvasStatus.error) {
-                ErrorDialog.show(
-                  context,
-                  message: state.error ?? LocaleKeys.something_went_wrong.tr(),
-                );
-              }
-            },
-            child: Stack(
-              children: <Widget>[
+                if (state.status == CanvasStatus.error) {
+                  ErrorDialog.show(
+                    context,
+                    message: state.error ?? LocaleKeys.something_went_wrong.tr(),
+                  );
+                }
+              },
+            ),
+          ],
+          child: Stack(
+            children: <Widget>[
+              if (!isInitial)
                 Positioned.fill(
-                  child: isLoading
-                      ? Center(
-                          child: CircularProgressIndicator(
-                            color: colors.secondaryBg,
-                          ),
-                        )
-                      : RepaintBoundary(
-                          key: _repaintKey,
-                          child: InteractiveViewer(
-                            transformationController: _transformationController,
-                            constrained: false,
-                            boundaryMargin: const EdgeInsets.all(
-                              _boundaryMargin,
-                            ),
-                            minScale: fitScale * _minScaleFactor,
-                            maxScale: fitScale * _maxScaleFactor,
-                            panEnabled: false,
-                            scaleEnabled: false,
-                            child: BlocBuilder<CanvasBloc, CanvasState>(
-                              buildWhen: (previous, current) =>
-                                  previous.strokes != current.strokes ||
-                                  previous.currentStroke !=
-                                      current.currentStroke ||
-                                  previous.contour != current.contour ||
-                                  previous.contourColor !=
-                                      current.contourColor ||
-                                  previous.contourOpacity !=
-                                      current.contourOpacity,
-                              builder: (context, state) {
-                                return SizedBox(
-                                  width: canvasSize.width,
-                                  height: canvasSize.height,
-                                  child: ClipRect(
-                                    child: Stack(
-                                      fit: StackFit.expand,
-                                      children: <Widget>[
-                                        RepaintBoundary(
-                                          child: CustomPaint(
-                                            painter: CanvasPainter(
-                                              strokes: state.strokes,
-                                            ),
-                                          ),
-                                        ),
-                                        const Positioned.fill(
-                                          child: ContourLayer(),
-                                        ),
-                                      ],
+                  child: RepaintBoundary(
+                    key: _repaintKey,
+                    child: InteractiveViewer(
+                      transformationController: _transformationController,
+                      constrained: false,
+                      boundaryMargin: const EdgeInsets.all(
+                        _boundaryMargin,
+                      ),
+                      minScale: fitScale * _minScaleFactor,
+                      maxScale: fitScale * _maxScaleFactor,
+                      panEnabled: false,
+                      scaleEnabled: false,
+                      child: BlocBuilder<CanvasBloc, CanvasState>(
+                        buildWhen: (previous, current) =>
+                            previous.strokes != current.strokes ||
+                            previous.currentStroke != current.currentStroke ||
+                            previous.contour != current.contour ||
+                            previous.contourColor != current.contourColor ||
+                            previous.contourOpacity != current.contourOpacity ||
+                            previous.contourSize != current.contourSize ||
+                            previous.isContourReady != current.isContourReady,
+                        builder: (context, state) {
+                          return SizedBox(
+                            width: canvasSize.width,
+                            height: canvasSize.height,
+                            child: ClipRect(
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: <Widget>[
+                                  RepaintBoundary(
+                                    child: CustomPaint(
+                                      painter: CanvasPainter(
+                                        strokes: state.strokes,
+                                      ),
                                     ),
                                   ),
-                                );
-                              },
+                                  const Positioned.fill(
+                                    child: ContourLayer(),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        ),
-                ),
-                Positioned.fill(
-                  child: Listener(
-                    behavior: HitTestBehavior.translucent,
-                    onPointerDown: (event) => _onPointerDown(event, canvasSize),
-                    onPointerMove: (event) => _onPointerMove(event, canvasSize),
-                    onPointerUp: _onPointerUp,
-                    onPointerCancel: _onPointerCancel,
-                    child: Container(color: Colors.transparent),
-                  ),
-                ),
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: TopToolbar(
-                    onExport: widget.onExport,
-                    onBack: _saveAndPop,
-                  ),
-                ),
-                const Positioned(left: 8, top: 120, child: LeftControls()),
-                Positioned(
-                  right: 8,
-                  bottom: 8,
-                  child: BottomToolbar(onEyedropper: widget.onEyedropper),
-                ),
-                if (_eyedropperPosition != null && _previewColor != null)
-                  BlocBuilder<CanvasBloc, CanvasState>(
-                    buildWhen: (CanvasState previous, CanvasState current) =>
-                        previous.color != current.color,
-                    builder: (BuildContext context, CanvasState state) {
-                      return EyedropperOverlay(
-                        position: _eyedropperPosition!,
-                        previewColor: _previewColor!,
-                        selectedColor: state.color,
-                        image: _eyedropperImage,
-                      );
-                    },
-                  ),
-                if (_isSavingBeforeClose)
-                  Positioned.fill(
-                    child: ColoredBox(
-                      color: colors.black.withValues(alpha: 0.45),
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          color: colors.primaryBg,
-                        ),
+                          );
+                        },
                       ),
                     ),
                   ),
-              ],
-            ),
+                ),
+              if (isLoading)
+                Positioned.fill(
+                  child: ColoredBox(
+                    color: colors.primaryBg,
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        color: colors.secondaryBg,
+                      ),
+                    ),
+                  ),
+                ),
+              Positioned.fill(
+                child: Listener(
+                  behavior: HitTestBehavior.translucent,
+                  onPointerDown: (event) => _onPointerDown(event, canvasSize),
+                  onPointerMove: (event) => _onPointerMove(event, canvasSize),
+                  onPointerUp: _onPointerUp,
+                  onPointerCancel: _onPointerCancel,
+                  child: Container(color: Colors.transparent),
+                ),
+              ),
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: TopToolbar(
+                  onExport: widget.onExport,
+                  onBack: _saveAndPop,
+                ),
+              ),
+              const Positioned(left: 8, top: 120, child: LeftControls()),
+              Positioned(
+                right: 8,
+                bottom: 8,
+                child: BottomToolbar(onEyedropper: widget.onEyedropper),
+              ),
+              if (_eyedropperPosition != null && _previewColor != null)
+                BlocBuilder<CanvasBloc, CanvasState>(
+                  buildWhen: (CanvasState previous, CanvasState current) =>
+                      previous.color != current.color,
+                  builder: (BuildContext context, CanvasState state) {
+                    return EyedropperOverlay(
+                      position: _eyedropperPosition!,
+                      previewColor: _previewColor!,
+                      selectedColor: state.color,
+                      image: _eyedropperImage,
+                    );
+                  },
+                ),
+              if (_isSavingBeforeClose)
+                Positioned.fill(
+                  child: ColoredBox(
+                    color: colors.black.withValues(alpha: 0.45),
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        color: colors.primaryBg,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
       ),
@@ -482,7 +488,7 @@ class _CanvasContentState extends State<CanvasContent>
     if (_pointerPositions.isEmpty) _drawingLocked = false;
 
     if (_isEyedropperActive && event.pointer == _eyedropperPointer) {
-      _commitEyedropperColor();
+      _commitEyededropperColor();
       return;
     }
 
@@ -588,10 +594,7 @@ class _CanvasContentState extends State<CanvasContent>
 
     final CanvasState state = context.read<CanvasBloc>().state;
     final Size viewportSize = MediaQuery.sizeOf(context);
-    final Size canvasSize = (state.contour == null
-            ? null
-            : SvgUtils.parseViewBoxSize(state.contour!.svgData)) ??
-        viewportSize;
+    final Size canvasSize = state.contourSize ?? viewportSize;
 
     if (state.transform.isIdentity()) {
       // No user transform: refit the canvas sheet to the new viewport.
@@ -799,7 +802,7 @@ class _CanvasContentState extends State<CanvasContent>
     });
   }
 
-  Future<void> _commitEyedropperColor() async {
+  Future<void> _commitEyededropperColor() async {
     if (_eyedropperCaptureFuture != null) {
       await _eyedropperCaptureFuture;
     }

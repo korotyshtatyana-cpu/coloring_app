@@ -13,8 +13,8 @@ class ContourEntity extends Equatable {
   /// Contour category.
   final ContourCategory category;
 
-  /// SVG data describing the contour shape.
-  final String svgData;
+  /// URL to the SVG file describing the contour shape.
+  final String svgUrl;
 
   /// URL to the contour preview image.
   final String previewUrl;
@@ -27,12 +27,12 @@ class ContourEntity extends Equatable {
     required this.id,
     required this.title,
     required this.category,
-    required this.svgData,
+    required this.svgUrl,
     required this.previewUrl,
     this.createdAt,
   });
 
   @override
   List<Object?> get props =>
-      <Object?>[id, title, category, svgData, previewUrl, createdAt];
+      <Object?>[id, title, category, svgUrl, previewUrl, createdAt];
 }

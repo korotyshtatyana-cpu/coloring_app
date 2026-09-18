@@ -11,8 +11,8 @@ class ContourModel {
   /// Contour category.
   final ContourCategory category;
 
-  /// SVG data describing the contour.
-  final String svgData;
+  /// URL to the SVG file describing the contour.
+  final String svgUrl;
 
   /// Preview image URL.
   final String previewUrl;
@@ -25,7 +25,7 @@ class ContourModel {
     required this.id,
     required this.title,
     required this.category,
-    required this.svgData,
+    required this.svgUrl,
     required this.previewUrl,
     this.createdAt,
   });
@@ -36,7 +36,7 @@ class ContourModel {
       id: json['id'] as String,
       title: json['title'] as String,
       category: ContourCategory.values.byName(json['category'] as String),
-      svgData: json['svg_data'] as String,
+      svgUrl: json['svg_data'] as String,
       previewUrl: json['preview_url'] as String,
       createdAt: json['created_at'] == null
           ? null
@@ -50,7 +50,7 @@ class ContourModel {
       'id': id,
       'title': title,
       'category': category.name,
-      'svg_data': svgData,
+      'svg_data': svgUrl,
       'preview_url': previewUrl,
       if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
     };

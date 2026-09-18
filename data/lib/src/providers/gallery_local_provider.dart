@@ -58,7 +58,7 @@ class GalleryLocalProvider {
       id: contour.id,
       title: contour.title,
       category: contour.category.name,
-      svgData: contour.svgData,
+      svgUrl: contour.svgUrl,
       previewUrl: contour.previewUrl,
       createdAt: contour.createdAt ?? DateTime.now(),
     );
@@ -69,7 +69,7 @@ class GalleryLocalProvider {
       id: row.id,
       title: row.title,
       category: ContourCategory.values.byName(row.category),
-      svgData: row.svgData,
+      svgUrl: row.svgUrl,
       previewUrl: row.previewUrl,
       createdAt: row.createdAt,
     );

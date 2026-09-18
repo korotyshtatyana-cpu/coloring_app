@@ -4,14 +4,14 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'contour_placeholder.dart';
 
 class VectorOrPlaceholder extends StatelessWidget {
-  final String? svgData;
+  final String? svgUrl;
 
-  const VectorOrPlaceholder({super.key, this.svgData});
+  const VectorOrPlaceholder({super.key, this.svgUrl});
 
   @override
   Widget build(BuildContext context) {
-    if (svgData != null && svgData!.isNotEmpty) {
-      return SvgPicture.string(svgData!, fit: BoxFit.fill);
+    if (svgUrl != null && svgUrl!.isNotEmpty) {
+      return SvgPicture.network(svgUrl!, fit: BoxFit.fill);
     }
     return const ContourPlaceholder();
   }

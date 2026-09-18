@@ -99,8 +99,8 @@ class Contours extends Table {
   /// Contour category.
   TextColumn get category => text()();
 
-  /// SVG data describing the contour.
-  TextColumn get svgData => text()();
+  /// URL to the SVG file describing the contour.
+  TextColumn get svgUrl => text()();
 
   /// Preview image URL.
   TextColumn get previewUrl => text()();
@@ -154,7 +154,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// Current database schema version.
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -166,6 +166,15 @@ class AppDatabase extends _$AppDatabase {
             // Add missing columns to strokes
             await m.addColumn(strokes, strokes.brushId);
             await m.addColumn(strokes, strokes.isPressureSensitive);
+          }
+          if (from < 3) {
+            // Rename svgData to svgUrl in contours table.
+            // Drift doesn't support direct column renaming in migrations easily
+            // for all platforms without manual SQL or recreating the table.
+            // Since this is a cache, we can drop and recreate or just add new.
+            // For simplicity and since it's a major change in data content
+            // (XML vs URL), we'll use a manual SQL to rename.
+            await m.issueCustomQuery('ALTER TABLE contours RENAME COLUMN svg_data TO svg_url;');
           }
         },
       );

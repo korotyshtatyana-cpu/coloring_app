@@ -65,6 +65,15 @@ class CanvasState extends Equatable {
   /// Contour display opacity.
   final double contourOpacity;
 
+  /// Contour viewBox size.
+  final Size? contourSize;
+
+  /// Raw SVG XML content of the contour.
+  final String? contourSvg;
+
+  /// Whether the contour SVG has been сompiled into a Picture.
+  final bool isContourReady;
+
   /// Canvas transformation matrix.
   final Matrix4 transform;
 
@@ -104,6 +113,9 @@ class CanvasState extends Equatable {
     this.isEraser = false,
     this.contourColor = Colors.black,
     this.contourOpacity = Constants.contourDefaultOpacity,
+    this.contourSize,
+    this.contourSvg,
+    this.isContourReady = false,
     Matrix4? transform,
     this.exportedFilePath,
     this.lastExportType,
@@ -129,6 +141,9 @@ class CanvasState extends Equatable {
         isEraser,
         contourColor,
         contourOpacity,
+        contourSize,
+        contourSvg,
+        isContourReady,
         transform,
         exportedFilePath,
         lastExportType,
@@ -155,6 +170,9 @@ class CanvasState extends Equatable {
     bool? isEraser,
     Color? contourColor,
     double? contourOpacity,
+    Size? contourSize,
+    String? contourSvg,
+    bool? isContourReady,
     Matrix4? transform,
     String? exportedFilePath,
     ExportType? lastExportType,
@@ -178,6 +196,9 @@ class CanvasState extends Equatable {
       isEraser: isEraser ?? this.isEraser,
       contourColor: contourColor ?? this.contourColor,
       contourOpacity: contourOpacity ?? this.contourOpacity,
+      contourSize: contourSize ?? this.contourSize,
+      contourSvg: contourSvg ?? this.contourSvg,
+      isContourReady: isContourReady ?? this.isContourReady,
       transform: transform ?? this.transform,
       exportedFilePath: exportedFilePath ?? this.exportedFilePath,
       lastExportType: lastExportType ?? this.lastExportType,

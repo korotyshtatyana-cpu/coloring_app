@@ -28,17 +28,17 @@ class _ContourLayerState extends State<ContourLayer> {
   Widget build(BuildContext context) {
     final state = context.watch<CanvasBloc>().state;
     final contour = state.contour;
+    final contourSvg = state.contourSvg;
 
-    if (contour == null) {
+    if (contour == null || contourSvg == null) {
       return const SizedBox.shrink();
     }
 
     final String key = contour.id;
     if (_loadedContourKey != key) {
       _loadedContourKey = key;
-      final String svgData = contour.svgData;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _loadContourPicture(svgData, key);
+        _loadContourPicture(context, contourSvg, key);
       });
     }
 
@@ -56,7 +56,11 @@ class _ContourLayerState extends State<ContourLayer> {
     );
   }
 
-  Future<void> _loadContourPicture(String svgData, String key) async {
+  Future<void> _loadContourPicture(
+    BuildContext context,
+    String svgData,
+    String key,
+  ) async {
     try {
       final PictureInfo info = await vg.loadPicture(
         SvgStringLoader(svgData),
@@ -70,8 +74,15 @@ class _ContourLayerState extends State<ContourLayer> {
         _contourPicture?.picture.dispose();
         _contourPicture = info;
       });
+
+      if (mounted && context.mounted) {
+        context.read<CanvasBloc>().add(const ContourCompiled());
+      }
     } catch (e, stackTrace) {
       ErrorHandler.report(e, stackTrace);
+      if (context.mounted) {
+        context.read<CanvasBloc>().add(const ContourCompiled());
+      }
     }
   }
 }
