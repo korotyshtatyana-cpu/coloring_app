@@ -155,7 +155,7 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
         StrokePoint(offset: event.point, pressure: isPressure ? event.pressure : 1.0)
       ],
       color: state.isEraser ? Colors.white.toARGB32() : state.color.toARGB32(),
-      size: state.isEraser ? effectiveSize * 2 : state.brushSize,
+      size: state.isEraser ? effectiveSize : state.brushSize,
       opacity: state.isEraser ? 1.0 : state.opacity,
       brushType: state.isEraser ? BrushType.circle : state.brushType,
       brushId: activeToolId,

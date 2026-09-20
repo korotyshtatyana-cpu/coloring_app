@@ -24,6 +24,7 @@ class GalleryContent extends StatelessWidget {
       appBar: AppBar(
         centerTitle: false,
         backgroundColor: colors.primaryBg,
+          surfaceTintColor: colors.primaryBg,
         title: Text(
           context.tr(LocaleKeys.gallery),
           style: AppFonts.appBarTitle.copyWith(

@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:drift/drift.dart';
 import 'package:core/core.dart';
 import 'package:domain/domain.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../../data.dart';
 
@@ -94,6 +97,25 @@ class CanvasLocalProvider {
     await (_database.delete(_database.strokes)
           ..where(($StrokesTable row) => row.projectId.equals(projectId)))
         .go();
+  }
+
+  /// Deletes all locally stored user data: projects, their strokes and
+  /// rendered thumbnails.
+  Future<void> clearUserData() async {
+    await _database.transaction(() async {
+      await _database.delete(_database.strokes).go();
+      await _database.delete(_database.projects).go();
+    });
+    await _deleteThumbnails();
+  }
+
+  Future<void> _deleteThumbnails() async {
+    final Directory directory = await getApplicationDocumentsDirectory();
+    final Directory thumbnailsDir =
+        Directory('${directory.path}/thumbnails');
+    if (thumbnailsDir.existsSync()) {
+      await thumbnailsDir.delete(recursive: true);
+    }
   }
 
   ProjectsCompanion _toProjectCompanion(ProjectModel project) {

@@ -30,11 +30,12 @@ class SettingsContent extends StatelessWidget {
         leading: Padding(
           padding: const EdgeInsets.only(left: 16, top: 10, bottom: 10),
           child: ToolbarContainer(
+            backgroundColor: colors.accentDark,
             isSquare: true,
             child: AppIconButton(
               size: 32,
               iconSize: 24,
-              icon: const Icon(Icons.arrow_back),
+              icon: Icon(Icons.arrow_back, color: colors.primaryBg),
               backgroundColor: Colors.transparent,
               onPressed: () => Navigator.of(context).pop(),
             ),

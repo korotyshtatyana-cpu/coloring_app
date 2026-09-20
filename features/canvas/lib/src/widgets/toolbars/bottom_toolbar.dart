@@ -77,7 +77,7 @@ class BottomToolbar extends StatelessWidget {
               backgroundColor: Colors.transparent,
               icon: Icon(
                 Icons.rounded_corner_rounded,
-                color: contourColor,
+                color: colors.iconPrimary,
               ),
               onPressed: () => _showColorPicker(context, isContour: true),
             ),

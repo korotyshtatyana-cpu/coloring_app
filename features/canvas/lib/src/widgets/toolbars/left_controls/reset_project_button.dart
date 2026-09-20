@@ -51,6 +51,7 @@ class ResetProjectButton extends StatelessWidget {
             AppButton(
               text: LocaleKeys.ok.tr(),
               filled: true,
+              color: colors.redAccent,
               onPressed: () {
                 bloc.add(const ClearProject());
                 Navigator.of(context).pop();

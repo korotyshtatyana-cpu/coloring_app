@@ -17,8 +17,10 @@ Future<void> mainCommon(Flavor flavor) async {
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
+      // Transparent so the app (and modal barriers of dialogs) shows
+      // through the status bar area and gets dimmed together with it.
       statusBarColor: Colors.transparent,
-      systemNavigationBarColor: Color(0xFFF9F8F6),
+      systemNavigationBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.dark,
       statusBarBrightness: Brightness.light,
     ),
@@ -93,19 +95,24 @@ class _AppState extends State<App> {
       fallbackLocale: AppLocalization.fallbackLocale,
       // useFallbackLocale: true,
       startLocale: null,
-      child: Builder(
-        builder: (BuildContext context) {
-          return AppErrorHandlerProvider(
-            child: MaterialApp.router(
-              debugShowCheckedModeBanner: false,
-              routerConfig: _routerConfig,
-              localizationsDelegates: context.localizationDelegates,
-              supportedLocales: context.supportedLocales,
-              locale: context.locale,
-              theme: lightTheme,
-            ),
-          );
-        },
+      // top: false lets the app extend behind the status bar so dialog
+      // barriers dim it too; screens with an AppBar pad the top themselves.
+      child: SafeArea(
+        top: false,
+        child: Builder(
+          builder: (BuildContext context) {
+            return AppErrorHandlerProvider(
+              child: MaterialApp.router(
+                debugShowCheckedModeBanner: false,
+                routerConfig: _routerConfig,
+                localizationsDelegates: context.localizationDelegates,
+                supportedLocales: context.supportedLocales,
+                locale: context.locale,
+                theme: lightTheme,
+              ),
+            );
+          },
+        ),
       ),
     );
   }
