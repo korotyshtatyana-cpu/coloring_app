@@ -50,13 +50,10 @@ class CanvasRepositoryImpl implements CanvasRepository {
     _strokes.putIfAbsent(projectId, () => <StrokeEntity>[]);
     _strokes[projectId]!.add(stroke);
 
-    // Pass a copy because the cached list can be modified concurrently
-    // (e.g. another addStroke can run while saveProject is awaiting a DB
-    // write, which would mutate the list mid-iteration).
-    await _localProvider.saveProject(
-      _projectModelFromId(projectId),
-      List<StrokeEntity>.from(_strokes[projectId]!),
-    );
+    // Only append the new stroke. Previously every finished stroke rewrote
+    // the whole project (delete-all + re-insert each stroke), which made
+    // saving slower and slower as the drawing grew.
+    await _localProvider.appendStroke(projectId, stroke);
   }
 
   @override
@@ -112,7 +109,10 @@ class CanvasRepositoryImpl implements CanvasRepository {
 
   @override
   Future<String?> exportImage(ExportImageParams params) async {
-    final ByteData? byteData = await _renderCanvasPng(params, _exportTargetSize);
+    final ByteData? byteData = await _renderCanvasPng(
+      params,
+      _exportTargetSize,
+    );
     if (byteData == null) return null;
 
     final directory = await getTemporaryDirectory();
@@ -126,8 +126,10 @@ class CanvasRepositoryImpl implements CanvasRepository {
 
   @override
   Future<String?> renderProjectThumbnail(ExportImageParams params) async {
-    final ByteData? byteData =
-        await _renderCanvasPng(params, _thumbnailTargetSize);
+    final ByteData? byteData = await _renderCanvasPng(
+      params,
+      _thumbnailTargetSize,
+    );
     if (byteData == null) return null;
 
     final directory = await getApplicationDocumentsDirectory();
@@ -178,17 +180,6 @@ class CanvasRepositoryImpl implements CanvasRepository {
     );
   }
 
-  ProjectModel _projectModelFromId(String projectId) {
-    return ProjectModel(
-      id: projectId,
-      contourId: projectId,
-      userId: _authRemoteProvider.currentUserId ?? '',
-      data: <String, dynamic>{},
-      lastOpened: DateTime.now(),
-      createdAt: DateTime.now(),
-    );
-  }
-
   Future<List<StrokeEntity>> _loadStrokesForProject(String projectId) async {
     final cached = _strokes[projectId];
     if (cached != null) {
@@ -211,8 +202,11 @@ class CanvasRepositoryImpl implements CanvasRepository {
       return <StrokeEntity>[];
     }
     return strokesJson
-        .map((dynamic json) => StrokeMapper.toEntity(
-            StrokeModel.fromJson(json as Map<String, dynamic>)))
+        .map(
+          (dynamic json) => StrokeMapper.toEntity(
+            StrokeModel.fromJson(json as Map<String, dynamic>),
+          ),
+        )
         .toList();
   }
 }

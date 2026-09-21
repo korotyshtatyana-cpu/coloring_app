@@ -11,8 +11,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
 import '../bloc/canvas_bloc.dart';
-import '../painters/canvas_painter.dart';
-import '../widgets/canvas/contour_layer.dart';
+import '../widgets/canvas/active_stroke.dart';
+import '../widgets/canvas/canvas_stack.dart';
 import '../widgets/eyedropper_overlay.dart';
 import '../widgets/export_menu.dart';
 import '../widgets/toolbars/bottom_toolbar.dart';
@@ -80,6 +80,10 @@ class _CanvasContentState extends State<CanvasContent>
   final TransformationController _transformationController =
       TransformationController();
   final GlobalKey _repaintKey = GlobalKey();
+
+  /// High-performance holder for the active stroke to avoid BLoC rebuilds
+  /// and O(n) per-event copies while drawing.
+  final ActiveStroke _activeStroke = ActiveStroke();
 
   bool _isEyedropperActive = false;
 
@@ -155,6 +159,7 @@ class _CanvasContentState extends State<CanvasContent>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _transformationController.dispose();
+    _activeStroke.dispose();
     _disposeEyedropperImage();
     super.dispose();
   }
@@ -200,7 +205,8 @@ class _CanvasContentState extends State<CanvasContent>
 
     final bool isInitial = status == CanvasStatus.initial;
     final bool isLoading =
-        status == CanvasStatus.loading || !state.isContourReady;
+        (status == CanvasStatus.loading || !state.isContourReady) &&
+        status != CanvasStatus.error;
     final AppColors colors = AppColors.of(context);
 
     final Size canvasSize = state.contourSize ?? viewportSize;
@@ -269,7 +275,8 @@ class _CanvasContentState extends State<CanvasContent>
                 if (state.status == CanvasStatus.error) {
                   ErrorDialog.show(
                     context,
-                    message: state.error ?? LocaleKeys.something_went_wrong.tr(),
+                    message:
+                        state.error ?? LocaleKeys.something_went_wrong.tr(),
                   );
                 }
               },
@@ -284,45 +291,18 @@ class _CanvasContentState extends State<CanvasContent>
                     child: InteractiveViewer(
                       transformationController: _transformationController,
                       constrained: false,
-                      boundaryMargin: const EdgeInsets.all(
-                        _boundaryMargin,
-                      ),
+                      boundaryMargin: const EdgeInsets.all(_boundaryMargin),
                       minScale: fitScale * _minScaleFactor,
                       maxScale: fitScale * _maxScaleFactor,
                       panEnabled: false,
                       scaleEnabled: false,
-                      child: BlocBuilder<CanvasBloc, CanvasState>(
-                        buildWhen: (previous, current) =>
-                            previous.strokes != current.strokes ||
-                            previous.currentStroke != current.currentStroke ||
-                            previous.contour != current.contour ||
-                            previous.contourColor != current.contourColor ||
-                            previous.contourOpacity != current.contourOpacity ||
-                            previous.contourSize != current.contourSize ||
-                            previous.isContourReady != current.isContourReady,
-                        builder: (context, state) {
-                          return SizedBox(
-                            width: canvasSize.width,
-                            height: canvasSize.height,
-                            child: ClipRect(
-                              child: Stack(
-                                fit: StackFit.expand,
-                                children: <Widget>[
-                                  RepaintBoundary(
-                                    child: CustomPaint(
-                                      painter: CanvasPainter(
-                                        strokes: state.strokes,
-                                      ),
-                                    ),
-                                  ),
-                                  const Positioned.fill(
-                                    child: ContourLayer(),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
+                      child: SizedBox(
+                        width: canvasSize.width,
+                        height: canvasSize.height,
+                        child: CanvasStack(
+                          currentStrokeNotifier: _activeStroke,
+                          canvasSize: canvasSize,
+                        ),
                       ),
                     ),
                   ),
@@ -333,7 +313,7 @@ class _CanvasContentState extends State<CanvasContent>
                     color: colors.primaryBg,
                     child: Center(
                       child: CircularProgressIndicator(
-                        color: colors.secondaryBg,
+                        color: colors.accentDark,
                       ),
                     ),
                   ),
@@ -381,9 +361,7 @@ class _CanvasContentState extends State<CanvasContent>
                   child: ColoredBox(
                     color: colors.black.withValues(alpha: 0.45),
                     child: Center(
-                      child: CircularProgressIndicator(
-                        color: colors.primaryBg,
-                      ),
+                      child: CircularProgressIndicator(color: colors.primaryBg),
                     ),
                   ),
                 ),
@@ -398,18 +376,16 @@ class _CanvasContentState extends State<CanvasContent>
     _pointerPositions[event.pointer] = event.localPosition;
 
     if (_pointerPositions.length >= 2) {
-      // Multiple pointers: stop drawing and switch to pan/zoom. If the
-      // first finger already started a stroke that is just a dot, discard
-      // it so scaling doesn't leave stray marks.
+      // Multiple pointers: stop drawing and switch to pan/zoom.
       _drawingLocked = true;
       if (_activeDrawPointer != null) {
         if (!_isEyedropperActive) {
-          final CanvasBloc bloc = context.read<CanvasBloc>();
-          final StrokeEntity? stroke = bloc.state.currentStroke;
+          final StrokeEntity? stroke = _activeStroke.stroke;
           if (stroke != null && _isDotStroke(stroke)) {
-            bloc.add(const CancelDrawing());
+            // Cancel drawing locally
+            _activeStroke.clear();
           } else {
-            bloc.add(const EndDrawing());
+            _finalizeDrawing();
           }
         }
         _activeDrawPointer = null;
@@ -426,11 +402,9 @@ class _CanvasContentState extends State<CanvasContent>
 
       _activeDrawPointer = event.pointer;
       if (_isPointerOnCanvas(event.localPosition, canvasSize)) {
-        context.read<CanvasBloc>().add(
-          StartDrawing(
-            point: _viewportToScene(event.localPosition),
-            pressure: event.pressure,
-          ),
+        _startDrawingLocally(
+          _viewportToScene(event.localPosition),
+          event.pressure,
         );
       }
     }
@@ -455,16 +429,10 @@ class _CanvasContentState extends State<CanvasContent>
       _handleTwoFingerGesture(canvasSize);
     } else if (event.pointer == _activeDrawPointer) {
       if (_isPointerOnCanvas(event.localPosition, canvasSize)) {
-        context.read<CanvasBloc>().add(
-          AddPoint(
-            point: _viewportToScene(event.localPosition),
-            pressure: event.pressure,
-          ),
-        );
+        _addPointLocally(_viewportToScene(event.localPosition), event.pressure);
       } else {
-        // Pointer left the canvas: end the stroke so we don't draw a
-        // connecting line along the border when it comes back.
-        context.read<CanvasBloc>().add(const EndDrawing());
+        // Pointer left the canvas: end the stroke
+        _finalizeDrawing();
         _activeDrawPointer = null;
       }
     } else if (_pointerPositions.length == 1 &&
@@ -474,11 +442,9 @@ class _CanvasContentState extends State<CanvasContent>
         _isPointerOnCanvas(event.localPosition, canvasSize)) {
       // Pointer re-entered the canvas after leaving: start a new stroke.
       _activeDrawPointer = event.pointer;
-      context.read<CanvasBloc>().add(
-        StartDrawing(
-          point: _viewportToScene(event.localPosition),
-          pressure: event.pressure,
-        ),
+      _startDrawingLocally(
+        _viewportToScene(event.localPosition),
+        event.pressure,
       );
     }
   }
@@ -493,16 +459,11 @@ class _CanvasContentState extends State<CanvasContent>
     }
 
     if (event.pointer == _activeDrawPointer) {
-      context.read<CanvasBloc>().add(const EndDrawing());
+      _finalizeDrawing();
       _activeDrawPointer = null;
     }
 
-    if (_pointerPositions.length < 2) {
-      _initialPointerPositions = null;
-      _initialTransform = null;
-    } else {
-      _resetTwoFingerGesture();
-    }
+    _finishTwoFingerGestureIfDone();
   }
 
   void _onPointerCancel(PointerCancelEvent event) {
@@ -515,16 +476,100 @@ class _CanvasContentState extends State<CanvasContent>
     }
 
     if (event.pointer == _activeDrawPointer) {
-      context.read<CanvasBloc>().add(const EndDrawing());
+      // For cancel, we just discard the active stroke locally
+      _activeStroke.clear();
       _activeDrawPointer = null;
     }
 
+    _finishTwoFingerGestureIfDone();
+  }
+
+  /// Ends the two-finger gesture bookkeeping once fewer than two pointers
+  /// remain. The final transform is persisted to the bloc only here (once
+  /// per gesture) instead of on every pointer move, which previously caused
+  /// a full rebuild of the screen during pan/zoom/rotate.
+  void _finishTwoFingerGestureIfDone() {
     if (_pointerPositions.length < 2) {
+      if (_initialTransform != null) {
+        context.read<CanvasBloc>().add(
+          UpdateTransform(_transformationController.value),
+        );
+      }
       _initialPointerPositions = null;
       _initialTransform = null;
     } else {
       _resetTwoFingerGesture();
     }
+  }
+
+  void _startDrawingLocally(Offset point, double pressure) {
+    final state = context.read<CanvasBloc>().state;
+    final activeToolId = state.isEraser
+        ? state.activeEraserId
+        : state.activeBrushId;
+    final activeTool = state.availableTools.firstWhere(
+      (t) => t.id == activeToolId,
+    );
+
+    final isPressure = activeTool.isPressureSensitive;
+    final effectiveSize = isPressure
+        ? _effectiveSize(pressure, state)
+        : state.brushSize;
+
+    final stroke = StrokeEntity(
+      points: <StrokePoint>[
+        StrokePoint(offset: point, pressure: isPressure ? pressure : 1.0),
+      ],
+      color: state.isEraser ? Colors.white.toARGB32() : state.color.toARGB32(),
+      size: state.isEraser ? effectiveSize : state.brushSize,
+      opacity: state.isEraser ? 1.0 : state.opacity,
+      brushType: state.isEraser ? BrushType.circle : state.brushType,
+      brushId: activeToolId,
+      isPressureSensitive: isPressure,
+    );
+
+    _activeStroke.begin(stroke);
+    // Notify BLoC that drawing started (for status tracking)
+    context.read<CanvasBloc>().add(
+      StartDrawing(point: point, pressure: pressure),
+    );
+  }
+
+  void _addPointLocally(Offset point, double pressure) {
+    final StrokeEntity? stroke = _activeStroke.stroke;
+    if (stroke == null) return;
+
+    // Performance optimization: don't add points that are too close.
+    if (stroke.points.isNotEmpty) {
+      final lastPoint = stroke.points.last.offset;
+      if ((point - lastPoint).distance < Constants.minPointDistance) {
+        return;
+      }
+    }
+
+    // Append points in place: rebuilding the points list per pointer event
+    // is O(n) and makes long strokes lag behind the pointer (O(n^2) total).
+    final isPressure = stroke.isPressureSensitive;
+    _activeStroke.add(
+      StrokePoint(offset: point, pressure: isPressure ? pressure : 1.0),
+    );
+
+    // Cap the points per stroke, seamlessly continuing with a fresh one.
+    // This bounds the per-frame cost of the finished-strokes layer.
+    if (stroke.points.length >= Constants.maxStrokePoints) {
+      _finalizeDrawing();
+      _startDrawingLocally(point, pressure);
+    }
+  }
+
+  void _finalizeDrawing() {
+    final StrokeEntity? stroke = _activeStroke.stroke;
+    if (stroke == null) return;
+
+    // Dispatch finalized stroke to BLoC to be added to history and persisted.
+    context.read<CanvasBloc>().add(EndDrawing(stroke));
+
+    _activeStroke.clear();
   }
 
   bool _canDrawWithPointer(PointerEvent event) {
@@ -533,8 +578,7 @@ class _CanvasContentState extends State<CanvasContent>
         event.kind == PointerDeviceKind.mouse;
   }
 
-  /// Whether the [stroke] covers less than a few screen pixels — i.e. it was
-  /// created by the first finger of a pinch gesture rather than deliberately.
+  /// Whether the [stroke] covers less than a few screen pixels.
   bool _isDotStroke(StrokeEntity stroke) {
     if (stroke.points.length < 2) return true;
 
@@ -587,8 +631,7 @@ class _CanvasContentState extends State<CanvasContent>
   }
 
   /// Re-centers the canvas sheet in the viewport after the viewport size
-  /// changed (e.g. on orientation change), preserving the current zoom and
-  /// rotation.
+  /// changed (e.g. on orientation change).
   void _recenterCanvas() {
     if (!mounted) return;
 
@@ -603,7 +646,7 @@ class _CanvasContentState extends State<CanvasContent>
     }
 
     // Shift the current transform so the canvas center lands on the new
-    // viewport center, keeping the user's zoom and rotation untouched.
+    // viewport center.
     final Matrix4 matrix = _transformationController.value;
     final Offset canvasCenter = MatrixUtils.transformPoint(
       matrix,
@@ -616,8 +659,6 @@ class _CanvasContentState extends State<CanvasContent>
       ..translateByDouble(delta.dx, delta.dy, 0, 1)
       ..multiply(matrix);
     _transformationController.value = recentered;
-    // Sync the bloc so a later status change can't restore the stale,
-    // off-center transform from the state.
     context.read<CanvasBloc>().add(UpdateTransform(recentered));
   }
 
@@ -654,8 +695,9 @@ class _CanvasContentState extends State<CanvasContent>
       ..multiply(_initialTransform!);
 
     final Matrix4 clampedMatrix = _clampTransform(matrix, canvasSize);
+    // Only the local controller is updated per move event; the bloc is
+    // notified once at gesture end (see [_finishTwoFingerGestureIfDone]).
     _transformationController.value = clampedMatrix;
-    context.read<CanvasBloc>().add(UpdateTransform(clampedMatrix));
   }
 
   Matrix4 _clampTransform(Matrix4 matrix, Size canvasSize) {
@@ -668,8 +710,6 @@ class _CanvasContentState extends State<CanvasContent>
       fitScale * _maxScaleFactor,
     );
 
-    // Adjust the scale while preserving rotation, anchored at the viewport
-    // center.
     Matrix4 result = matrix;
     if (clampedScale != scale) {
       final double factor = clampedScale / scale;
@@ -681,8 +721,6 @@ class _CanvasContentState extends State<CanvasContent>
         ..multiply(matrix);
     }
 
-    // Free panning: allow moving the canvas anywhere, but keep at least
-    // [_boundaryMargin] of it visible on each axis so it can't get lost.
     final Rect bounds = _canvasBoundsOnScreen(result, canvasSize);
     double dx = 0;
     double dy = 0;
@@ -900,5 +938,10 @@ class _CanvasContentState extends State<CanvasContent>
 
   void _onExportSelected(CanvasBloc bloc, ExportType exportType) {
     bloc.add(ExportImage(exportType));
+  }
+
+  double _effectiveSize(double pressure, CanvasState state) {
+    final clamped = pressure.clamp(0.0, 1.0);
+    return max(Constants.minBrushSize, state.brushSize * clamped);
   }
 }

@@ -24,6 +24,10 @@ abstract final class Constants {
   /// Default contour opacity (0.0 - 1.0).
   static const double contourDefaultOpacity = 1.0;
 
+  /// Minimum distance in logical pixels between points in a stroke to be
+  /// recorded. Lower values increase precision but decrease performance.
+  static const double minPointDistance = 1.5;
+
   /// Debounce duration for autosave after a stroke.
   static const Duration autosaveDebounce = Duration(milliseconds: 500);
 }

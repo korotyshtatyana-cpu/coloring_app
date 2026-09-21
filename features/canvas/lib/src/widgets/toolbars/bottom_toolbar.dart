@@ -25,9 +25,6 @@ class BottomToolbar extends StatelessWidget {
     final Color brushColor = context.select(
       (CanvasBloc bloc) => bloc.state.color,
     );
-    final Color contourColor = context.select(
-      (CanvasBloc bloc) => bloc.state.contourColor,
-    );
 
     final bloc = context.read<CanvasBloc>();
     final AppColors colors = AppColors.of(context);

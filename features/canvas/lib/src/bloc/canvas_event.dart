@@ -30,25 +30,16 @@ class StartDrawing extends CanvasEvent {
   List<Object?> get props => <Object?>[point, pressure];
 }
 
-/// Adds a point to the current stroke.
-class AddPoint extends CanvasEvent {
-  /// New point.
-  final Offset point;
-
-  /// Pressure value from the stylus.
-  final double pressure;
-
-  /// Creates an [AddPoint] event.
-  const AddPoint({required this.point, this.pressure = 1.0});
-
-  @override
-  List<Object?> get props => <Object?>[point, pressure];
-}
-
 /// Ends the current stroke.
 class EndDrawing extends CanvasEvent {
+  /// The finalized stroke to save.
+  final StrokeEntity stroke;
+
   /// Creates an [EndDrawing] event.
-  const EndDrawing();
+  const EndDrawing(this.stroke);
+
+  @override
+  List<Object?> get props => <Object?>[stroke];
 }
 
 /// Cancels the current stroke and removes it without saving.

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:domain/domain.dart';
 import '../models/contour_model.dart';
 import '../providers/gallery_local_provider.dart';
@@ -112,8 +113,13 @@ class GalleryRepositoryImpl implements GalleryRepository {
   }
 
   @override
-  Future<List<String>> getFavoriteIds() {
-    return _remoteProvider.getFavoriteIds();
+  Future<List<String>> getFavoriteIds() async {
+    try {
+      return await _remoteProvider.getFavoriteIds();
+    } catch (e) {
+      debugPrint('Failed to fetch favorite IDs: $e');
+      return <String>[];
+    }
   }
 
   @override
@@ -171,9 +177,13 @@ class GalleryRepositoryImpl implements GalleryRepository {
 
   @override
   Future<ContourEntity?> getContourById(String id) async {
-    final cached = await _localProvider.getContourById(id);
-    if (cached != null) {
-      return ContourMapper.toEntity(cached);
+    try {
+      final cached = await _localProvider.getContourById(id);
+      if (cached != null) {
+        return ContourMapper.toEntity(cached);
+      }
+    } catch (e) {
+      debugPrint('Error getting contour by ID: $e');
     }
     return null;
   }
