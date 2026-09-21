@@ -54,7 +54,7 @@ core/lib/
         ├── constants.dart       # Константы приложения
         ├── logger.dart          # AppLogger
         ├── result.dart          # Result тип
-        └── svg_utils.dart       # Утилиты для SVG
+        └── svg_utils.dart       # Утилиты для SVG (парсинг viewBox, скачивание XML)
 ```
 
 **Публичный API (core.dart):** экспортирует все публичные компоненты модуля, а также:
@@ -76,6 +76,7 @@ core/lib/
 - Переиспользуемые виджеты (кнопки, диалоги, поля ввода, карточки)
 - Тема и стили (только светлая тема)
 - Ресурсы: шрифты, иконки, изображения
+- Адаптивность (`ResponsiveHelper`)
 
 **Структура:**
 ```text
@@ -89,6 +90,8 @@ core_ui/lib/
     │   ├── app_dimens.dart
     │   ├── app_fonts.dart
     │   └── app_theme.dart        # Только lightTheme
+    ├── utils/
+    │   └── responsive_helper.dart # Хелпер для определения типа устройства
     └── widgets/
         ├── buttons/
         │   ├── primary_button.dart
@@ -104,7 +107,7 @@ core_ui/lib/
 ```
 
 
-**Публичный API (core_ui.dart):** экспортирует тему и все виджеты.
+**Публичный API (core_ui.dart):** экспортирует тему, все виджеты и `ResponsiveHelper`.
 
 **Виджеты:**
 - `PrimaryButton` — основная кнопка с закругленными углами
@@ -114,6 +117,8 @@ core_ui/lib/
 - `CustomSlider` — кастомный слайдер (поддерживает градиенты и настройку цветов для разных панелей)
 - `SearchField` — поле поиска с иконкой
 - `ContourCard` — карточка контура для галереи
+
+**ResponsiveHelper:** предоставляет метод `isTablet(context)` (порог 600dp) для адаптивной верстки (например, изменение количества колонок в галерее).
 
 
 ### domain
@@ -162,7 +167,8 @@ domain/lib/
         │   ├── get_contours_use_case.dart
         │   ├── get_favorite_ids_use_case.dart
         │   ├── get_work_in_progress_use_case.dart
-        │   └── toggle_favorite_use_case.dart
+        │   ├── toggle_favorite_use_case.dart
+        │   └── get_used_categories_use_case.dart # Список непустых категорий
         ├── settings/
         │   ├── get_settings_use_case.dart
         │   └── update_settings_use_case.dart
@@ -180,37 +186,28 @@ domain/lib/
 
 **Сущности:**
 - `UserEntity` — пользователь (id, email, name, avatarUrl)
-- `ContourEntity` — контур (id, title, category, svgData, previewUrl)
-- `ContourCategory` — enum категорий контура (all, animals, nature, fantasy, mandala, transport, cities, people, flowers, patterns, abstract). `all` — UI-значение «Все категории», не хранится в базе; use cases конвертируют его в `null` перед репозиторием
+- `ContourEntity` — контур (id, title, category, svgUrl, previewUrl)
+- `ContourCategory` — enum категорий контура. `all` — UI-значение «Все категории».
 - `ProjectEntity` — проект (id, contourId, userId, data, lastOpened, createdAt)
 - `StrokeEntity` — мазок (points, color, size, opacity, brushType)
 - `BrushType` — enum (circle, square, watercolor, chalk, marker, calligraphy, texture, airbrush)
 
 **Репозитории (интерфейсы):**
 - `AuthRepository` — checkAuth(), signIn(), signInSilently()
-- `GalleryRepository` — getContours, getContoursByIds, getFavoriteIds, toggleFavorite, getWorkInProgress, getContourById
+- `GalleryRepository` — getContours, getContoursByIds, getFavoriteIds, toggleFavorite, getWorkInProgress, getContourById, getUsedCategories
 - `CanvasRepository` — addStroke, saveProject, loadProject, exportImage, saveImageToGallery
 - `SettingsRepository` — getLanguageCode, saveLanguageCode
 - `ShareRepository` — shareFile
 
 **UseCases:**
 - `CheckAuthUseCase` — проверяет авторизацию
-- `SignInUseCase` — выполняет ручной вход
-- `SignInSilentlyUseCase` — пытается войти автоматически
+- `GetUsedCategoriesUseCase` — возвращает список категорий, в которых есть контуры
 - `GetContoursUseCase` — получает список контуров с пагинацией
-- `GetContoursByIdsUseCase` — получает контуры по списку id
-- `GetFavoriteIdsUseCase` — возвращает id избранных контуров
-- `ToggleFavoriteUseCase` — добавляет/удаляет из избранного
-- `GetWorkInProgressUseCase` — получает начатые проекты
-- `GetContourByIdUseCase` — загружает один контур по id
 - `AddStrokeUseCase` — добавляет мазок
 - `SaveProjectUseCase` — сохраняет проект
 - `LoadProjectUseCase` — загружает проект
-- `ExportImageUseCase` — экспортирует изображение
-- `ShareFileUseCase` — делится файлом
+- `ExportImageUseCase` — экспортирует изображение (использует кэшированный SVG контур)
 - `SaveImageToGalleryUseCase` — сохраняет файл в галерею устройства
-- `GetSettingsUseCase` — читает настройки
-- `UpdateSettingsUseCase` — сохраняет настройки
 
 **DomainDI:** регистрирует все UseCase в `appLocator` с использованием `registerLazySingleton`.
 
@@ -237,7 +234,6 @@ data/lib/
     │   └── request_constants.dart
     ├── di/
     │   └── data_di.dart
-    ├── errors/
     ├── mappers/
     │   ├── contour_mapper.dart
     │   ├── project_mapper.dart
@@ -263,7 +259,8 @@ data/lib/
     │   └── share_repository_impl.dart
     └── services/
         ├── share_service.dart
-        └── gallery_saver_service.dart
+        ├── gallery_saver_service.dart
+        └── canvas_rendering_service.dart # Рендеринг в PNG
 ```
 
 
@@ -271,27 +268,21 @@ data/lib/
 
 **Провайдеры:**
 - `SupabaseProvider` — инициализация Supabase с конфигом
-- `AppDatabase` (Drift) — база данных SQLite с таблицами `Projects`, `Strokes` и `Contours`
-- `AuthRemoteProvider` — работа с Supabase Auth; содержит `currentUserId`
-- `GalleryRemoteProvider` — получение контуров и избранного из Supabase
-- `GalleryLocalProvider` — кэширование контуров в Drift
-- `CanvasRemoteProvider` — сохранение проектов в Supabase
-- `CanvasLocalProvider` — сохранение проектов в Drift
+- `AppDatabase` (Drift) — база данных SQLite с таблицами `Projects`, `Strokes` и `Contours`. Схема v3 (svg_url вместо svg_data).
+- `GalleryRemoteProvider` — получение контуров и избранного из Supabase. Метод `getUsedCategories` через `select(category)`.
+- `CanvasRenderingService` — рендеринг холста в PNG. Использует raw XML контура.
 
-**Models (DTO):** `UserModel`, `ContourModel`, `ProjectModel`, `StrokeModel`
+**Models (DTO):** `UserModel`, `ContourModel` (svg_data из БД мапится в svgUrl), `ProjectModel`, `StrokeModel`
 
 **Mappers:** преобразуют Models ↔ Entities
 
 **Реализации репозиториев:** `AuthRepositoryImpl`, `GalleryRepositoryImpl`, `CanvasRepositoryImpl`, `SettingsRepositoryImpl`, `ShareRepositoryImpl`
 
 **Сервисы:**
-- `ShareService` — статический сервис-обертка над `share_plus` для шаринга файлов/изображений.
-- `GallerySaverService` — статический сервис-обертка над `saver_gallery` для сохранения изображений в галерею устройства.
-- Платформенные операции (шаринг, запрос пермишенов, работа с файлами) оформляются как сервисы, а не размазываются по провайдерам/репозиториям.
+- `ShareService` — статический сервис-обертка над `share_plus`.
+- `GallerySaverService` — статический сервис-обертка над `saver_gallery`.
 
 **DataDI:** регистрирует провайдеры, сервисы и репозитории в правильном порядке.
-
-**Реализация `ShareRepository`:** `ShareRepositoryImpl` использует статический `ShareService`.
 
 
 ### navigation
@@ -317,7 +308,6 @@ navigation/lib/
 
 **AppRouter:** корневой роутер приложения находится в модуле `navigation`:
 - `navigation/lib/src/app_router/app_router.dart` — определение маршрутов в порядке: Splash, Canvas, Gallery, Settings. `SplashRoute` — initial.
-- `navigation/lib/src/app_router/app_router.gr.dart` — генерируется `auto_route` (минимальный/заглушка, `part-of`).
 
 Использует `@AutoRouterConfig` с `replaceInRouteName: 'Screen|Page,Route'`.
 
@@ -327,65 +317,21 @@ navigation/lib/
 ### features
 **Назначение:** Фичи приложения
 
-**Фича авторизации/загрузки называется `splash`:**
-```text
-features/splash/
-├── lib/
-│   ├── splash.dart               # Публичный API: SplashRoute
-│   ├── splash.gr.dart              # Генерируется auto_route
-│   └── src/
-│       ├── bloc/
-│       │   ├── auth_bloc.dart
-│       │   ├── auth_event.dart
-│       │   └── auth_state.dart
-│       ├── screens/
-│       │   └── splash_screen.dart
-│       └── widgets/
-│           └── login_button.dart
-└── pubspec.yaml
-```
-
 **Каждая фича содержит:**
 - BLoC (события, состояния)
 - Экраны (Screens)
 - Виджеты (Widgets)
 - Публичный API (`splash.dart`, `gallery.dart`, `canvas.dart`, `settings.dart`)
 
-**Публичный API фичи:**
-- Фичи не экспортируют BLoC, виджеты и экраны напрямую.
-- Публичный файл объявляет `@AutoRouterConfig` и импортирует реальный экран, чтобы `auto_route` сгенерировал `*Route` класс.
-- Через фичу доступен только сгенерированный класс маршрута (`SplashRoute`, `GalleryRoute`, `CanvasRoute`, `SettingsRoute`).
-
 **Предоставление BLoC:** происходит на уровне экранов (Screens) через `BlocProvider`. Зависимости (UseCases, Router) внедряются в конструктор BLoC из `appLocator`.
 
-**Структура экрана:**
-```dart
-@RoutePage()
-class SplashScreen extends StatelessWidget {
-  const SplashScreen({super.key});
+**Галерея (gallery):**
+- Поддерживает адаптивную сетку (2 или 3 колонки через `ResponsiveHelper`).
+- Фильтрует пустые категории, запрашивая список используемых через `GetUsedCategoriesUseCase`.
 
-  @override
-  Widget build(BuildContext context) {
-    return BlocProvider<AuthBloc>(
-      create: (context) => AuthBloc(
-        checkAuthUseCase: appLocator<CheckAuthUseCase>(),
-        signInUseCase: appLocator<SignInUseCase>(),
-        signInSilentlyUseCase: appLocator<SignInSilentlyUseCase>(),
-      )..add(const CheckAuth()),
-      child: const SplashContent(),
-    );
-  }
-}
-
-class SplashContent extends StatelessWidget {
-  const SplashContent({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    // ... UI
-  }
-}
-```
+**Холст (canvas):**
+- Синхронизированная загрузка: лоадер висит до полной подготовки мазков и SVG-контура.
+- **Bitmap Baking:** высокая производительность за счет «запекания» завершенных мазков в растровый буфер.
 
 
 ## State Management (BLoC)
@@ -393,13 +339,9 @@ class SplashContent extends StatelessWidget {
 ### Принципы BLoC
 1. Единый класс состояния (extends Equatable)
 2. Абстрактные события (extends Equatable)
-3. Все зависимости через конструктор с `required`
-4. Обработчики событий — приватные методы `_on...`
-5. Использование `copyWith` для обновления состояния
-6. `enum` для статусов (initial, loading, success, failure)
-7. Обработка ошибок через ErrorHandler
-8. `close()` для отписок от стримов и таймеров
-9. Опционально: `with WidgetsBindingObserver` для отслеживания жизненного цикла
+3. Обработчики событий — приватные методы `_on...`
+4. Использование `copyWith` для обновления состояния
+5. Обработка ошибок через ErrorHandler и ErrorDialog.
 
 ### Формат State
 ```dart
@@ -410,61 +352,35 @@ class SomeState extends Equatable {
   final Data? data;
   final String? error;
 
-  const SomeState({
-    this.status = SomeStatus.initial,
-    this.data,
-    this.error,
-  });
-
-  @override
-  List<Object?> get props => [status, data, error];
-
-  SomeState copyWith({...});
-}
-```
-### Формат Event
-```dart
-abstract class SomeEvent extends Equatable {
-  const SomeEvent();
-  @override List<Object?> get props => [];
-}
-
-class LoadData extends SomeEvent {
-  final bool reset;
-  const LoadData({this.reset = false});
-  @override List<Object?> get props => [reset];
+  // ... copyWith, props
 }
 ```
 
-### Формат BLoC
-```dart
-class SomeBloc extends Bloc<SomeEvent, SomeState> {
-  final SomeUseCase _someUseCase;
 
-  SomeBloc({required SomeUseCase someUseCase})
-      : _someUseCase = someUseCase,
-        super(const SomeState()) {
-    on<LoadData>(_onLoadData);
-  }
+## Rendering & Performance (Bitmap Baking)
 
-  Future<void> _onLoadData(LoadData event, Emitter<SomeState> emit) async {
-    try {
-      emit(state.copyWith(status: SomeStatus.loading));
-      final data = await _someUseCase.execute();
-      emit(state.copyWith(status: SomeStatus.success, data: data));
-    } catch (e, stackTrace) {
-      ErrorHandler.handleError(e, stackTrace);
-      emit(state.copyWith(status: SomeStatus.failure, error: e.toString()));
-    }
-  }
+### Архитектура холста
+Для обеспечения плавности 60/120 FPS на холстах с тысячами мазков используется гибридная архитектура:
 
-  @override
-  Future<void> close() {
-    // отписки
-    return super.close();
-  }
-}
-```
+1. **_FinishedStrokesLayer (RasterCanvasBuffer):** 
+   - Все завершенные мазки «запекаются» в один объект `ui.Image` (битмап) в памяти.
+   - Использует `RepaintBoundary` для кэширования картинки в GPU.
+   - Перерисовывается **только** при завершении нового мазка (инкрементально) или при Undo/Redo (полный пересчет).
+   - Это обеспечивает O(1) производительность при панорамировании и зуме.
+
+2. **_ActiveStrokeLayer:** 
+   - Рисует только ту линию, которую пользователь ведет пальцем в данный момент.
+   - Использует векторную отрисовку для максимальной точности.
+   - Частота обновления — каждый кадр, но нагрузка минимальна, так как мазок всего один.
+
+3. **_ContourLayerWrapper:**
+   - Рисует SVG-контур поверх всего.
+   - Изолирован через `RepaintBoundary`.
+
+### Оптимизации отрисовки (CanvasPainter)
+- **drawPath:** Для кистей с постоянной шириной используется `canvas.drawPath` вместо сотен `canvas.drawLine`, что значительно быстрее.
+- **Filtering:** В `CanvasBloc` игнорируются точки, расстояние до которых меньше `Constants.minPointDistance` (1.5px).
+
 
 ## Dependency Injection (appLocator)
 ### Глобальный экземпляр
@@ -473,63 +389,25 @@ class SomeBloc extends Bloc<SomeEvent, SomeState> {
 final GetIt appLocator = GetIt.instance;
 ```
 
-### Порядок инициализации в main_common
-1. `CoreDi.init(flavor)` — AppConfig, AppLogger
-2. `DataDI.initDependencies()` — провайдеры, сервисы, репозитории
-3. `DomainDI.initDependencies()` — usecases
-4. `NavigationDI.initDependencies()` — AppRouter
-5. `appLocator.allReady()`
 
 ## Локализация (easy_localization)
-### Файлы переводов
-```text
-core/resources/lang/
-├── en-US.json
-└── ru-RU.json
-```
-
-### Генерация ключей
-```bash
-flutter pub run easy_localization:generate \
-  -f json \
-  -O lib/src/localization/generated \
-  -o locale_keys.g.dart \
-  -i resources/lang
-```
-
-Сгенерированные ключи живут в `core/lib/src/localization/generated/locale_keys.g.dart`.
-
 ### Использование в коде
 ```dart
 Text(LocaleKeys.gallery).tr();
 ```
 
+
 ## Обработка ошибок
 ### Глобальный ErrorHandler
-`lib/error_handler/error_handler.dart` инициализируется с `GlobalKey<NavigatorState>`, получает контекст из `navigatorKey.currentState?.overlay?.context` и показывает `ErrorDialog` через `ErrorDialog.show`.
+Централизованный перехват ошибок. Показывает `ErrorDialog` через контекст навигатора.
+В `CanvasScreen` лоадер автоматически скрывается при ошибке (`status == CanvasStatus.error`), позволяя пользователю увидеть сообщение об ошибке.
 
-### AppErrorHandlerProvider
-- Оборачивает приложение в `main_common.dart`
-- Перехватывает ошибки через `FlutterError.onError`
-- Перехватывает ошибки в BLoC через `Bloc.observer`
-- Логирует ошибки через `AppLogger`
-
-### ErrorDialog
-- Универсальный виджет в `core_ui`
-- Статический метод `show` для отображения диалога
-- Используется в галерее как отдельный диалог, а не как виджет внутри списка
 
 ## Drift (SQLite) база данных
 ### Таблицы
-- `Projects` — id, contourId, userId, data (JSON), lastOpened, createdAt
-- `Strokes` — id, projectId, points (JSON), color, size, opacity, brushType
-- `Contours` — id, title, category, svgData, previewUrl, createdAt
-
-### Настройка
-- Использовать `@DriftDatabase` с таблицами
-- `AppDatabase extends _$AppDatabase`
-- `schemaVersion = 1`
-- `_openConnection()` — открытие SQLite файла
+- `Projects` — данные проекта и настройки контура (цвет, прозрачность).
+- `Strokes` — мазки (теперь включают `brushId` и `isPressureSensitive`).
+- `Contours` — кэш метаданных контура (с полем `svg_url`).
 
 ### Генерация кода
 ```bash
@@ -540,101 +418,30 @@ flutter pub run build_runner build --delete-conflicting-outputs
 | Константа | Значение |
 |-----------|----------|
 | `maxUndoSteps` | 5 |
-| `maxStrokePoints` | 1000 |
 | `pageSize` | 20 |
-| `defaultBrushSize` | 10.0 |
-| `minBrushSize` | 1.0 |
-| `maxBrushSize` | 100.0 |
-| `defaultOpacity` | 1.0 |
+| `minPointDistance` | 1.5 |
 | `contourDefaultOpacity` | 1.0 |
-| `contourDefaultWidth` | 2.0 |
-| `minContourWidth` | 0.5 |
-| `maxContourWidth` | 10.0 |
 | `autosaveDebounce` | 500ms |
 
 ---
 
 ## Типы кистей (enum)
-| Значение | Описание |
-|----------|----------|
-| `circle` | Круглая |
-| `square` | Квадратная |
-| `watercolor` | Акварель |
-| `chalk` | Мелок |
-| `marker` | Маркер |
-| `calligraphy` | Каллиграфическая |
-| `texture` | Текстурная |
-| `airbrush` | Аэрограф |
+`circle`, `square`, `watercolor`, `chalk`, `marker`, `calligraphy`, `texture`, `airbrush`.
 
 ---
 
 ## Константы вместо строк
-Все идентификаторы таблиц, колонок, параметров запросов и сообщения об ошибках централизованы в `RequestConstants` (`data/lib/src/constants/request_constants.dart`).
+Все ключи БД и параметры API живут в `RequestConstants`.
 
-Примеры:
-- Имена таблиц: `usersTable`, `contoursTable`, `favoritesTable`, `projectsTable`
-- Колонки: `createdAtColumn`, `userIdColumn`, `contourIdColumn`
-- Параметры: `limitParam`, `offsetParam`, `orderParam`
-- Сообщения: `userNotAuthenticated`, `googleSignInFailed`
-
-Провайдеры не используют «магические строки» при построении запросов Supabase.
-
-## Сервисы для переиспользуемых платформенных операций
-Платформенно-зависимые и часто повторяющиеся операции оформляются как сервисы в `data/lib/src/services/`:
-- `ShareService` — шаринг файлов/изображений через `share_plus`.
-
-К сервисам относятся также пермишены, экспорт файлов, работа с галереей устройства. Сервисы регистрируются в `DataDI` и внедряются в репозитории/провайдеры, избегая дублирования кода.
-
-## Версии пакетов
-Предпочтение отдается последним стабильным версиям пакетов (`google_sign_in ^7.2.0`, `share_plus`, `flutter_colorpicker`, `image_gallery_saver` и т.д.).
-Зависимости обновляются через `flutter pub outdated` и тестируются с `flutter analyze` / `flutter build apk --debug`.
+## Сервисы
+Платформенные операции (шаринг, сохранение в галерею) вынесены в статические сервисы в модуле `data`.
 
 ---
 
 ## Best Practices
 
-### Общие
-1. **Разделение UI и логики** — вся бизнес-логика в BLoC и UseCases.
-2. **Переиспользование виджетов** — выносить в `core_ui`.
-3. **Обработка ошибок** — UseCase выбрасывают исключения, BLoC перехватывают и передают в `ErrorHandler`.
-4. **Работа с Drift** — использовать генерацию кода, миграции, транзакции.
-5. **Производительность** — const конструкторы, ListView.builder, избегать rebuild.
-6. **Экспорт модулей** — только то, что используется другими модулями.
-7. **Состояния загрузки** — initial, loading, success, failure.
-8. **Доступность** — Semantics, тап-области ≥ 44pt.
-9. **Жизненный цикл BLoC** — отписки в `close()`.
-10. **Тема** — используется только светлая тема; переключатель темы удалён.
-
-### UI и Виджеты
-1. **Один класс — один файл.** Каждый виджет должен находиться в отдельном файле. Исключение: `StatefulWidget` и его `State` класс всегда находятся в одном файле.
-2. **Запрет на методы генерации виджетов.** В классах виджетов не должно быть методов, которые возвращают `Widget` (например, `_buildHeader()`). Вместо этого:
-    - Если UI простой и не повторяется — пишите его прямо внутри `build`.
-    - Если UI сложный или должен быть переиспользован — создайте новый класс виджета в отдельном файле.
-    - Если UI повторяется внутри одного метода `build` — вынесите его в локальную переменную (не метод!).
-3. **Обработка событий.** Все вызовы BLoC или навигации при нажатии на кнопки/области должны быть вынесены в отдельные именованные методы класса (например, `_onSettingsPressed(BuildContext context)`). Это делает метод `build` декларативным и легко читаемым.
-4. **Контекст в методах.** Если метод обработки события требует `BuildContext`, передавайте его как аргумент.
-
-### CanvasPainter
-- Отрисовка нижнего слоя: белый фон + мазки пользователя (полная история точек)
-- Контур отрисовывается отдельно через `SvgPicture.string` с прозрачностью, цветом и толщиной (`SvgUtils.applyStrokeWidth`)
-- Поддержка трансформации (масштаб, поворот до 360°, смещение)
-- Сглаживание контура (smooth contour) для высокого качества отрисовки
-
-### Обработка касаний
-- Используется `Listener` (`onPointerDown`, `onPointerMove`, `onPointerUp`, `onPointerCancel`)
-- Координаты и `event.pressure` передаются в BLoC; при масштабировании учитывается корректное преобразование координат
-- Мультитач — зум, поворот и панорамирование
-
-### Интерфейс Canvas
-- **LeftControls**: вертикальная панель с выбором инструмента (Кисть/Ластик), ползунками размера/прозрачности и кнопкой сброса вида. Кнопки используют `AppIconButton` (24px, иконка 18px).
-- **BottomToolbar**: горизонтальная панель с выбором цвета, кнопками Undo/Redo (с авто-дизейблом) и настройками контура.
-- **Overlays**: выбор цвета и настройки контура реализованы в виде парящих прозрачных оверлеев (`showGeneralDialog`) для непрерывного процесса рисования.
-
-### Автосохранение
-- Дебаунс `Constants.autosaveDebounce` после каждого завершённого мазка
-- Сохранение при сворачивании/фоне через `WidgetsBindingObserver` (`AppLifecycleState.paused/inactive`)
-
-### Экспорт
-- Экспорт обрабатывается в `CanvasBloc`: событие `ExportImage(ExportType)` запускает `ExportImageUseCase`, а затем `ShareFileUseCase` (для `ExportType.share`) или `SaveImageToGalleryUseCase` (для `ExportType.gallery`)
-- `CanvasRepository.exportImage` склеивает белый фон, мазки и контур (с применённой толщиной), сохраняет в PNG
-- `CanvasRepository.saveImageToGallery` сохраняет готовый файл в галерею устройства через `GallerySaverService`
+1. **Разделение UI и логики.**
+2. **Изоляция рендеринга.** Разделение на растровые и векторные слои.
+3. **Адаптивность.** Использование `ResponsiveHelper` для планшетов.
+4. **Загрузка данных.** SVG контуры загружаются из Supabase Storage по URL.
+5. **Тема.** Только светлая тема.

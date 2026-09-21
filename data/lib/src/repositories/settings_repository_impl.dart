@@ -6,6 +6,7 @@ class SettingsRepositoryImpl implements SettingsRepository {
   final SharedPreferences _preferences;
 
   static const String _languageKey = 'language_code';
+  static const String _canvasOnboardingKey = 'canvas_onboarding_shown';
 
   /// Creates a repository with the given [_preferences].
   SettingsRepositoryImpl({required this._preferences});
@@ -18,5 +19,15 @@ class SettingsRepositoryImpl implements SettingsRepository {
   @override
   Future<void> saveLanguageCode(String languageCode) async {
     await _preferences.setString(_languageKey, languageCode);
+  }
+
+  @override
+  Future<bool> isCanvasOnboardingShown() async {
+    return _preferences.getBool(_canvasOnboardingKey) ?? false;
+  }
+
+  @override
+  Future<void> setCanvasOnboardingShown({bool shown = true}) async {
+    await _preferences.setBool(_canvasOnboardingKey, shown);
   }
 }

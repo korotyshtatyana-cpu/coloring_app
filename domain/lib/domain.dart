@@ -26,6 +26,8 @@ export 'src/use_cases/canvas/save_project_use_case.dart';
 export 'src/use_cases/canvas/get_available_tools_use_case.dart';
 export 'src/use_cases/canvas/save_image_to_gallery_use_case.dart';
 export 'src/use_cases/canvas/share_file_use_case.dart';
+export 'src/use_cases/canvas/check_canvas_onboarding_shown_use_case.dart';
+export 'src/use_cases/canvas/set_canvas_onboarding_shown_use_case.dart';
 export 'src/use_cases/gallery/get_contour_by_id_use_case.dart';
 export 'src/use_cases/gallery/get_contours_use_case.dart';
 export 'src/use_cases/gallery/get_contours_by_ids_use_case.dart';

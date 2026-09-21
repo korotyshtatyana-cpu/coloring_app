@@ -71,5 +71,29 @@ abstract class  LocaleKeys {
   static const message = 'message';
   static const submit = 'submit';
   static const attachments_max = 'attachments_max';
+  static const onboarding_skip = 'onboarding_skip';
+  static const onboarding_next = 'onboarding_next';
+  static const onboarding_back = 'onboarding_back';
+  static const onboarding_start = 'onboarding_start';
+  static const onboarding_slide1_title = 'onboarding_slide1_title';
+  static const onboarding_slide1_text = 'onboarding_slide1_text';
+  static const onboarding_slide2_title = 'onboarding_slide2_title';
+  static const onboarding_slide2_text = 'onboarding_slide2_text';
+  static const onboarding_slide3_title = 'onboarding_slide3_title';
+  static const onboarding_slide3_text = 'onboarding_slide3_text';
+  static const onboarding_slide4_title = 'onboarding_slide4_title';
+  static const onboarding_slide4_text = 'onboarding_slide4_text';
+  static const onboarding_slide5_title = 'onboarding_slide5_title';
+  static const onboarding_slide5_text = 'onboarding_slide5_text';
+  static const onboarding_slide6_title = 'onboarding_slide6_title';
+  static const onboarding_slide6_text = 'onboarding_slide6_text';
+  static const onboarding_slide7_title = 'onboarding_slide7_title';
+  static const onboarding_slide7_text = 'onboarding_slide7_text';
+  static const onboarding_slide8_title = 'onboarding_slide8_title';
+  static const onboarding_slide8_text = 'onboarding_slide8_text';
+  static const onboarding_slide9_title = 'onboarding_slide9_title';
+  static const onboarding_slide9_text = 'onboarding_slide9_text';
+  static const onboarding_slide10_title = 'onboarding_slide10_title';
+  static const onboarding_slide10_text = 'onboarding_slide10_text';
 
 }

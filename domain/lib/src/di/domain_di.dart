@@ -142,6 +142,18 @@ abstract class DomainDI {
       ),
     );
 
+    appLocator.registerLazySingleton<CheckCanvasOnboardingShownUseCase>(
+      () => CheckCanvasOnboardingShownUseCase(
+        repository: appLocator<SettingsRepository>(),
+      ),
+    );
+
+    appLocator.registerLazySingleton<SetCanvasOnboardingShownUseCase>(
+      () => SetCanvasOnboardingShownUseCase(
+        repository: appLocator<SettingsRepository>(),
+      ),
+    );
+
     appLocator.registerLazySingleton<SubmitFeedbackUseCase>(
       () => SubmitFeedbackUseCase(
         repository: appLocator<FeedbackRepository>(),

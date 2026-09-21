@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
 import '../bloc/canvas_bloc.dart';
+import '../onboarding/canvas_onboarding_dialog.dart';
 import '../widgets/canvas/active_stroke.dart';
 import '../widgets/canvas/canvas_stack.dart';
 import '../widgets/eyedropper_overlay.dart';
@@ -153,6 +154,11 @@ class _CanvasContentState extends State<CanvasContent>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        showCanvasOnboarding(context);
+      }
+    });
   }
 
   @override
@@ -335,6 +341,7 @@ class _CanvasContentState extends State<CanvasContent>
                 child: TopToolbar(
                   onExport: widget.onExport,
                   onBack: _saveAndPop,
+                  onHelp: () => showCanvasOnboarding(context, forceShow: true),
                 ),
               ),
               const Positioned(left: 8, top: 120, child: LeftControls()),
