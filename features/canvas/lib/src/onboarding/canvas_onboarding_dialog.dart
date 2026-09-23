@@ -197,25 +197,20 @@ class _CanvasOnboardingDialogState extends State<CanvasOnboardingDialog> {
                     ),
                     const Spacer(),
                     if (_currentIndex > 0) ...{
-                      Expanded(
-                        child: AppButton(
+                    AppButton(
                           onPressed: _onPrevPage,
                           text: LocaleKeys.onboarding_back.tr(),
                         ),
-                      ),
-                    } else ...{
-                      const Spacer(),
+
                     },
                     const SizedBox(width: 12),
-                    Expanded(
-                      child: AppButton(
-                        filled: true,
-                        color: colors.accentDark,
-                        text: _currentIndex == _slides.length - 1
-                            ? LocaleKeys.onboarding_start.tr()
-                            : LocaleKeys.onboarding_next.tr(),
-                        onPressed: _onNextPage,
-                      ),
+                    AppButton(
+                      filled: true,
+                      color: colors.accentDark,
+                      text: _currentIndex == _slides.length - 1
+                          ? LocaleKeys.onboarding_start.tr()
+                          : LocaleKeys.onboarding_next.tr(),
+                      onPressed: _onNextPage,
                     ),
                   ],
                 ),

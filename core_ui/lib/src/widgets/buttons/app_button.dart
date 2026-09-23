@@ -52,8 +52,6 @@ class AppButton extends StatelessWidget {
       style: TextButton.styleFrom(
         foregroundColor: textColor,
         backgroundColor: filled ? effectiveColor : Colors.transparent,
-        // styleFrom falls back to the theme's disabled colors unless these
-        // are passed explicitly.
         disabledForegroundColor: textColor,
         disabledBackgroundColor:
             filled ? effectiveColor : Colors.transparent,
@@ -66,14 +64,16 @@ class AppButton extends StatelessWidget {
           vertical: 12,
         ),
       ),
-      child: Text(
-        text,
-        style: AppFonts.normal14.copyWith(
-          color: textColor,
-          fontWeight: FontWeight.w600,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(
+          text,
+          style: AppFonts.normal14.copyWith(
+            color: textColor,
+            fontWeight: FontWeight.w600,
+          ),
+          maxLines: 1,
         ),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
       ),
     );
   }

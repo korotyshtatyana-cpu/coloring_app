@@ -188,11 +188,13 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     try {
       emit(state.copyWith(status: CanvasStatus.saving));
 
-      // 1. Clear strokes in state
+      // 1. Clear strokes and reset contour settings in state
       final newState = state.copyWith(
         strokes: const <StrokeEntity>[],
         undoStack: const <StrokeEntity>[],
         redoStack: const <StrokeEntity>[],
+        contourColor: Colors.black,
+        contourOpacity: Constants.contourDefaultOpacity,
         thumbnailPath: null,
       );
 
