@@ -48,46 +48,57 @@ class _CanvasOnboardingDialogState extends State<CanvasOnboardingDialog> {
   late final PageController _pageController;
   int _currentIndex = 0;
 
-  static const List<({String titleKey, String textKey})> _slides = [
+  static const List<({String titleKey, String textKey, String imagePath})>
+  _slides = [
     (
       titleKey: LocaleKeys.onboarding_slide1_title,
       textKey: LocaleKeys.onboarding_slide1_text,
+      imagePath: AppImages.slide01,
     ),
     (
       titleKey: LocaleKeys.onboarding_slide2_title,
       textKey: LocaleKeys.onboarding_slide2_text,
+      imagePath: AppImages.slide02,
     ),
     (
       titleKey: LocaleKeys.onboarding_slide3_title,
       textKey: LocaleKeys.onboarding_slide3_text,
+      imagePath: AppImages.slide03,
     ),
     (
       titleKey: LocaleKeys.onboarding_slide4_title,
       textKey: LocaleKeys.onboarding_slide4_text,
+      imagePath: AppImages.slide04,
     ),
     (
       titleKey: LocaleKeys.onboarding_slide5_title,
       textKey: LocaleKeys.onboarding_slide5_text,
+      imagePath: AppImages.slide05,
     ),
     (
       titleKey: LocaleKeys.onboarding_slide6_title,
       textKey: LocaleKeys.onboarding_slide6_text,
+      imagePath: AppImages.slide06,
     ),
     (
       titleKey: LocaleKeys.onboarding_slide7_title,
       textKey: LocaleKeys.onboarding_slide7_text,
+      imagePath: AppImages.slide07,
     ),
     (
       titleKey: LocaleKeys.onboarding_slide8_title,
       textKey: LocaleKeys.onboarding_slide8_text,
+      imagePath: AppImages.slide08,
     ),
     (
       titleKey: LocaleKeys.onboarding_slide9_title,
       textKey: LocaleKeys.onboarding_slide9_text,
+      imagePath: AppImages.slide09,
     ),
     (
       titleKey: LocaleKeys.onboarding_slide10_title,
       textKey: LocaleKeys.onboarding_slide10_text,
+      imagePath: AppImages.slide10,
     ),
   ];
 
@@ -133,6 +144,11 @@ class _CanvasOnboardingDialogState extends State<CanvasOnboardingDialog> {
   @override
   Widget build(BuildContext context) {
     final AppColors colors = AppColors.of(context);
+    final Orientation orientation = MediaQuery.orientationOf(context);
+    final bool isLandscape = orientation == Orientation.landscape;
+
+    final double maxWidth = isLandscape ? 640 : 480;
+    final double maxHeight = isLandscape ? 360 : 580;
 
     return PopScope(
       onPopInvokedWithResult: (bool didPop, Object? result) {
@@ -142,9 +158,11 @@ class _CanvasOnboardingDialogState extends State<CanvasOnboardingDialog> {
         child: Material(
           color: Colors.transparent,
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 480, maxHeight: 560),
-            margin: const EdgeInsets.all(20),
-            padding: const EdgeInsets.all(16),
+            constraints: BoxConstraints(
+              maxWidth: maxWidth,
+              maxHeight: maxHeight,
+            ),
+            margin: EdgeInsets.all(isLandscape ? 12 : 20),
             decoration: BoxDecoration(
               color: colors.primaryBg,
               borderRadius: BorderRadius.circular(24),
@@ -161,9 +179,12 @@ class _CanvasOnboardingDialogState extends State<CanvasOnboardingDialog> {
                 Row(
                   children: <Widget>[
                     const Spacer(),
-                    IconButton(
-                      icon: Icon(Icons.close, color: colors.iconPrimary),
-                      onPressed: _closeDialog,
+                    Padding(
+                      padding: const EdgeInsets.only(right: 4.0, top: 4.0),
+                      child: IconButton(
+                        icon: Icon(Icons.close, color: colors.iconPrimary),
+                        onPressed: _closeDialog,
+                      ),
                     ),
                   ],
                 ),
@@ -172,13 +193,16 @@ class _CanvasOnboardingDialogState extends State<CanvasOnboardingDialog> {
                     controller: _pageController,
                     itemCount: _slides.length,
                     onPageChanged: (int index) {
-                      setState(() => _currentIndex = index);
+                      setState(() {
+                        _currentIndex = index;
+                      });
                     },
                     itemBuilder: (BuildContext context, int index) {
                       final slide = _slides[index];
                       return OnboardingSlide(
                         titleKey: slide.titleKey,
                         textKey: slide.textKey,
+                        imagePath: slide.imagePath,
                       );
                     },
                   ),
@@ -188,31 +212,39 @@ class _CanvasOnboardingDialogState extends State<CanvasOnboardingDialog> {
                   count: _slides.length,
                   currentIndex: _currentIndex,
                 ),
-                const SizedBox(height: 24),
-                Row(
-                  children: <Widget>[
-                    AppButton(
-                      onPressed: _closeDialog,
-                      text: LocaleKeys.onboarding_skip.tr(),
-                    ),
-                    const Spacer(),
-                    if (_currentIndex > 0) ...{
-                    AppButton(
-                          onPressed: _onPrevPage,
-                          text: LocaleKeys.onboarding_back.tr(),
+                Padding(
+                  padding: EdgeInsets.only(
+                    right: 16.0,
+                    left: 16.0,
+                    top: isLandscape ? 8.0 : 24.0,
+                    bottom: isLandscape ? 8.0 : 16.0,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: <Widget>[
+                      if (_currentIndex > 0) ...<Widget>[
+                        SizedBox(
+                          width: 100,
+                          child: AppButton(
+                            onPressed: _onPrevPage,
+                            text: LocaleKeys.onboarding_back.tr(),
+                          ),
                         ),
-
-                    },
-                    const SizedBox(width: 12),
-                    AppButton(
-                      filled: true,
-                      color: colors.accentDark,
-                      text: _currentIndex == _slides.length - 1
-                          ? LocaleKeys.onboarding_start.tr()
-                          : LocaleKeys.onboarding_next.tr(),
-                      onPressed: _onNextPage,
-                    ),
-                  ],
+                      ],
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        width: 100,
+                        child: AppButton(
+                          filled: true,
+                          color: colors.accentDark,
+                          text: _currentIndex == _slides.length - 1
+                              ? LocaleKeys.onboarding_start.tr()
+                              : LocaleKeys.onboarding_next.tr(),
+                          onPressed: _onNextPage,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),

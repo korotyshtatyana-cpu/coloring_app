@@ -9,6 +9,9 @@ import '../../theme/app_fonts.dart';
 /// border, like the delete account button). Set [filled] to true for the
 /// filled variant.
 ///
+/// Set [shrinkWrap] to true so the button only occupies the exact width
+/// required by its text content and padding, preventing it from stretching.
+///
 /// The button is disabled when [onPressed] is null; a disabled button is
 /// rendered in [AppColors.iconDisabled] instead of [color].
 class AppButton extends StatelessWidget {
@@ -29,12 +32,21 @@ class AppButton extends StatelessWidget {
   /// [AppColors.iconDisabled] instead.
   final Color? color;
 
+  /// Optional custom padding for the button.
+  final EdgeInsetsGeometry? padding;
+
+  /// Whether the button should shrink-wrap to fit its content tightly without
+  /// stretching.
+  final bool shrinkWrap;
+
   /// Creates an [AppButton].
   const AppButton({
     required this.text,
     required this.onPressed,
     this.filled = false,
     this.color,
+    this.padding,
+    this.shrinkWrap = false,
     super.key,
   });
 
@@ -47,7 +59,7 @@ class AppButton extends StatelessWidget {
         : color ?? (filled ? colors.accentDark : colors.iconPrimary);
     final Color textColor = filled ? colors.primaryBg : effectiveColor;
 
-    return TextButton(
+    Widget button = TextButton(
       onPressed: onPressed,
       style: TextButton.styleFrom(
         foregroundColor: textColor,
@@ -59,10 +71,15 @@ class AppButton extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(24),
         ),
-        padding: const EdgeInsets.symmetric(
-          horizontal: 24,
-          vertical: 12,
-        ),
+        padding: padding ??
+            const EdgeInsets.symmetric(
+              horizontal: 24,
+              vertical: 12,
+            ),
+        minimumSize: shrinkWrap ? Size.zero : null,
+        tapTargetSize: shrinkWrap
+            ? MaterialTapTargetSize.shrinkWrap
+            : null,
       ),
       child: FittedBox(
         fit: BoxFit.scaleDown,
@@ -76,5 +93,13 @@ class AppButton extends StatelessWidget {
         ),
       ),
     );
+
+    if (shrinkWrap) {
+      button = UnconstrainedBox(
+        child: button,
+      );
+    }
+
+    return button;
   }
 }
