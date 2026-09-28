@@ -28,8 +28,8 @@ class RasterCanvasBuffer extends StatefulWidget {
 
 class _RasterCanvasBufferState extends State<RasterCanvasBuffer> {
   ui.Image? _bakedImage;
-  List<StrokeEntity> _bakedStrokes = [];
-  
+  List<StrokeEntity> _bakedStrokes = <StrokeEntity>[];
+
   bool _isBaking = false;
   List<StrokeEntity>? _pendingStrokes;
 
@@ -45,6 +45,15 @@ class _RasterCanvasBufferState extends State<RasterCanvasBuffer> {
   }
 
   @override
+  void didUpdateWidget(RasterCanvasBuffer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.size != widget.size) {
+      _bakedStrokes = <StrokeEntity>[];
+      _updateBuffer(context.read<CanvasBloc>().state.strokes);
+    }
+  }
+
+  @override
   void dispose() {
     _bakedImage?.dispose();
     super.dispose();
@@ -53,8 +62,9 @@ class _RasterCanvasBufferState extends State<RasterCanvasBuffer> {
   @override
   Widget build(BuildContext context) {
     return BlocListener<CanvasBloc, CanvasState>(
-      listenWhen: (previous, current) => previous.strokes != current.strokes,
-      listener: (context, state) {
+      listenWhen: (CanvasState previous, CanvasState current) =>
+          previous.strokes != current.strokes,
+      listener: (BuildContext context, CanvasState state) {
         _updateBuffer(state.strokes);
       },
       child: _bakedImage == null
@@ -73,26 +83,26 @@ class _RasterCanvasBufferState extends State<RasterCanvasBuffer> {
     }
 
     _isBaking = true;
-    
+
     try {
       // 1. Full re-bake if strokes were removed (Undo) or project was loaded/cleared.
-      // We also full rebake if the prefix doesn't match (though shouldn't happen here).
-      final bool isUndoOrLoad = newStrokes.length < _bakedStrokes.length || 
-                                 _bakedStrokes.isEmpty;
-      
+      final bool isUndoOrLoad = newStrokes.length < _bakedStrokes.length ||
+          _bakedStrokes.isEmpty;
+
       if (isUndoOrLoad) {
         await _fullRebake(newStrokes);
       } else if (newStrokes.length > _bakedStrokes.length) {
         // 2. Incremental bake: only draw the new strokes on top.
-        final newItems = newStrokes.sublist(_bakedStrokes.length);
+        final List<StrokeEntity> newItems =
+            newStrokes.sublist(_bakedStrokes.length);
         await _incrementalBake(newItems);
       }
-      
-      _bakedStrokes = List.from(newStrokes);
+
+      _bakedStrokes = List<StrokeEntity>.from(newStrokes);
     } finally {
       _isBaking = false;
       if (_pendingStrokes != null) {
-        final next = _pendingStrokes!;
+        final List<StrokeEntity> next = _pendingStrokes!;
         _pendingStrokes = null;
         _updateBuffer(next);
       }
@@ -100,21 +110,25 @@ class _RasterCanvasBufferState extends State<RasterCanvasBuffer> {
   }
 
   Future<void> _fullRebake(List<StrokeEntity> strokes) async {
-    final recorder = ui.PictureRecorder();
-    final canvas = Canvas(recorder);
     final Size size = widget.size;
+    final double pixelRatio =
+        (MediaQuery.maybeDevicePixelRatioOf(context) ?? 2.0).clamp(2.0, 3.5);
+    final int imageWidth = (size.width * pixelRatio).round();
+    final int imageHeight = (size.height * pixelRatio).round();
+
+    final ui.PictureRecorder recorder = ui.PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+
+    canvas.scale(pixelRatio, pixelRatio);
 
     // Clear background and draw all strokes
     canvas.drawRect(Offset.zero & size, Paint()..color = Colors.white);
-    for (final stroke in strokes) {
+    for (final StrokeEntity stroke in strokes) {
       StrokeRenderer.drawStroke(canvas, stroke);
     }
 
-    final picture = recorder.endRecording();
-    final newImage = await picture.toImage(
-      size.width.round(),
-      size.height.round(),
-    );
+    final ui.Picture picture = recorder.endRecording();
+    final ui.Image newImage = await picture.toImage(imageWidth, imageHeight);
 
     if (mounted) {
       setState(() {
@@ -133,23 +147,32 @@ class _RasterCanvasBufferState extends State<RasterCanvasBuffer> {
       return;
     }
 
-    final recorder = ui.PictureRecorder();
-    final canvas = Canvas(recorder);
     final Size size = widget.size;
+    final double pixelRatio =
+        (MediaQuery.maybeDevicePixelRatioOf(context) ?? 2.0).clamp(2.0, 3.5);
+    final int imageWidth = (size.width * pixelRatio).round();
+    final int imageHeight = (size.height * pixelRatio).round();
 
-    // 1. Draw existing bitmap
-    canvas.drawImage(_bakedImage!, Offset.zero, Paint());
+    final ui.PictureRecorder recorder = ui.PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
 
-    // 2. Draw new strokes on top
-    for (final stroke in newStrokes) {
+    // 1. Draw existing high-res bitmap
+    canvas.drawImage(
+      _bakedImage!,
+      Offset.zero,
+      Paint()..filterQuality = FilterQuality.medium,
+    );
+
+    // 2. Scale canvas for new strokes
+    canvas.scale(pixelRatio, pixelRatio);
+
+    // 3. Draw new strokes on top
+    for (final StrokeEntity stroke in newStrokes) {
       StrokeRenderer.drawStroke(canvas, stroke);
     }
 
-    final picture = recorder.endRecording();
-    final newImage = await picture.toImage(
-      size.width.round(),
-      size.height.round(),
-    );
+    final ui.Picture picture = recorder.endRecording();
+    final ui.Image newImage = await picture.toImage(imageWidth, imageHeight);
 
     if (mounted) {
       setState(() {

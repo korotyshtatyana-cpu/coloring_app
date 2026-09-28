@@ -77,17 +77,24 @@ class GalleryRemoteProvider {
         .eq(RequestConstants.userIdColumn, user.id)
         .order(RequestConstants.lastOpenedColumn, ascending: false);
 
-    return response
-        .map(
-          (Map<String, dynamic> row) => WorkInProgressEntity(
+    final List<WorkInProgressEntity> result = <WorkInProgressEntity>[];
+    for (final Map<String, dynamic> row in response) {
+      final Map<String, dynamic>? data =
+          row[RequestConstants.dataColumn] as Map<String, dynamic>?;
+      final List<dynamic>? strokes = data?['strokes'] as List<dynamic>?;
+      if (strokes != null && strokes.isNotEmpty) {
+        result.add(
+          WorkInProgressEntity(
             contourId: row[RequestConstants.contourIdColumn] as String,
             thumbnailPath: row[RequestConstants.thumbnailUrlColumn] as String?,
             lastOpened: DateTime.parse(
               row[RequestConstants.lastOpenedColumn] as String,
             ),
           ),
-        )
-        .toList();
+        );
+      }
+    }
+    return result;
   }
 
   /// Returns favorite contour ids for the current user, most recently

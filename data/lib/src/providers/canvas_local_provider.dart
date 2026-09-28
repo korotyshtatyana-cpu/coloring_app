@@ -125,6 +125,30 @@ class CanvasLocalProvider {
     )..where(($StrokesTable row) => row.projectId.equals(projectId))).go();
   }
 
+  /// Deletes a project and its strokes/thumbnails by contour ID.
+  Future<void> deleteProject(String contourId) async {
+    final ProjectModel? project = await loadProject(contourId);
+    if (project != null) {
+      await _database.transaction(() async {
+        await (_database.delete(_database.strokes)
+              ..where(($StrokesTable row) => row.projectId.equals(project.id)))
+            .go();
+        await (_database.delete(_database.projects)
+              ..where(($ProjectsTable row) => row.id.equals(project.id)))
+            .go();
+      });
+      await _deleteThumbnailFor(contourId);
+    }
+  }
+
+  Future<void> _deleteThumbnailFor(String contourId) async {
+    final Directory directory = await getApplicationDocumentsDirectory();
+    final File file = File('${directory.path}/thumbnails/$contourId.png');
+    if (file.existsSync()) {
+      await file.delete();
+    }
+  }
+
   /// Deletes all locally stored user data: projects, their strokes and
   /// rendered thumbnails.
   Future<void> clearUserData() async {

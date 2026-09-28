@@ -14,6 +14,9 @@ abstract class CanvasRepository {
   /// Saves the project locally and schedules cloud sync.
   Future<void> saveProject(ProjectEntity project);
 
+  /// Deletes a project and its strokes/thumbnails by contour ID.
+  Future<void> deleteProject(String contourId);
+
   /// Loads a project for the given contour.
   Future<ProjectEntity?> loadProject(String contourId);
 

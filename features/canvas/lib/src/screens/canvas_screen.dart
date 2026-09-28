@@ -290,7 +290,7 @@ class _CanvasContentState extends State<CanvasContent>
           ],
           child: Stack(
             children: <Widget>[
-              if (!isInitial)
+              if (!isInitial && state.contourSize != null)
                 Positioned.fill(
                   child: RepaintBoundary(
                     key: _repaintKey,

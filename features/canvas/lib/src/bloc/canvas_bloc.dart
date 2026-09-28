@@ -90,7 +90,14 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
       if (contour != null) {
         contourSvg = await SvgUtils.fetchSvgContent(contour.svgUrl);
         if (contourSvg != null) {
-          contourSize = SvgUtils.parseViewBoxSize(contourSvg);
+          final Size? parsedSize = SvgUtils.parseViewBoxSize(contourSvg);
+          if (parsedSize != null) {
+            // Scale project canvas size 1.5x for crisp vector resolution
+            contourSize = Size(
+              parsedSize.width * 1.5,
+              parsedSize.height * 1.5,
+            );
+          }
         }
       }
 
@@ -198,10 +205,8 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
         thumbnailPath: null,
       );
 
-      // 2. Persist the empty project (this clears local/remote strokes)
-      await _saveProjectUseCase.execute(
-        _projectEntity(state: newState, thumbnailPath: null),
-      );
+      // 2. Delete project from persistence so it is no longer Work In Progress
+      await _saveProjectUseCase.repository.deleteProject(_contourId);
 
       emit(newState.copyWith(status: CanvasStatus.ready));
     } catch (e, stackTrace) {

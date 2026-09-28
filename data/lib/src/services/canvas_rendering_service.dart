@@ -20,8 +20,9 @@ abstract final class CanvasRenderingService {
   }) async {
     // Strokes live in canvas (viewBox) coordinates; scale them to fit the
     // output while keeping the canvas aspect ratio.
-    final Size canvasSize = SvgUtils.parseViewBoxSize(contourSvg) ??
+    final Size rawSize = SvgUtils.parseViewBoxSize(contourSvg) ??
         Size(targetSize, targetSize);
+    final Size canvasSize = Size(rawSize.width * 1.5, rawSize.height * 1.5);
     final double scale = min(
       targetSize / canvasSize.width,
       targetSize / canvasSize.height,
@@ -118,9 +119,14 @@ abstract final class CanvasRenderingService {
       null,
     );
 
+    final Size svgSize = pictureInfo.size;
+    final double scaleX = size.width / svgSize.width;
+    final double scaleY = size.height / svgSize.height;
+
     final recorder = ui.PictureRecorder();
     final strokeCanvas = Canvas(recorder);
 
+    strokeCanvas.scale(scaleX, scaleY);
     strokeCanvas.drawPicture(pictureInfo.picture);
 
     final strokePicture = recorder.endRecording();

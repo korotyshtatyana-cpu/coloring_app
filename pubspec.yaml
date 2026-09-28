@@ -1,6 +1,6 @@
 name: coloring_app
 description: Professional coloring app with advanced tools
-version: 1.0.0
+version: 1.0.0+12
 publish_to: 'none'
 
 environment:
@@ -24,6 +24,7 @@ dependencies:
   flutter_native_splash: ^2.4.0
 
   flutter_bloc: any
+
 dependency_overrides:
   core:
     path: ./core

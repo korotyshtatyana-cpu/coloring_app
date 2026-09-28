@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'dart:ui' as ui;
 
 import 'package:domain/domain.dart';
@@ -143,7 +142,12 @@ class BitmapPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    canvas.drawImage(image, Offset.zero, Paint());
+    canvas.drawImageRect(
+      image,
+      Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
+      Offset.zero & size,
+      Paint()..filterQuality = FilterQuality.medium,
+    );
   }
 
   @override
@@ -235,12 +239,8 @@ class ContourPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final Size svgSize = pictureInfo.size;
-    final double scale = min(
-      size.width / svgSize.width,
-      size.height / svgSize.height,
-    );
-    final double dx = (size.width - svgSize.width * scale) / 2;
-    final double dy = (size.height - svgSize.height * scale) / 2;
+    final double scaleX = size.width / svgSize.width;
+    final double scaleY = size.height / svgSize.height;
 
     final Paint layerPaint = Paint()
       ..colorFilter = ColorFilter.mode(
@@ -249,8 +249,7 @@ class ContourPainter extends CustomPainter {
       );
 
     canvas.saveLayer(Offset.zero & size, layerPaint);
-    canvas.translate(dx, dy);
-    canvas.scale(scale);
+    canvas.scale(scaleX, scaleY);
     canvas.drawPicture(pictureInfo.picture);
     canvas.restore();
   }

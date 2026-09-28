@@ -59,6 +59,15 @@ class CanvasRepositoryImpl implements CanvasRepository {
   @override
   Future<void> saveProject(ProjectEntity project) async {
     final mapped = ProjectMapper.toModel(project);
+    final strokes = _strokesFromData(mapped.data);
+
+    if (strokes.isEmpty) {
+      // Do not persist empty project (no strokes made) as Work In Progress.
+      // If an empty project exists locally/remotely, delete it.
+      await deleteProject(project.contourId);
+      return;
+    }
+
     final model = ProjectModel(
       id: mapped.id,
       contourId: mapped.contourId,
@@ -67,7 +76,6 @@ class CanvasRepositoryImpl implements CanvasRepository {
       lastOpened: mapped.lastOpened,
       createdAt: mapped.createdAt,
     );
-    final strokes = _strokesFromData(mapped.data);
     _strokes[project.id] = strokes;
     // Pass a copy because the cached list can be modified concurrently
     // (e.g. addStroke runs while saveProject is awaiting DB writes).
@@ -78,6 +86,18 @@ class CanvasRepositoryImpl implements CanvasRepository {
       // Remote sync failed (e.g. RLS policy misconfiguration or no network).
       // Local data is already saved, so the user can keep drawing.
       debugPrint('Remote project sync failed: $e');
+      debugPrint('$stackTrace');
+    }
+  }
+
+  @override
+  Future<void> deleteProject(String contourId) async {
+    _strokes.remove(contourId);
+    await _localProvider.deleteProject(contourId);
+    try {
+      await _remoteProvider.deleteProject(contourId);
+    } catch (e, stackTrace) {
+      debugPrint('Remote project deletion failed: $e');
       debugPrint('$stackTrace');
     }
   }

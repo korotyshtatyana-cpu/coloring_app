@@ -104,4 +104,16 @@ class CanvasRemoteProvider {
       createdAt: DateTime.now(),
     );
   }
+
+  /// Deletes a project from Supabase.
+  Future<void> deleteProject(String contourId) async {
+    final User? user = _client.auth.currentUser;
+    if (user == null) return;
+
+    await _client
+        .from(RequestConstants.projectsTable)
+        .delete()
+        .eq(RequestConstants.userIdColumn, user.id)
+        .eq(RequestConstants.contourIdColumn, contourId);
+  }
 }
