@@ -46,9 +46,21 @@ class AuthRemoteProvider {
     );
   }
 
-  /// Checks whether a user session exists.
+  /// Checks whether a valid user session exists, refreshing if expired.
   Future<bool> checkAuth() async {
-    return _client.auth.currentSession != null;
+    final Session? session = _client.auth.currentSession;
+    if (session == null) {
+      return false;
+    }
+    if (session.isExpired) {
+      try {
+        final AuthResponse response = await _client.auth.refreshSession();
+        return response.session != null;
+      } catch (_) {
+        return false;
+      }
+    }
+    return true;
   }
 
   /// Deletes the currently authenticated user's account via RPC.
@@ -89,7 +101,9 @@ class AuthRemoteProvider {
         .attemptLightweightAuthentication();
     final GoogleSignInAccount? account = attempt == null ? null : await attempt;
     if (account == null) {
-      throw Exception(RequestConstants.silentSignInNotAvailable);
+      // Fallback: when lightweight silent auth is unavailable (e.g. after an app update),
+      // seamlessly attempt platform Google Sign-In to restore the session.
+      return _signInWithGoogle();
     }
     return _signInWithGoogleAccount(account);
   }
