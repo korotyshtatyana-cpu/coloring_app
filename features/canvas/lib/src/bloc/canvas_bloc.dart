@@ -112,6 +112,9 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
           // strokes drawn in the current session.
           undoStack: const <StrokeEntity>[],
           redoStack: const <StrokeEntity>[],
+          // Identity means "no user transform": the view is refit to the
+          // viewport, so pan/zoom never survives a project restart.
+          transform: Matrix4.identity(),
           contourColor: loadedColor ?? state.contourColor,
           contourOpacity: loadedOpacity ?? state.contourOpacity,
           thumbnailPath: thumbnailPath,
@@ -198,6 +201,9 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
         contourColor: Colors.black,
         contourOpacity: Constants.contourDefaultOpacity,
         thumbnailPath: null,
+        // Identity means "no user transform": the view is refit to the
+        // viewport, so pan/zoom/size do not survive a project restart.
+        transform: Matrix4.identity(),
       );
 
       // 2. Delete project from persistence so it is no longer Work In Progress
