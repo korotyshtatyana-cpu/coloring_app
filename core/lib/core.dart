@@ -10,6 +10,7 @@ export 'src/di/core_di.dart';
 export 'src/error_handler/error_handler.dart';
 export 'src/localization/app_localization.dart';
 export 'src/localization/generated/locale_keys.g.dart';
+export 'src/services/app_version.dart';
 export 'src/utils/logger.dart';
 export 'src/utils/result.dart';
 export 'src/utils/svg_utils.dart';

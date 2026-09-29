@@ -24,14 +24,8 @@ class GalleryContent extends StatelessWidget {
       appBar: AppBar(
         centerTitle: false,
         backgroundColor: colors.primaryBg,
-          surfaceTintColor: colors.primaryBg,
-        title: Text(
-          context.tr(LocaleKeys.gallery),
-          style: AppFonts.appBarTitle.copyWith(
-            color: colors.primaryText,
-            shadows: [],
-          ),
-        ),
+        surfaceTintColor: colors.primaryBg,
+        title: _GalleryTitle(title: context.tr(LocaleKeys.gallery)),
         actions: <Widget>[
           UserAvatarButton(onPressed: () => _onProfilePressed(context)),
           const SizedBox(width: 16),
@@ -122,5 +116,50 @@ class GalleryContent extends StatelessWidget {
       _onLoadMore(context);
     }
     return false;
+  }
+}
+
+/// App bar title showing the gallery name with the build number appended.
+class _GalleryTitle extends StatelessWidget {
+  /// Creates a [_GalleryTitle] with the localized [title].
+  const _GalleryTitle({required this.title});
+
+  /// Localized gallery name without the build number.
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppColors colors = AppColors.of(context);
+
+    return FutureBuilder<String>(
+      future: AppVersion.buildNumber,
+      builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
+        final String build = snapshot.data ?? '';
+        final TextStyle style = AppFonts.appBarTitle.copyWith(
+          color: colors.primaryText,
+          shadows: <Shadow>[],
+        );
+
+        if (build.isEmpty) {
+          return Text(title, style: style);
+        }
+
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Flexible(
+              child: Text(title, style: style, overflow: TextOverflow.ellipsis),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              build,
+              style: style.copyWith(
+                color: colors.primaryText.withValues(alpha: 0.5),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
