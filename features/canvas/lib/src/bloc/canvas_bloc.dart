@@ -107,15 +107,10 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
           contourSize: contourSize,
           contourSvg: contourSvg,
           strokes: strokes,
-          // Only the last [Constants.maxUndoSteps] strokes are undoable;
-          // older strokes are "baked" and cannot be undone.
-          undoStack: List<StrokeEntity>.of(
-            strokes.skip(
-              strokes.length > Constants.maxUndoSteps
-                  ? strokes.length - Constants.maxUndoSteps
-                  : 0,
-            ),
-          ),
+          // History does not survive a session: on open every persisted stroke
+          // is "baked" and cannot be undone. Undo steps are only created by
+          // strokes drawn in the current session.
+          undoStack: const <StrokeEntity>[],
           redoStack: const <StrokeEntity>[],
           contourColor: loadedColor ?? state.contourColor,
           contourOpacity: loadedOpacity ?? state.contourOpacity,
