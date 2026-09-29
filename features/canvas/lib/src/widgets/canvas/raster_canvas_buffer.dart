@@ -124,7 +124,11 @@ class _RasterCanvasBufferState extends State<RasterCanvasBuffer> {
     // Clear background and draw all strokes
     canvas.drawRect(Offset.zero & size, Paint()..color = Colors.white);
     for (final StrokeEntity stroke in strokes) {
-      StrokeRenderer.drawStroke(canvas, stroke);
+      StrokeRenderer.drawStroke(
+        canvas,
+        stroke,
+        visibleArea: Offset.zero & size,
+      );
     }
 
     final ui.Picture picture = recorder.endRecording();
@@ -168,7 +172,11 @@ class _RasterCanvasBufferState extends State<RasterCanvasBuffer> {
 
     // 3. Draw new strokes on top
     for (final StrokeEntity stroke in newStrokes) {
-      StrokeRenderer.drawStroke(canvas, stroke);
+      StrokeRenderer.drawStroke(
+        canvas,
+        stroke,
+        visibleArea: Offset.zero & size,
+      );
     }
 
     final ui.Picture picture = recorder.endRecording();

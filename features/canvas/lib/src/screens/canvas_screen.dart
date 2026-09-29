@@ -12,6 +12,7 @@ import 'package:flutter/rendering.dart';
 
 import '../bloc/canvas_bloc.dart';
 import '../onboarding/canvas_onboarding_dialog.dart';
+import '../painters/canvas_painter.dart';
 import '../widgets/canvas/active_stroke.dart';
 import '../widgets/canvas/canvas_stack.dart';
 import '../widgets/eyedropper_overlay.dart';
@@ -138,9 +139,24 @@ class _CanvasContentState extends State<CanvasContent>
   /// (or window size) changes and recenter the canvas.
   Size? _lastViewportSize;
 
+  /// Page rect in scene coordinates. Ink outside of it is clipped away, so it
+  /// is the only part of a stroke the user ever sees (or gets exported).
+  Rect _pageRect = Rect.zero;
+
+  /// [_pageRect] inflated by the stroke bleed: the region a stroke may cover
+  /// while the pointer is down. Recomputed on every [build].
+  Rect _strokeBounds = Rect.zero;
+
   static const double _minScaleFactor = 0.5; // relative to the fit scale
   static const double _maxScaleFactor = 5.0; // relative to the fit scale
   static const double _boundaryMargin = 64.0;
+
+  /// Extra scene space around the page where stroke points are still
+  /// recorded, as a multiple of the largest page side. The pointer can travel
+  /// up to a full viewport away from the page (at the minimum zoom), so the
+  /// bleed is deliberately larger than anything reachable on screen: it only
+  /// has to keep the coordinates of an excursion bounded.
+  static const double _strokeBleedFactor = 1.5;
 
   /// Margin around the canvas sheet when fitting it into the viewport.
   static const EdgeInsets _canvasPadding = EdgeInsets.only(
@@ -217,6 +233,11 @@ class _CanvasContentState extends State<CanvasContent>
 
     final Size canvasSize = state.contourSize ?? viewportSize;
     final double fitScale = _fitScaleFor(viewportSize, canvasSize);
+
+    _pageRect = Rect.fromLTWH(0, 0, canvasSize.width, canvasSize.height);
+    _strokeBounds = _pageRect.inflate(
+      max(canvasSize.width, canvasSize.height) * _strokeBleedFactor,
+    );
 
     if (_lastViewportSize != viewportSize) {
       final bool hadViewportSize = _lastViewportSize != null;
@@ -327,7 +348,7 @@ class _CanvasContentState extends State<CanvasContent>
               Positioned.fill(
                 child: Listener(
                   behavior: HitTestBehavior.translucent,
-                  onPointerDown: (event) => _onPointerDown(event, canvasSize),
+                  onPointerDown: _onPointerDown,
                   onPointerMove: (event) => _onPointerMove(event, canvasSize),
                   onPointerUp: _onPointerUp,
                   onPointerCancel: _onPointerCancel,
@@ -379,7 +400,7 @@ class _CanvasContentState extends State<CanvasContent>
     );
   }
 
-  void _onPointerDown(PointerDownEvent event, Size canvasSize) {
+  void _onPointerDown(PointerDownEvent event) {
     _pointerPositions[event.pointer] = event.localPosition;
 
     if (_pointerPositions.length >= 2) {
@@ -391,6 +412,7 @@ class _CanvasContentState extends State<CanvasContent>
           if (stroke != null && _isDotStroke(stroke)) {
             // Cancel drawing locally
             _activeStroke.clear();
+            context.read<CanvasBloc>().add(const CancelDrawing());
           } else {
             _finalizeDrawing();
           }
@@ -407,12 +429,13 @@ class _CanvasContentState extends State<CanvasContent>
         return;
       }
 
+      // The pointer is claimed for the whole gesture: the stroke is only
+      // seeded here if the press landed on the page, and keeps running even
+      // if the finger then leaves the page.
       _activeDrawPointer = event.pointer;
-      if (_isPointerOnCanvas(event.localPosition, canvasSize)) {
-        _startDrawingLocally(
-          _viewportToScene(event.localPosition),
-          event.pressure,
-        );
+      final Offset point = _viewportToScene(event.localPosition);
+      if (_isPointOnPage(point)) {
+        _startDrawingLocally(point, event.pressure);
       }
     }
   }
@@ -435,24 +458,19 @@ class _CanvasContentState extends State<CanvasContent>
         _initialTransform != null) {
       _handleTwoFingerGesture(canvasSize);
     } else if (event.pointer == _activeDrawPointer) {
-      if (_isPointerOnCanvas(event.localPosition, canvasSize)) {
-        _addPointLocally(_viewportToScene(event.localPosition), event.pressure);
+      // The stroke is never interrupted by the page edges: the pointer may
+      // leave the page and come back, and the line stays a single stroke
+      // (CanvasStack clips the ink to the page, so the excursion is invisible).
+      final Offset point = _viewportToScene(event.localPosition);
+      if (_activeStroke.stroke == null) {
+        // The press landed outside the page: start the stroke as soon as the
+        // pointer comes back onto it.
+        if (_isPointOnPage(point)) {
+          _startDrawingLocally(point, event.pressure);
+        }
       } else {
-        // Pointer left the canvas: end the stroke
-        _finalizeDrawing();
-        _activeDrawPointer = null;
+        _addPointLocally(point, event.pressure);
       }
-    } else if (_pointerPositions.length == 1 &&
-        _activeDrawPointer == null &&
-        !_drawingLocked &&
-        _canDrawWithPointer(event) &&
-        _isPointerOnCanvas(event.localPosition, canvasSize)) {
-      // Pointer re-entered the canvas after leaving: start a new stroke.
-      _activeDrawPointer = event.pointer;
-      _startDrawingLocally(
-        _viewportToScene(event.localPosition),
-        event.pressure,
-      );
     }
   }
 
@@ -485,6 +503,7 @@ class _CanvasContentState extends State<CanvasContent>
     if (event.pointer == _activeDrawPointer) {
       // For cancel, we just discard the active stroke locally
       _activeStroke.clear();
+      context.read<CanvasBloc>().add(const CancelDrawing());
       _activeDrawPointer = null;
     }
 
@@ -546,10 +565,15 @@ class _CanvasContentState extends State<CanvasContent>
     final StrokeEntity? stroke = _activeStroke.stroke;
     if (stroke == null) return;
 
+    // The pointer may run far outside the page; clamping to the bleed keeps
+    // the coordinates bounded while the finger is parked off-page (the
+    // min-distance filter then drops those repeated points).
+    final Offset clamped = _clampToStrokeBounds(point);
+
     // Performance optimization: don't add points that are too close.
     if (stroke.points.isNotEmpty) {
       final lastPoint = stroke.points.last.offset;
-      if ((point - lastPoint).distance < Constants.minPointDistance) {
+      if ((clamped - lastPoint).distance < Constants.minPointDistance) {
         return;
       }
     }
@@ -558,14 +582,14 @@ class _CanvasContentState extends State<CanvasContent>
     // is O(n) and makes long strokes lag behind the pointer (O(n^2) total).
     final isPressure = stroke.isPressureSensitive;
     _activeStroke.add(
-      StrokePoint(offset: point, pressure: isPressure ? pressure : 1.0),
+      StrokePoint(offset: clamped, pressure: isPressure ? pressure : 1.0),
     );
 
     // Cap the points per stroke, seamlessly continuing with a fresh one.
     // This bounds the per-frame cost of the finished-strokes layer.
     if (stroke.points.length >= Constants.maxStrokePoints) {
       _finalizeDrawing();
-      _startDrawingLocally(point, pressure);
+      _startDrawingLocally(clamped, pressure);
     }
   }
 
@@ -573,10 +597,30 @@ class _CanvasContentState extends State<CanvasContent>
     final StrokeEntity? stroke = _activeStroke.stroke;
     if (stroke == null) return;
 
+    _activeStroke.clear();
+
+    if (!_isStrokeVisible(stroke)) {
+      // The gesture left no ink on the page (it stayed outside of it, or it
+      // was a tap): persisting it would only add an empty stroke to the
+      // project and an undo step the user cannot see.
+      context.read<CanvasBloc>().add(const CancelDrawing());
+      return;
+    }
+
     // Dispatch finalized stroke to BLoC to be added to history and persisted.
     context.read<CanvasBloc>().add(EndDrawing(stroke));
+  }
 
-    _activeStroke.clear();
+  /// Whether [stroke] has any ink on the page.
+  ///
+  /// Strokes may run outside the page (that part is clipped away) and strokes
+  /// with a single point are never rendered at all, so both would be invisible
+  /// noise in the project.
+  bool _isStrokeVisible(StrokeEntity stroke) {
+    if (stroke.points.length < 2) return false;
+    // Bounds already include the brush size and the blur margin, so ink that
+    // only reaches the page edge is still counted as visible.
+    return StrokeRenderer.getStrokeBounds(stroke).overlaps(_pageRect);
   }
 
   bool _canDrawWithPointer(PointerEvent event) {
@@ -612,13 +656,20 @@ class _CanvasContentState extends State<CanvasContent>
     return MatrixUtils.transformPoint(inverse, viewportPoint);
   }
 
-  bool _isPointerOnCanvas(Offset viewportPoint, Size canvasSize) {
-    final Offset scene = _viewportToScene(viewportPoint);
-    return scene.dx >= 0 &&
-        scene.dx <= canvasSize.width &&
-        scene.dy >= 0 &&
-        scene.dy <= canvasSize.height;
+  /// Whether [point] in scene coordinates is on the page (page bounds are
+  /// inclusive, so a press exactly on the edge still starts a stroke).
+  bool _isPointOnPage(Offset point) {
+    return point.dx >= _pageRect.left &&
+        point.dx <= _pageRect.right &&
+        point.dy >= _pageRect.top &&
+        point.dy <= _pageRect.bottom;
   }
+
+  /// Clamps a scene point to the stroke bleed around the page.
+  Offset _clampToStrokeBounds(Offset point) => Offset(
+    point.dx.clamp(_strokeBounds.left, _strokeBounds.right).toDouble(),
+    point.dy.clamp(_strokeBounds.top, _strokeBounds.bottom).toDouble(),
+  );
 
   /// Scale at which [canvas] fits into [viewport] minus [_canvasPadding].
   double _fitScaleFor(Size viewport, Size canvas) {

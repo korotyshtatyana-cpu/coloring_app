@@ -245,27 +245,13 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     }
   }
 
+  /// Ends a drawing gesture that produced nothing to keep (e.g. the finger
+  /// stayed outside the page): only the status tracking is reset, the stored
+  /// strokes are untouched because the in-progress stroke was never added.
   void _onCancelDrawing(CancelDrawing event, Emitter<CanvasState> emit) {
-    final StrokeEntity? current = state.currentStroke;
-    if (current == null) return;
+    if (state.currentStroke == null) return;
 
-    final strokes = List<StrokeEntity>.from(state.strokes);
-    if (strokes.isNotEmpty && strokes.last == current) {
-      strokes.removeLast();
-    }
-    final undoStack = List<StrokeEntity>.from(state.undoStack);
-    if (undoStack.isNotEmpty && undoStack.last == current) {
-      undoStack.removeLast();
-    }
-
-    emit(
-      state.copyWith(
-        status: CanvasStatus.ready,
-        strokes: strokes,
-        undoStack: undoStack,
-        clearCurrentStroke: true,
-      ),
-    );
+    emit(state.copyWith(status: CanvasStatus.ready, clearCurrentStroke: true));
   }
 
   Future<void> _onUndo(Undo event, Emitter<CanvasState> emit) async {

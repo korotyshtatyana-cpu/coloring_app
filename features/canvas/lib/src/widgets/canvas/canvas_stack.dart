@@ -13,6 +13,11 @@ import 'package:domain/domain.dart';
 /// Separates finished strokes from the active stroke into different layers.
 /// The finished strokes are flattened into a bitmap in [RasterCanvasBuffer]
 /// to ensure constant-time rendering.
+///
+/// The stack is exactly the page, and the [ClipRect] is what keeps the result
+/// looking like a page: a stroke may run outside of it while the finger is
+/// down, and everything outside is simply not shown (and never exported,
+/// since exports render the same page-sized rects).
 class CanvasStack extends StatelessWidget {
   /// Notifier for the stroke currently being drawn.
   final ActiveStroke currentStrokeNotifier;

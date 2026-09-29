@@ -11,15 +11,25 @@ const double _blurMargin = 12;
 /// Utility class to render strokes onto a [Canvas].
 abstract final class StrokeRenderer {
   /// Renders a single [stroke] onto the given [canvas].
-  static void drawStroke(Canvas canvas, StrokeEntity stroke) {
+  ///
+  /// [visibleArea] is the page the stroke belongs to. A stroke may run outside
+  /// of it while the finger is down, and that part is clipped away anyway, so
+  /// it is used to keep the opacity layer down to the visible part instead of
+  /// the whole off-page excursion.
+  static void drawStroke(
+    Canvas canvas,
+    StrokeEntity stroke, {
+    Rect? visibleArea,
+  }) {
     if (stroke.points.length < 2) return;
 
     final bool useLayer = stroke.opacity < 1.0;
     if (useLayer) {
+      final Rect bounds = getStrokeBounds(stroke);
       // Draw the stroke at full opacity into a layer, then composite the
       // layer once with the stroke opacity.
       canvas.saveLayer(
-        getStrokeBounds(stroke),
+        visibleArea == null ? bounds : bounds.intersect(visibleArea),
         Paint()..color = Colors.white.withValues(alpha: stroke.opacity),
       );
     }
@@ -121,7 +131,11 @@ class CanvasPainter extends CustomPainter {
     }
 
     for (final stroke in strokes) {
-      StrokeRenderer.drawStroke(canvas, stroke);
+      StrokeRenderer.drawStroke(
+        canvas,
+        stroke,
+        visibleArea: Offset.zero & size,
+      );
     }
   }
 
@@ -177,13 +191,17 @@ class ActiveStrokePainter extends CustomPainter {
     Rect? layerBounds = rawBounds;
     if (useLayer && layerBounds != null) {
       final double margin = stroke.size + _blurMargin;
+      // The paint area is the page, so the layer is limited to the part of the
+      // stroke the user can see: a stroke running outside of the page would
+      // otherwise make the layer grow with the excursion.
+      final Rect page = Offset.zero & size;
       canvas.saveLayer(
         Rect.fromLTRB(
           layerBounds.left - margin,
           layerBounds.top - margin,
           layerBounds.right + margin,
           layerBounds.bottom + margin,
-        ),
+        ).intersect(page),
         Paint()..color = Colors.white.withValues(alpha: stroke.opacity),
       );
     }
