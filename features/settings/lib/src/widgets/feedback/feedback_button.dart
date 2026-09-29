@@ -19,7 +19,7 @@ class FeedbackButton extends StatelessWidget {
     return ListTile(
       leading: Icon(icon, color: colors.iconPrimary),
       title: Text(label, style: AppFonts.normal16),
-      trailing: Icon(Icons.chevron_right_rounded, color: colors.iconDisabled),
+      trailing: Icon(Icons.chevron_right_rounded, color: colors.iconActive),
       onTap: onPressed,
       contentPadding: EdgeInsets.zero,
     );
