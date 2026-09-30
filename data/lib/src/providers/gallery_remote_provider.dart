@@ -65,6 +65,12 @@ class GalleryRemoteProvider {
   /// Returns the current user's started (work in progress) projects ordered
   /// by the date of the last change, most recent first. Projects without an
   /// uploaded thumbnail are included with a null thumbnail.
+  ///
+  /// Every row returned here counts as started: [CanvasRepositoryImpl
+  /// .saveProject] deletes a project instead of persisting it when it has no
+  /// strokes, so a remote row always holds at least one. Checking emptiness
+  /// here would mean selecting the whole `data` blob (strokes included) for
+  /// every project, which defeats the point of the cheap thumbnail query.
   Future<List<WorkInProgressEntity>> getWorkInProgress() async {
     final User? user = _client.auth.currentUser;
     if (user == null) {
@@ -77,24 +83,17 @@ class GalleryRemoteProvider {
         .eq(RequestConstants.userIdColumn, user.id)
         .order(RequestConstants.lastOpenedColumn, ascending: false);
 
-    final List<WorkInProgressEntity> result = <WorkInProgressEntity>[];
-    for (final Map<String, dynamic> row in response) {
-      final Map<String, dynamic>? data =
-          row[RequestConstants.dataColumn] as Map<String, dynamic>?;
-      final List<dynamic>? strokes = data?['strokes'] as List<dynamic>?;
-      if (strokes != null && strokes.isNotEmpty) {
-        result.add(
-          WorkInProgressEntity(
+    return response
+        .map(
+          (Map<String, dynamic> row) => WorkInProgressEntity(
             contourId: row[RequestConstants.contourIdColumn] as String,
             thumbnailPath: row[RequestConstants.thumbnailUrlColumn] as String?,
             lastOpened: DateTime.parse(
               row[RequestConstants.lastOpenedColumn] as String,
             ),
           ),
-        );
-      }
-    }
-    return result;
+        )
+        .toList();
   }
 
   /// Returns favorite contour ids for the current user, most recently
