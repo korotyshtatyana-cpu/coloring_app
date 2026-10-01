@@ -52,3 +52,9 @@ ios/Runner/GoogleService-Info.plist
 .env.dev
 .env.prod
 .env.staging
+
+# Android signing
+/android/key.properties
+/android/app/*.jks
+
+.artifacts

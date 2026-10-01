@@ -65,8 +65,10 @@ abstract class DataDI {
     );
 
     appLocator.registerLazySingleton<AuthRepository>(
-      () =>
-          AuthRepositoryImpl(remoteProvider: appLocator<AuthRemoteProvider>()),
+      () => AuthRepositoryImpl(
+        remoteProvider: appLocator<AuthRemoteProvider>(),
+        localProvider: appLocator<CanvasLocalProvider>(),
+      ),
     );
 
     appLocator.registerLazySingleton<GalleryRepository>(

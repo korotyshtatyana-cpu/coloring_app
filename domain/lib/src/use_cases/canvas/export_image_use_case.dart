@@ -1,5 +1,4 @@
 import '../../../domain.dart';
-import '../use_case.dart';
 
 /// Exports a project as an image and returns the file path.
 class ExportImageUseCase implements FutureUseCase<ExportImageParams, String?> {

@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../bloc/canvas_bloc.dart';
 
-/// Top toolbar with back, export and autosave indicator.
+/// Top toolbar with back, help, export and autosave indicator.
 class TopToolbar extends StatelessWidget {
   /// Callback invoked when the export button is pressed.
   final VoidCallback onExport;
@@ -12,8 +12,16 @@ class TopToolbar extends StatelessWidget {
   /// Callback invoked when the back button is pressed.
   final VoidCallback onBack;
 
+  /// Callback invoked when the help/info button is pressed.
+  final VoidCallback onHelp;
+
   /// Creates a [TopToolbar].
-  const TopToolbar({required this.onExport, required this.onBack, super.key});
+  const TopToolbar({
+    required this.onExport,
+    required this.onBack,
+    required this.onHelp,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -52,6 +60,17 @@ class TopToolbar extends StatelessWidget {
                 icon: Icon(Icons.share, color: colors.primaryBg),
                 backgroundColor: colors.transparent,
                 onPressed: onExport,
+              ),
+            ),
+            const SizedBox(width: 8),
+            ToolbarContainer(
+              isSquare: true,
+              child: AppIconButton(
+                size: 32,
+                iconSize: 24,
+                icon: Icon(Icons.info_outline, color: colors.accentDark),
+                backgroundColor: Colors.transparent,
+                onPressed: onHelp,
               ),
             ),
           ],

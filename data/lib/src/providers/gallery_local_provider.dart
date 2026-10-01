@@ -35,22 +35,32 @@ class GalleryLocalProvider {
   }
 
   /// Returns started (work in progress) projects ordered by the date of
-  /// the last change, most recent first.
+  /// the last change, most recent first. Only projects with at least one stroke
+  /// are included.
   Future<List<WorkInProgressEntity>> getWorkInProgress() async {
     final List<Project> rows = await (_database.select(_database.projects)
           ..orderBy(<OrderingTerm Function($ProjectsTable)>[
             ($ProjectsTable row) => OrderingTerm.desc(row.lastOpened),
           ]))
         .get();
-    return rows
-        .map(
-          (Project row) => WorkInProgressEntity(
+
+    final List<WorkInProgressEntity> result = <WorkInProgressEntity>[];
+    for (final Project row in rows) {
+      final List<Stroke> strokes = await (_database.select(_database.strokes)
+            ..where(($StrokesTable s) => s.projectId.equals(row.id)))
+          .get();
+
+      if (strokes.isNotEmpty) {
+        result.add(
+          WorkInProgressEntity(
             contourId: row.contourId,
             thumbnailPath: row.data['thumbnailPath'] as String?,
             lastOpened: row.lastOpened,
           ),
-        )
-        .toList();
+        );
+      }
+    }
+    return result;
   }
 
   ContoursCompanion _toCompanion(ContourModel contour) {
@@ -58,7 +68,7 @@ class GalleryLocalProvider {
       id: contour.id,
       title: contour.title,
       category: contour.category.name,
-      svgData: contour.svgData,
+      svgUrl: contour.svgUrl,
       previewUrl: contour.previewUrl,
       createdAt: contour.createdAt ?? DateTime.now(),
     );
@@ -69,7 +79,7 @@ class GalleryLocalProvider {
       id: row.id,
       title: row.title,
       category: ContourCategory.values.byName(row.category),
-      svgData: row.svgData,
+      svgUrl: row.svgUrl,
       previewUrl: row.previewUrl,
       createdAt: row.createdAt,
     );

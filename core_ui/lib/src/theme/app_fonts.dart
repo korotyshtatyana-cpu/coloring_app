@@ -107,6 +107,13 @@ class AppFonts {
     package: _packageName,
   );
 
+  static TextStyle smallTitle = const TextStyle(
+    fontWeight: FontWeight.w600,
+    fontSize: 18,
+    fontFamily: _playfairDisplayFamily,
+    package: _packageName,
+  );
+
   static TextStyle normal18 = const TextStyle(
     fontWeight: FontWeight.w400,
     fontSize: 18,
@@ -130,7 +137,7 @@ class AppFonts {
 
   static TextStyle normal12 = const TextStyle(
     fontWeight: FontWeight.w400,
-    fontSize: 14,
+    fontSize: 12,
     fontFamily: _montserratFamily,
     package: _packageName,
   );

@@ -1,5 +1,4 @@
 import '../../../domain.dart';
-import '../use_case.dart';
 
 /// Returns the currently authenticated user, or `null` when there is no
 /// active session.

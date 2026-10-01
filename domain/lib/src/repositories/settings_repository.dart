@@ -5,4 +5,10 @@ abstract class SettingsRepository {
 
   /// Saves the language code.
   Future<void> saveLanguageCode(String languageCode);
+
+  /// Returns whether the canvas onboarding slider has been shown.
+  Future<bool> isCanvasOnboardingShown();
+
+  /// Sets whether the canvas onboarding slider has been shown.
+  Future<void> setCanvasOnboardingShown({bool shown = true});
 }

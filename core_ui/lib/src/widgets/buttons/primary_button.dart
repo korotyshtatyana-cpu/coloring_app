@@ -58,11 +58,13 @@ class PrimaryButton extends StatelessWidget {
                   color: Colors.white,
                 ),
               )
-            : Text(
-                text,
-                style: AppFonts.semiBold20.copyWith(color: Colors.white),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+            : FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  text,
+                  style: AppFonts.semiBold20.copyWith(color: Colors.white),
+                  maxLines: 1,
+                ),
               ),
       ),
     );

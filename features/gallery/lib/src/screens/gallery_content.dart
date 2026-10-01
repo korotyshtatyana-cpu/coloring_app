@@ -7,6 +7,7 @@ import 'package:settings/settings.dart';
 import '../bloc/gallery_bloc.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/filter_chips.dart';
+import '../widgets/gallery_title.dart';
 import '../widgets/grid/gallery_grid.dart';
 import '../widgets/user_avatar_button.dart';
 
@@ -24,19 +25,15 @@ class GalleryContent extends StatelessWidget {
       appBar: AppBar(
         centerTitle: false,
         backgroundColor: colors.primaryBg,
-        title: Text(
-          context.tr(LocaleKeys.gallery),
-          style: AppFonts.appBarTitle.copyWith(
-            color: colors.primaryText,
-            shadows: [],
-          ),
-        ),
+        surfaceTintColor: colors.primaryBg,
+        title: GalleryTitle(title: context.tr(LocaleKeys.gallery)),
         actions: <Widget>[
           UserAvatarButton(onPressed: () => _onProfilePressed(context)),
           const SizedBox(width: 16),
         ],
       ),
       body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           const SizedBox(height: 8),
           const FilterChips(),
@@ -106,14 +103,12 @@ class GalleryContent extends StatelessWidget {
     context.read<GalleryBloc>().add(const LoadContours());
   }
 
-  bool _handleScroll(
-    BuildContext context,
-    ScrollNotification notification,
-    GalleryState state,
-  ) {
+  bool _handleScroll(BuildContext context,
+      ScrollNotification notification,
+      GalleryState state,) {
     final bool isNearBottom =
         notification.metrics.pixels >=
-        notification.metrics.maxScrollExtent * 0.9;
+            notification.metrics.maxScrollExtent * 0.9;
     if (isNearBottom &&
         !state.hasReachedMax &&
         state.status != GalleryStatus.loading) {

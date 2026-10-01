@@ -1,5 +1,4 @@
 import '../../../domain.dart';
-import '../use_case.dart';
 
 /// Renders a project thumbnail image and returns its file path.
 class RenderProjectThumbnailUseCase

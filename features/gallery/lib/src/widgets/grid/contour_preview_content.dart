@@ -11,13 +11,13 @@ class ContourPreviewContent extends StatelessWidget {
   /// The image URL or local file path to display.
   final String? url;
 
-  /// Raw SVG data for the fallback vector rendering.
-  final String? svgData;
+  /// URL to the SVG file.
+  final String? svgUrl;
 
   /// Creates a [ContourPreviewContent].
   const ContourPreviewContent({
     required this.url,
-    required this.svgData,
+    required this.svgUrl,
     super.key,
   });
 
@@ -32,7 +32,7 @@ class ContourPreviewContent extends StatelessWidget {
           width: double.infinity,
           height: double.infinity,
           fit: BoxFit.cover,
-          placeholderBuilder: (_) => VectorOrPlaceholder(svgData: svgData),
+          placeholderBuilder: (_) => VectorOrPlaceholder(svgUrl: svgUrl),
         );
       }
       return Image.file(
@@ -41,7 +41,7 @@ class ContourPreviewContent extends StatelessWidget {
         width: double.infinity,
         height: double.infinity,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => VectorOrPlaceholder(svgData: svgData),
+        errorBuilder: (_, __, ___) => VectorOrPlaceholder(svgUrl: svgUrl),
       );
     }
 
@@ -54,7 +54,7 @@ class ContourPreviewContent extends StatelessWidget {
           width: double.infinity,
           height: double.infinity,
           fit: BoxFit.cover,
-          placeholderBuilder: (_) => VectorOrPlaceholder(svgData: svgData),
+          placeholderBuilder: (_) => VectorOrPlaceholder(svgUrl: svgUrl),
         );
       }
       return Image.network(
@@ -65,20 +65,21 @@ class ContourPreviewContent extends StatelessWidget {
         key: ValueKey<String>(url!),
         frameBuilder: (_, Widget child, int? frame, bool wasSynchronouslyLoaded) {
           if (wasSynchronouslyLoaded || frame != null) return child;
-          return VectorOrPlaceholder(svgData: svgData);
+          return VectorOrPlaceholder(svgUrl: svgUrl);
         },
-        errorBuilder: (_, __, ___) => VectorOrPlaceholder(svgData: svgData),
+        errorBuilder: (_, __, ___) => VectorOrPlaceholder(svgUrl: svgUrl),
       );
     }
 
-    // 3. No image at all: render the contour SVG locally.
-    if (svgData != null && svgData!.isNotEmpty) {
-      return SvgPicture.string(
-        svgData!,
-        key: const ValueKey<String>('svg-fallback'),
+    // 3. No image at all: render the contour SVG from its own URL.
+    if (svgUrl != null && svgUrl!.isNotEmpty) {
+      return SvgPicture.network(
+        svgUrl!,
+        key: ValueKey<String>(svgUrl!),
         width: double.infinity,
         height: double.infinity,
         fit: BoxFit.cover,
+        placeholderBuilder: (_) => const ContourPlaceholder(),
       );
     }
 

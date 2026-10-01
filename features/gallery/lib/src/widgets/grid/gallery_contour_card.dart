@@ -37,7 +37,7 @@ class GalleryContourCard extends StatelessWidget {
       // Started project → its thumbnail (local file or Supabase URL);
       // otherwise → the contour's default preview image from Supabase.
       previewUrl: thumbnailPath ?? contour.previewUrl,
-      svgData: contour.svgData,
+      svgUrl: contour.svgUrl,
       isFavorite: isFavorite,
       isInProgress: isInProgress,
       onTap: () => _onTap(context),

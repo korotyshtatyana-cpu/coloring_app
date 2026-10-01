@@ -7,6 +7,15 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:domain/domain.dart';
 import 'package:core/core.dart';
 
+/// Watermark width as a fraction of the exported image width.
+const double kWatermarkFraction = 0.25;
+
+/// Inset from the right and bottom edges, as a fraction of the exported size.
+const double kWatermarkMarginFraction = 0.02;
+
+/// Asset path of the watermark PNG, relative to the `core_ui` package.
+const String kWatermarkAssetPath = 'resources/images/watermark.png';
+
 /// Service responsible for rendering the canvas to an image.
 abstract final class CanvasRenderingService {
   /// Renders the whole canvas (white background, strokes and contour) into
@@ -15,14 +24,15 @@ abstract final class CanvasRenderingService {
     required String contourSvg,
     required Color contourColor,
     required double contourOpacity,
-    required double contourWidth,
     required List<StrokeEntity> strokes,
     required double targetSize,
+    Uint8List? watermarkBytes,
   }) async {
     // Strokes live in canvas (viewBox) coordinates; scale them to fit the
     // output while keeping the canvas aspect ratio.
-    final Size canvasSize = SvgUtils.parseViewBoxSize(contourSvg) ??
+    final Size rawSize = SvgUtils.parseViewBoxSize(contourSvg) ??
         Size(targetSize, targetSize);
+    final Size canvasSize = Size(rawSize.width * 1.5, rawSize.height * 1.5);
     final double scale = min(
       targetSize / canvasSize.width,
       targetSize / canvasSize.height,
@@ -37,20 +47,29 @@ abstract final class CanvasRenderingService {
 
     final backgroundPaint = Paint()..color = Colors.white;
     canvas.drawRect(Offset.zero & outputSize, backgroundPaint);
-    canvas.scale(scale);
 
+    // Strokes and the contour live in canvas coordinates, so they are drawn
+    // inside a scaled layer that is closed before the watermark is placed.
+    canvas.save();
+    canvas.scale(scale);
     for (final stroke in strokes) {
       _drawStroke(canvas, stroke);
     }
 
     await _drawContour(
       canvas,
-      svgData: SvgUtils.applyStrokeWidth(contourSvg, contourWidth),
+      svgData: contourSvg,
       color: contourColor,
       opacity: contourOpacity,
-      width: contourWidth,
       size: canvasSize,
     );
+    canvas.restore();
+
+    final ui.Image? watermark = await _decodeWatermark(watermarkBytes);
+    if (watermark != null) {
+      _drawWatermark(canvas, watermark, outputSize);
+      watermark.dispose();
+    }
 
     final picture = recorder.endRecording();
     final ui.Image image = await picture.toImage(
@@ -62,6 +81,62 @@ abstract final class CanvasRenderingService {
     );
     image.dispose();
     return byteData;
+  }
+
+  /// Decodes [bytes] into an image, returning null if absent or unreadable.
+  ///
+  /// A watermark that fails to load must not fail the whole export, so any
+  /// error here yields null and the image is exported unwatermarked.
+  static Future<ui.Image?> _decodeWatermark(Uint8List? bytes) async {
+    if (bytes == null || bytes.isEmpty) return null;
+    try {
+      final ui.ImmutableBuffer buffer = await ui.ImmutableBuffer.fromUint8List(
+        bytes,
+      );
+      final ui.ImageDescriptor descriptor = await ui.ImageDescriptor.encoded(
+        buffer,
+      );
+      final ui.Codec codec = await descriptor.instantiateCodec();
+      final ui.FrameInfo frame = await codec.getNextFrame();
+      final ui.Image image = frame.image;
+      codec.dispose();
+      descriptor.dispose();
+      buffer.dispose();
+      return image;
+    } catch (e) {
+      ErrorHandler.report(e, StackTrace.current);
+      return null;
+    }
+  }
+
+  /// Stamps the watermark into the bottom-right corner.
+  ///
+  /// Width is [kWatermarkFraction] of the exported width; the height follows
+  /// the watermark's own aspect ratio so it is never distorted. It is inset by
+  /// [kWatermarkMarginFraction] of the exported size on both axes to keep it off
+  /// the very edge.
+  static void _drawWatermark(Canvas canvas, ui.Image watermark, Size outputSize) {
+    final double width = outputSize.width * kWatermarkFraction;
+    final double height = width * watermark.height / watermark.width;
+    final double marginX = outputSize.width * kWatermarkMarginFraction;
+    final double marginY = outputSize.height * kWatermarkMarginFraction;
+    final Rect dest = Rect.fromLTWH(
+      outputSize.width - width - marginX,
+      outputSize.height - height - marginY,
+      width,
+      height,
+    );
+    canvas.drawImageRect(
+      watermark,
+      Rect.fromLTWH(
+        0,
+        0,
+        watermark.width.toDouble(),
+        watermark.height.toDouble(),
+      ),
+      dest,
+      Paint()..filterQuality = FilterQuality.high,
+    );
   }
 
   static void _drawStroke(Canvas canvas, StrokeEntity stroke) {
@@ -113,7 +188,6 @@ abstract final class CanvasRenderingService {
     required String svgData,
     required Color color,
     required double opacity,
-    required double width,
     required Size size,
   }) async {
     final PictureInfo pictureInfo = await vg.loadPicture(
@@ -121,9 +195,14 @@ abstract final class CanvasRenderingService {
       null,
     );
 
+    final Size svgSize = pictureInfo.size;
+    final double scaleX = size.width / svgSize.width;
+    final double scaleY = size.height / svgSize.height;
+
     final recorder = ui.PictureRecorder();
     final strokeCanvas = Canvas(recorder);
 
+    strokeCanvas.scale(scaleX, scaleY);
     strokeCanvas.drawPicture(pictureInfo.picture);
 
     final strokePicture = recorder.endRecording();

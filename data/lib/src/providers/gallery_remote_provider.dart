@@ -65,6 +65,12 @@ class GalleryRemoteProvider {
   /// Returns the current user's started (work in progress) projects ordered
   /// by the date of the last change, most recent first. Projects without an
   /// uploaded thumbnail are included with a null thumbnail.
+  ///
+  /// Every row returned here counts as started: [CanvasRepositoryImpl
+  /// .saveProject] deletes a project instead of persisting it when it has no
+  /// strokes, so a remote row always holds at least one. Checking emptiness
+  /// here would mean selecting the whole `data` blob (strokes included) for
+  /// every project, which defeats the point of the cheap thumbnail query.
   Future<List<WorkInProgressEntity>> getWorkInProgress() async {
     final User? user = _client.auth.currentUser;
     if (user == null) {
@@ -134,5 +140,19 @@ class GalleryRemoteProvider {
         rethrow;
       }
     }
+  }
+
+  /// Returns the list of categories that have at least one contour.
+  Future<List<ContourCategory>> getUsedCategories() async {
+    final List<Map<String, dynamic>> response = await _client
+        .from(RequestConstants.contoursTable)
+        .select(RequestConstants.categoryColumn);
+
+    return response
+        .map((Map<String, dynamic> row) =>
+            row[RequestConstants.categoryColumn] as String)
+        .toSet()
+        .map((String name) => ContourCategory.values.byName(name))
+        .toList();
   }
 }

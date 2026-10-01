@@ -30,25 +30,16 @@ class StartDrawing extends CanvasEvent {
   List<Object?> get props => <Object?>[point, pressure];
 }
 
-/// Adds a point to the current stroke.
-class AddPoint extends CanvasEvent {
-  /// New point.
-  final Offset point;
-
-  /// Pressure value from the stylus.
-  final double pressure;
-
-  /// Creates an [AddPoint] event.
-  const AddPoint({required this.point, this.pressure = 1.0});
-
-  @override
-  List<Object?> get props => <Object?>[point, pressure];
-}
-
 /// Ends the current stroke.
 class EndDrawing extends CanvasEvent {
+  /// The finalized stroke to save.
+  final StrokeEntity stroke;
+
   /// Creates an [EndDrawing] event.
-  const EndDrawing();
+  const EndDrawing(this.stroke);
+
+  @override
+  List<Object?> get props => <Object?>[stroke];
 }
 
 /// Cancels the current stroke and removes it without saving.
@@ -174,14 +165,11 @@ class ChangeContourSettings extends CanvasEvent {
   /// New contour opacity.
   final double? opacity;
 
-  /// New contour width.
-  final double? width;
-
   /// Creates a [ChangeContourSettings] event.
-  const ChangeContourSettings({this.color, this.opacity, this.width});
+  const ChangeContourSettings({this.color, this.opacity});
 
   @override
-  List<Object?> get props => <Object?>[color, opacity, width];
+  List<Object?> get props => <Object?>[color, opacity];
 }
 
 /// Resets the canvas view transformation.
@@ -227,6 +215,12 @@ class SelectTool extends CanvasEvent {
 
   @override
   List<Object?> get props => <Object?>[tool];
+}
+
+/// Notifies that the contour SVG has been successfully compiled into a PictureInfo.
+class ContourCompiled extends CanvasEvent {
+  /// Creates a [ContourCompiled] event.
+  const ContourCompiled();
 }
 
 /// Clears all strokes from the project.

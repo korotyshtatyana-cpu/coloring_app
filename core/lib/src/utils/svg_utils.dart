@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:http/http.dart' as http;
 
 /// Utilities for manipulating SVG data strings.
 abstract final class SvgUtils {
@@ -23,23 +24,16 @@ abstract final class SvgUtils {
     return Size(width, height);
   }
 
-  /// Applies a [strokeWidth] to SVG elements that support strokes.
-  ///
-  /// Currently handles `<path>` elements. If the SVG already contains a
-  /// `stroke-width` attribute, it is overwritten; otherwise it is inserted.
-  static String applyStrokeWidth(String svgData, double strokeWidth) {
-    return svgData.replaceAllMapped(
-      RegExp(r'<path([^>]*)>', caseSensitive: false),
-      (Match match) {
-        final String attrs = match.group(1)!;
-        if (attrs.contains('stroke-width')) {
-          return '<path${attrs.replaceAllMapped(
-            RegExp(r'stroke-width="[^"]*"', caseSensitive: false),
-            (Match widthMatch) => 'stroke-width="$strokeWidth"',
-          )}>';
-        }
-        return '<path$attrs stroke-width="$strokeWidth">';
-      },
-    );
+  /// Fetches SVG content from a URL.
+  static Future<String?> fetchSvgContent(String url) async {
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        return response.body;
+      }
+    } catch (_) {
+      // Ignore errors, return null
+    }
+    return null;
   }
 }

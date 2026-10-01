@@ -1,5 +1,4 @@
 import '../../../domain.dart';
-import '../use_case.dart';
 
 /// Saves the selected language code.
 class UpdateSettingsUseCase implements FutureUseCase<String, void> {

@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:drift/drift.dart';
 import 'package:core/core.dart';
 import 'package:domain/domain.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../../data.dart';
 
@@ -13,37 +16,59 @@ class CanvasLocalProvider {
 
   /// Saves the project and its strokes locally.
   Future<void> saveProject(
-      ProjectModel project, List<StrokeEntity> strokes) async {
-    await _database.into(_database.projects).insertOnConflictUpdate(
-          _toProjectCompanion(project),
-        );
+    ProjectModel project,
+    List<StrokeEntity> strokes,
+  ) async {
+    await _database.transaction(() async {
+      await _database
+          .into(_database.projects)
+          .insertOnConflictUpdate(_toProjectCompanion(project));
 
-    await (_database.delete(_database.strokes)
-          ..where(($StrokesTable row) => row.projectId.equals(project.id)))
-        .go();
+      await (_database.delete(
+        _database.strokes,
+      )..where(($StrokesTable row) => row.projectId.equals(project.id))).go();
 
-    for (final StrokeEntity stroke in strokes) {
-      final StrokeModel model = StrokeMapper.toModel(stroke, project.id);
-      await _database.into(_database.strokes).insertOnConflictUpdate(
+      // One batch insert instead of an awaited statement per stroke: a full
+      // rewrite of many strokes took seconds; with batching it is a single
+      // round trip.
+      await _database.batch((Batch batch) {
+        for (final StrokeEntity stroke in strokes) {
+          final StrokeModel model = StrokeMapper.toModel(stroke, project.id);
+          batch.insert(
+            _database.strokes,
             _toStrokeCompanion(model),
+            mode: InsertMode.insertOrReplace,
           );
-    }
+        }
+      });
+    });
+  }
+
+  /// Appends a single finished stroke to an already-persisted project.
+  /// O(1) per stroke: older strokes are already stored ("baked"), they are
+  /// never rewritten unless the project as a whole is re-saved.
+  Future<void> appendStroke(String projectId, StrokeEntity stroke) async {
+    final StrokeModel model = StrokeMapper.toModel(stroke, projectId);
+    await _database
+        .into(_database.strokes)
+        .insertOnConflictUpdate(_toStrokeCompanion(model));
   }
 
   /// Loads a project for the given contour.
   Future<ProjectModel?> loadProject(String contourId) async {
-    final Project? row = await (_database.select(_database.projects)
-          ..where(($ProjectsTable row) => row.contourId.equals(contourId)))
-        .getSingleOrNull();
+    final Project? row =
+        await (_database.select(_database.projects)
+              ..where(($ProjectsTable row) => row.contourId.equals(contourId)))
+            .getSingleOrNull();
 
     return row == null ? null : _projectFromCompanion(row);
   }
 
   /// Loads strokes for the given project.
   Future<List<StrokeEntity>> loadStrokes(String projectId) async {
-    final List<Stroke> rows = await (_database.select(_database.strokes)
-          ..where(($StrokesTable row) => row.projectId.equals(projectId)))
-        .get();
+    final List<Stroke> rows = await (_database.select(
+      _database.strokes,
+    )..where(($StrokesTable row) => row.projectId.equals(projectId))).get();
 
     return rows
         .map((Stroke row) => StrokeMapper.toEntity(_strokeFromCompanion(row)))
@@ -53,19 +78,23 @@ class CanvasLocalProvider {
   /// Loads available tools from the database.
   Future<List<ToolEntity>> getAvailableTools() async {
     final List<Brushe> rows = await _database.select(_database.brushes).get();
-    
+
     // Seed database if empty
     if (rows.isEmpty) {
       await _seedBrushes();
       return getAvailableTools();
     }
 
-    return rows.map((row) => ToolEntity(
-      id: row.id,
-      nameKey: row.nameKey,
-      previewPath: row.previewPath,
-      isPressureSensitive: row.isPressureSensitive,
-    )).toList();
+    return rows
+        .map(
+          (row) => ToolEntity(
+            id: row.id,
+            nameKey: row.nameKey,
+            previewPath: row.previewPath,
+            isPressureSensitive: row.isPressureSensitive,
+          ),
+        )
+        .toList();
   }
 
   Future<void> _seedBrushes() async {
@@ -91,9 +120,51 @@ class CanvasLocalProvider {
 
   /// Deletes all strokes for the given project.
   Future<void> clearStrokes(String projectId) async {
-    await (_database.delete(_database.strokes)
-          ..where(($StrokesTable row) => row.projectId.equals(projectId)))
-        .go();
+    await (_database.delete(
+      _database.strokes,
+    )..where(($StrokesTable row) => row.projectId.equals(projectId))).go();
+  }
+
+  /// Deletes a project and its strokes/thumbnails by contour ID.
+  Future<void> deleteProject(String contourId) async {
+    final ProjectModel? project = await loadProject(contourId);
+    if (project != null) {
+      await _database.transaction(() async {
+        await (_database.delete(_database.strokes)
+              ..where(($StrokesTable row) => row.projectId.equals(project.id)))
+            .go();
+        await (_database.delete(_database.projects)
+              ..where(($ProjectsTable row) => row.id.equals(project.id)))
+            .go();
+      });
+      await _deleteThumbnailFor(contourId);
+    }
+  }
+
+  Future<void> _deleteThumbnailFor(String contourId) async {
+    final Directory directory = await getApplicationDocumentsDirectory();
+    final File file = File('${directory.path}/thumbnails/$contourId.png');
+    if (file.existsSync()) {
+      await file.delete();
+    }
+  }
+
+  /// Deletes all locally stored user data: projects, their strokes and
+  /// rendered thumbnails.
+  Future<void> clearUserData() async {
+    await _database.transaction(() async {
+      await _database.delete(_database.strokes).go();
+      await _database.delete(_database.projects).go();
+    });
+    await _deleteThumbnails();
+  }
+
+  Future<void> _deleteThumbnails() async {
+    final Directory directory = await getApplicationDocumentsDirectory();
+    final Directory thumbnailsDir = Directory('${directory.path}/thumbnails');
+    if (thumbnailsDir.existsSync()) {
+      await thumbnailsDir.delete(recursive: true);
+    }
   }
 
   ProjectsCompanion _toProjectCompanion(ProjectModel project) {

@@ -1,5 +1,4 @@
 import '../../../domain.dart';
-import '../use_case.dart';
 
 /// Signs the user in using the platform identity provider.
 class SignInUseCase implements FutureUseCase<NoParams, UserEntity> {

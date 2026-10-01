@@ -1,5 +1,4 @@
 import '../../../domain.dart';
-import '../use_case.dart';
 
 /// Loads a cached contour by its identifier.
 class GetContourByIdUseCase implements FutureUseCase<String, ContourEntity?> {

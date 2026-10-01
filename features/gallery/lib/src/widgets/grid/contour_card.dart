@@ -11,9 +11,8 @@ class ContourCard extends StatelessWidget {
   /// Contour preview URL or local file path.
   final String? previewUrl;
 
-  /// SVG data of the contour, rendered as the preview when [previewUrl] is
-  /// not a local file.
-  final String? svgData;
+  /// URL to the SVG file.
+  final String? svgUrl;
 
   /// Whether the contour is marked as favorite.
   final bool isFavorite;
@@ -31,7 +30,7 @@ class ContourCard extends StatelessWidget {
   const ContourCard({
     required this.title,
     this.previewUrl,
-    this.svgData,
+    this.svgUrl,
     this.isFavorite = false,
     this.isInProgress = false,
     this.onTap,
@@ -56,7 +55,7 @@ class ContourCard extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: <Widget>[
-            ContourPreview(previewUrl: previewUrl, svgData: svgData),
+            ContourPreview(previewUrl: previewUrl, svgUrl: svgUrl),
             if (isInProgress)
               Positioned(
                 top: 8,

@@ -46,6 +46,12 @@ abstract class DomainDI {
       ),
     );
 
+    appLocator.registerLazySingleton<GetUsedCategoriesUseCase>(
+      () => GetUsedCategoriesUseCase(
+        repository: appLocator<GalleryRepository>(),
+      ),
+    );
+
     appLocator.registerLazySingleton<GetContoursByIdsUseCase>(
       () => GetContoursByIdsUseCase(
         repository: appLocator<GalleryRepository>(),
@@ -132,6 +138,18 @@ abstract class DomainDI {
 
     appLocator.registerLazySingleton<UpdateSettingsUseCase>(
       () => UpdateSettingsUseCase(
+        repository: appLocator<SettingsRepository>(),
+      ),
+    );
+
+    appLocator.registerLazySingleton<CheckCanvasOnboardingShownUseCase>(
+      () => CheckCanvasOnboardingShownUseCase(
+        repository: appLocator<SettingsRepository>(),
+      ),
+    );
+
+    appLocator.registerLazySingleton<SetCanvasOnboardingShownUseCase>(
+      () => SetCanvasOnboardingShownUseCase(
         repository: appLocator<SettingsRepository>(),
       ),
     );

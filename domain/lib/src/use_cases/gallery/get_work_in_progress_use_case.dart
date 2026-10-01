@@ -1,5 +1,4 @@
 import '../../../domain.dart';
-import '../use_case.dart';
 
 /// Returns started (work in progress) projects ordered by the date of
 /// the last change, most recent first.

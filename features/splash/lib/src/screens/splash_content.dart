@@ -33,10 +33,18 @@ class _SplashContentState extends State<SplashContent> {
         }
 
         if (state.status == AuthStatus.failure) {
-          ErrorDialog.show(
-            context,
-            message: state.error ?? LocaleKeys.something_went_wrong.tr(),
-          );
+          final String? error = state.error;
+          final bool isCancellationOrSilentUnavailable = error != null &&
+              (error.contains('aborted') ||
+                  error.contains('canceled') ||
+                  error.contains('cancelled') ||
+                  error.contains('Silent sign-in'));
+          if (!isCancellationOrSilentUnavailable) {
+            ErrorDialog.show(
+              context,
+              message: error ?? LocaleKeys.something_went_wrong.tr(),
+            );
+          }
         }
       },
       child: Scaffold(

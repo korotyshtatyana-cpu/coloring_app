@@ -50,18 +50,24 @@ class CanvasRepositoryImpl implements CanvasRepository {
     _strokes.putIfAbsent(projectId, () => <StrokeEntity>[]);
     _strokes[projectId]!.add(stroke);
 
-    // Pass a copy because the cached list can be modified concurrently
-    // (e.g. another addStroke can run while saveProject is awaiting a DB
-    // write, which would mutate the list mid-iteration).
-    await _localProvider.saveProject(
-      _projectModelFromId(projectId),
-      List<StrokeEntity>.from(_strokes[projectId]!),
-    );
+    // Only append the new stroke. Previously every finished stroke rewrote
+    // the whole project (delete-all + re-insert each stroke), which made
+    // saving slower and slower as the drawing grew.
+    await _localProvider.appendStroke(projectId, stroke);
   }
 
   @override
   Future<void> saveProject(ProjectEntity project) async {
     final mapped = ProjectMapper.toModel(project);
+    final strokes = _strokesFromData(mapped.data);
+
+    if (strokes.isEmpty) {
+      // Do not persist empty project (no strokes made) as Work In Progress.
+      // If an empty project exists locally/remotely, delete it.
+      await deleteProject(project.contourId);
+      return;
+    }
+
     final model = ProjectModel(
       id: mapped.id,
       contourId: mapped.contourId,
@@ -70,7 +76,6 @@ class CanvasRepositoryImpl implements CanvasRepository {
       lastOpened: mapped.lastOpened,
       createdAt: mapped.createdAt,
     );
-    final strokes = _strokesFromData(mapped.data);
     _strokes[project.id] = strokes;
     // Pass a copy because the cached list can be modified concurrently
     // (e.g. addStroke runs while saveProject is awaiting DB writes).
@@ -81,6 +86,18 @@ class CanvasRepositoryImpl implements CanvasRepository {
       // Remote sync failed (e.g. RLS policy misconfiguration or no network).
       // Local data is already saved, so the user can keep drawing.
       debugPrint('Remote project sync failed: $e');
+      debugPrint('$stackTrace');
+    }
+  }
+
+  @override
+  Future<void> deleteProject(String contourId) async {
+    _strokes.remove(contourId);
+    await _localProvider.deleteProject(contourId);
+    try {
+      await _remoteProvider.deleteProject(contourId);
+    } catch (e, stackTrace) {
+      debugPrint('Remote project deletion failed: $e');
       debugPrint('$stackTrace');
     }
   }
@@ -112,7 +129,10 @@ class CanvasRepositoryImpl implements CanvasRepository {
 
   @override
   Future<String?> exportImage(ExportImageParams params) async {
-    final ByteData? byteData = await _renderCanvasPng(params, _exportTargetSize);
+    final ByteData? byteData = await _renderCanvasPng(
+      params,
+      _exportTargetSize,
+    );
     if (byteData == null) return null;
 
     final directory = await getTemporaryDirectory();
@@ -126,8 +146,10 @@ class CanvasRepositoryImpl implements CanvasRepository {
 
   @override
   Future<String?> renderProjectThumbnail(ExportImageParams params) async {
-    final ByteData? byteData =
-        await _renderCanvasPng(params, _thumbnailTargetSize);
+    final ByteData? byteData = await _renderCanvasPng(
+      params,
+      _thumbnailTargetSize,
+    );
     if (byteData == null) return null;
 
     final directory = await getApplicationDocumentsDirectory();
@@ -173,20 +195,9 @@ class CanvasRepositoryImpl implements CanvasRepository {
       contourSvg: params.contourSvg,
       contourColor: params.contourColor,
       contourOpacity: params.contourOpacity,
-      contourWidth: params.contourWidth,
       strokes: strokes,
       targetSize: targetSize,
-    );
-  }
-
-  ProjectModel _projectModelFromId(String projectId) {
-    return ProjectModel(
-      id: projectId,
-      contourId: projectId,
-      userId: _authRemoteProvider.currentUserId ?? '',
-      data: <String, dynamic>{},
-      lastOpened: DateTime.now(),
-      createdAt: DateTime.now(),
+      watermarkBytes: params.watermarkBytes,
     );
   }
 
@@ -212,8 +223,11 @@ class CanvasRepositoryImpl implements CanvasRepository {
       return <StrokeEntity>[];
     }
     return strokesJson
-        .map((dynamic json) => StrokeMapper.toEntity(
-            StrokeModel.fromJson(json as Map<String, dynamic>)))
+        .map(
+          (dynamic json) => StrokeMapper.toEntity(
+            StrokeModel.fromJson(json as Map<String, dynamic>),
+          ),
+        )
         .toList();
   }
 }

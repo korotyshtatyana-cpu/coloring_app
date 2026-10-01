@@ -10,6 +10,7 @@ part 'gallery_state.dart';
 /// BLoC responsible for loading and filtering gallery contours.
 class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
   final GetContoursUseCase _getContoursUseCase;
+  final GetUsedCategoriesUseCase _getUsedCategoriesUseCase;
   final GetContoursByIdsUseCase _getContoursByIdsUseCase;
   final ToggleFavoriteUseCase _toggleFavoriteUseCase;
   final GetFavoriteIdsUseCase _getFavoriteIdsUseCase;
@@ -18,6 +19,7 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
   /// Creates a [GalleryBloc] with the required use cases.
   GalleryBloc({
     required this._getContoursUseCase,
+    required this._getUsedCategoriesUseCase,
     required this._getContoursByIdsUseCase,
     required this._toggleFavoriteUseCase,
     required this._getFavoriteIdsUseCase,
@@ -47,9 +49,11 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
       List<String> workInProgressIds = state.workInProgressIds;
       Map<String, String?> workInProgressThumbnails =
           state.workInProgressThumbnails;
+      List<ContourCategory> availableCategories = state.availableCategories;
 
       if (event.reset) {
         favoriteIds = await _getFavoriteIdsUseCase.execute();
+        availableCategories = await _getUsedCategoriesUseCase.execute();
         // Entries come ordered by the date of the last change, most recent
         // first; the ids below keep that order for the WIP filter.
         final List<WorkInProgressEntity> workInProgress =
@@ -136,6 +140,7 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
         hasReachedMax: hasReachedMax,
         error: null,
         favoriteIds: favoriteIds,
+        availableCategories: availableCategories,
         workInProgressIds: workInProgressIds,
         workInProgressThumbnails: workInProgressThumbnails,
       ));

@@ -1,5 +1,4 @@
 import '../../../domain.dart';
-import '../use_case.dart';
 
 /// Loads a project for the given contour identifier.
 class LoadProjectUseCase implements FutureUseCase<String, ProjectEntity?> {

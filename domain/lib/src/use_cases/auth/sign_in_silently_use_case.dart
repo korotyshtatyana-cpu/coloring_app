@@ -1,5 +1,4 @@
 import '../../../domain.dart';
-import '../use_case.dart';
 
 /// Attempts to sign the user in silently using a previously authorized
 /// platform account (Google Play / App Store).

@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:core/core.dart';
+import 'package:core_ui/core_ui.dart';
 import 'package:domain/domain.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 part 'canvas_event.dart';
 part 'canvas_state.dart';
@@ -12,6 +15,9 @@ part 'canvas_state.dart';
 /// BLoC responsible for canvas drawing state and tool settings.
 class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
   final String _contourId;
+
+  /// Cached watermark bytes, loaded lazily on first export.
+  Uint8List? _watermarkBytes;
   final AddStrokeUseCase _addStrokeUseCase;
   final SaveProjectUseCase _saveProjectUseCase;
   final LoadProjectUseCase _loadProjectUseCase;
@@ -36,10 +42,9 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     required this._saveImageToGalleryUseCase,
     required this._renderProjectThumbnailUseCase,
     required this._getAvailableToolsUseCase,
-  })  : super(CanvasState()) {
+  }) : super(CanvasState()) {
     on<LoadProject>(_onLoadProject);
     on<StartDrawing>(_onStartDrawing);
-    on<AddPoint>(_onAddPoint);
     on<EndDrawing>(_onEndDrawing);
     on<CancelDrawing>(_onCancelDrawing);
     on<Undo>(_onUndo);
@@ -59,6 +64,7 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     on<ClearProject>(_onClearProject);
     on<ExportImage>(_onExportImage);
     on<ExportImageFinished>(_onExportImageFinished);
+    on<ContourCompiled>(_onContourCompiled);
   }
 
   Future<void> _onLoadProject(
@@ -83,96 +89,99 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
           ? Color(settings!['contourColor'] as int)
           : null;
       final double? loadedOpacity = settings?['contourOpacity']?.toDouble();
-      final double? loadedWidth = settings?['contourWidth']?.toDouble();
       final String? thumbnailPath = project?.data['thumbnailPath'] as String?;
 
-      emit(state.copyWith(
-        status: CanvasStatus.ready,
-        contour: contour,
-        strokes: strokes,
-        undoStack: strokes,
-        redoStack: const <StrokeEntity>[],
-        contourColor: loadedColor ?? state.contourColor,
-        contourOpacity: loadedOpacity ?? state.contourOpacity,
-        contourWidth: loadedWidth ?? state.contourWidth,
-        thumbnailPath: thumbnailPath,
-        availableTools: allTools,
-        activeBrushId: allTools.isNotEmpty ? allTools.first.id : null,
-        activeEraserId: allTools.isNotEmpty ? allTools.first.id : null,
-      ));
+      Size? contourSize;
+      String? contourSvg;
+      if (contour != null) {
+        contourSvg = await SvgUtils.fetchSvgContent(contour.svgUrl);
+        if (contourSvg != null) {
+          final Size? parsedSize = SvgUtils.parseViewBoxSize(contourSvg);
+          if (parsedSize != null) {
+            // Scale project canvas size 1.5x for crisp vector resolution
+            contourSize = Size(
+              parsedSize.width * 1.5,
+              parsedSize.height * 1.5,
+            );
+          }
+        }
+      }
+
+      emit(
+        state.copyWith(
+          contour: contour,
+          contourSize: contourSize,
+          contourSvg: contourSvg,
+          strokes: strokes,
+          // History does not survive a session: on open every persisted stroke
+          // is "baked" and cannot be undone. Undo steps are only created by
+          // strokes drawn in the current session.
+          undoStack: const <StrokeEntity>[],
+          redoStack: const <StrokeEntity>[],
+          // Identity means "no user transform": the view is refit to the
+          // viewport, so pan/zoom never survives a project restart.
+          transform: Matrix4.identity(),
+          contourColor: loadedColor ?? state.contourColor,
+          contourOpacity: loadedOpacity ?? state.contourOpacity,
+          thumbnailPath: thumbnailPath,
+          availableTools: allTools,
+          activeBrushId: allTools.isNotEmpty ? allTools.first.id : null,
+          activeEraserId: allTools.isNotEmpty ? allTools.first.id : null,
+        ),
+      );
+
+      // If the contour was not fetched correctly or doesn't exist, we don't
+      // wait for compilation and switch to ready immediately.
+      if (contourSvg == null) {
+        emit(state.copyWith(status: CanvasStatus.ready, isContourReady: true));
+      }
 
       // Automatically update last_opened timestamp when project is opened
       unawaited(saveProject(withThumbnail: false));
     } catch (e, stackTrace) {
       ErrorHandler.report(e, stackTrace);
-      emit(state.copyWith(
-        status: CanvasStatus.error,
-        error: e.toString(),
-      ));
+      emit(state.copyWith(status: CanvasStatus.error, error: e.toString()));
     }
   }
 
-  void _onStartDrawing(
-    StartDrawing event,
-    Emitter<CanvasState> emit,
-  ) {
-    final activeToolId = state.isEraser ? state.activeEraserId : state.activeBrushId;
-    final activeTool = state.availableTools.firstWhere((t) => t.id == activeToolId);
+  void _onContourCompiled(ContourCompiled event, Emitter<CanvasState> emit) {
+    emit(state.copyWith(status: CanvasStatus.ready, isContourReady: true));
+  }
+
+  void _onStartDrawing(StartDrawing event, Emitter<CanvasState> emit) {
+    final activeToolId = state.isEraser
+        ? state.activeEraserId
+        : state.activeBrushId;
+    final activeTool = state.availableTools.firstWhere(
+      (t) => t.id == activeToolId,
+    );
 
     final isPressure = activeTool.isPressureSensitive;
-    final effectiveSize = isPressure ? _effectiveSize(event.pressure) : state.brushSize;
+    final effectiveSize = isPressure
+        ? _effectiveSize(event.pressure)
+        : state.brushSize;
 
     final stroke = StrokeEntity(
       points: <StrokePoint>[
-        StrokePoint(offset: event.point, pressure: isPressure ? event.pressure : 1.0)
+        StrokePoint(
+          offset: event.point,
+          pressure: isPressure ? event.pressure : 1.0,
+        ),
       ],
       color: state.isEraser ? Colors.white.toARGB32() : state.color.toARGB32(),
-      size: state.isEraser ? effectiveSize * 2 : state.brushSize,
+      size: state.isEraser ? effectiveSize : state.brushSize,
       opacity: state.isEraser ? 1.0 : state.opacity,
       brushType: state.isEraser ? BrushType.circle : state.brushType,
       brushId: activeToolId,
       isPressureSensitive: isPressure,
     );
-    final strokes = <StrokeEntity>[...state.strokes, stroke];
-    final undoStack = <StrokeEntity>[...state.undoStack, stroke];
-    if (undoStack.length > Constants.maxUndoSteps) {
-      undoStack.removeAt(0);
-    }
-    emit(state.copyWith(
-      status: CanvasStatus.drawing,
-      strokes: strokes,
-      currentStroke: stroke,
-      undoStack: undoStack,
-      redoStack: const <StrokeEntity>[],
-    ));
-  }
-
-  void _onAddPoint(
-    AddPoint event,
-    Emitter<CanvasState> emit,
-  ) {
-    if (state.currentStroke == null || state.strokes.isEmpty) return;
-
-    final activeToolId = state.currentStroke!.brushId;
-    final activeTool = state.availableTools.firstWhere((t) => t.id == activeToolId);
-    final isPressure = activeTool.isPressureSensitive;
-
-    final updated = state.currentStroke!.copyWith(
-      points: <StrokePoint>[
-        ...state.currentStroke!.points,
-        StrokePoint(offset: event.point, pressure: isPressure ? event.pressure : 1.0),
-      ],
+    emit(
+      state.copyWith(
+        status: CanvasStatus.drawing,
+        currentStroke: stroke,
+        redoStack: const <StrokeEntity>[],
+      ),
     );
-    final strokes = List<StrokeEntity>.from(state.strokes);
-    strokes[strokes.length - 1] = updated;
-    final undoStack = List<StrokeEntity>.from(state.undoStack);
-    undoStack[undoStack.length - 1] = updated;
-
-    emit(state.copyWith(
-      strokes: strokes,
-      undoStack: undoStack,
-      currentStroke: updated,
-    ));
   }
 
   void _onSelectBrush(SelectBrush event, Emitter<CanvasState> emit) {
@@ -190,26 +199,26 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     try {
       emit(state.copyWith(status: CanvasStatus.saving));
 
-      // 1. Clear strokes in state
+      // 1. Clear strokes and reset contour settings in state
       final newState = state.copyWith(
         strokes: const <StrokeEntity>[],
         undoStack: const <StrokeEntity>[],
         redoStack: const <StrokeEntity>[],
+        contourColor: Colors.black,
+        contourOpacity: Constants.contourDefaultOpacity,
         thumbnailPath: null,
+        // Identity means "no user transform": the view is refit to the
+        // viewport, so pan/zoom/size do not survive a project restart.
+        transform: Matrix4.identity(),
       );
 
-      // 2. Persist the empty project (this clears local/remote strokes)
-      await _saveProjectUseCase.execute(
-        _projectEntity(state: newState, thumbnailPath: null),
-      );
+      // 2. Delete project from persistence so it is no longer Work In Progress
+      await _saveProjectUseCase.repository.deleteProject(_contourId);
 
       emit(newState.copyWith(status: CanvasStatus.ready));
     } catch (e, stackTrace) {
       ErrorHandler.report(e, stackTrace);
-      emit(state.copyWith(
-        status: CanvasStatus.error,
-        error: e.toString(),
-      ));
+      emit(state.copyWith(status: CanvasStatus.error, error: e.toString()));
     }
   }
 
@@ -217,30 +226,25 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     EndDrawing event,
     Emitter<CanvasState> emit,
   ) async {
-    if (state.currentStroke == null) return;
-
-    final strokeToSave = state.currentStroke!;
-    final shouldSave = state.strokes.isNotEmpty && state.strokes.last == strokeToSave;
-
-    final undoStack = List<StrokeEntity>.from(state.undoStack);
-    if (undoStack.isNotEmpty) {
-      undoStack[undoStack.length - 1] = strokeToSave;
+    final strokeToSave = event.stroke;
+    final strokes = <StrokeEntity>[...state.strokes, strokeToSave];
+    final undoStack = <StrokeEntity>[...state.undoStack, strokeToSave];
+    if (undoStack.length > Constants.maxUndoSteps) {
+      undoStack.removeAt(0);
     }
 
-    emit(state.copyWith(
-      status: CanvasStatus.ready,
-      currentStroke: null,
-      undoStack: undoStack,
-    ));
-
-    if (!shouldSave) return;
+    emit(
+      state.copyWith(
+        status: CanvasStatus.ready,
+        currentStroke: null,
+        strokes: strokes,
+        undoStack: undoStack,
+      ),
+    );
 
     try {
       await _addStrokeUseCase.execute(
-        AddStrokeParams(
-          projectId: _contourId,
-          stroke: strokeToSave,
-        ),
+        AddStrokeParams(projectId: _contourId, stroke: strokeToSave),
       );
       _scheduleAutosave();
     } catch (e, stackTrace) {
@@ -248,28 +252,13 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     }
   }
 
-  void _onCancelDrawing(
-    CancelDrawing event,
-    Emitter<CanvasState> emit,
-  ) {
-    final StrokeEntity? current = state.currentStroke;
-    if (current == null) return;
+  /// Ends a drawing gesture that produced nothing to keep (e.g. the finger
+  /// stayed outside the page): only the status tracking is reset, the stored
+  /// strokes are untouched because the in-progress stroke was never added.
+  void _onCancelDrawing(CancelDrawing event, Emitter<CanvasState> emit) {
+    if (state.currentStroke == null) return;
 
-    final strokes = List<StrokeEntity>.from(state.strokes);
-    if (strokes.isNotEmpty && strokes.last == current) {
-      strokes.removeLast();
-    }
-    final undoStack = List<StrokeEntity>.from(state.undoStack);
-    if (undoStack.isNotEmpty && undoStack.last == current) {
-      undoStack.removeLast();
-    }
-
-    emit(state.copyWith(
-      status: CanvasStatus.ready,
-      strokes: strokes,
-      undoStack: undoStack,
-      clearCurrentStroke: true,
-    ));
+    emit(state.copyWith(status: CanvasStatus.ready, clearCurrentStroke: true));
   }
 
   Future<void> _onUndo(Undo event, Emitter<CanvasState> emit) async {
@@ -282,13 +271,15 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     final strokes = List<StrokeEntity>.from(state.strokes)..removeLast();
     final redoStack = <StrokeEntity>[removed, ...state.redoStack];
 
-    emit(state.copyWith(
-      status: isCurrentStroke ? CanvasStatus.ready : state.status,
-      strokes: strokes,
-      undoStack: undoStack,
-      redoStack: redoStack,
-      currentStroke: isCurrentStroke ? null : state.currentStroke,
-    ));
+    emit(
+      state.copyWith(
+        status: isCurrentStroke ? CanvasStatus.ready : state.status,
+        strokes: strokes,
+        undoStack: undoStack,
+        redoStack: redoStack,
+        currentStroke: isCurrentStroke ? null : state.currentStroke,
+      ),
+    );
 
     _scheduleAutosave();
   }
@@ -304,11 +295,13 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
       undoStack.removeAt(0);
     }
 
-    emit(state.copyWith(
-      strokes: strokes,
-      undoStack: undoStack,
-      redoStack: redoStack,
-    ));
+    emit(
+      state.copyWith(
+        strokes: strokes,
+        undoStack: undoStack,
+        redoStack: redoStack,
+      ),
+    );
 
     _scheduleAutosave();
   }
@@ -339,14 +332,14 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
       if (!isClosed) emit?.call(state.copyWith(status: CanvasStatus.saving));
 
       String? thumbnailPath = state.thumbnailPath;
-      if (withThumbnail && state.contour != null) {
-        thumbnailPath = await _renderProjectThumbnailUseCase.execute(
+      if (withThumbnail && state.contour != null && state.contourSvg != null) {
+        thumbnailPath =
+            await _renderProjectThumbnailUseCase.execute(
               ExportImageParams(
                 projectId: _contourId,
-                contourSvg: state.contour!.svgData,
+                contourSvg: state.contourSvg!,
                 contourColor: state.contourColor,
                 contourOpacity: state.contourOpacity,
-                contourWidth: state.contourWidth,
                 strokes: state.strokes,
               ),
             ) ??
@@ -357,35 +350,35 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
         _projectEntity(thumbnailPath: thumbnailPath),
       );
       if (!isClosed) {
-        emit?.call(state.copyWith(
-          status: CanvasStatus.ready,
-          thumbnailPath: thumbnailPath,
-        ));
+        emit?.call(
+          state.copyWith(
+            status: CanvasStatus.ready,
+            thumbnailPath: thumbnailPath,
+          ),
+        );
       }
     } catch (e, stackTrace) {
       ErrorHandler.report(e, stackTrace);
       if (!isClosed) {
-        emit?.call(state.copyWith(
-          status: CanvasStatus.error,
-          error: e.toString(),
-        ));
+        emit?.call(
+          state.copyWith(status: CanvasStatus.error, error: e.toString()),
+        );
       }
     }
   }
 
-  void _onChangeBrushSize(
-    ChangeBrushSize event,
-    Emitter<CanvasState> emit,
-  ) {
-    emit(state.copyWith(
-      brushSize: event.size.clamp(Constants.minBrushSize, Constants.maxBrushSize),
-    ));
+  void _onChangeBrushSize(ChangeBrushSize event, Emitter<CanvasState> emit) {
+    emit(
+      state.copyWith(
+        brushSize: event.size.clamp(
+          Constants.minBrushSize,
+          Constants.maxBrushSize,
+        ),
+      ),
+    );
   }
 
-  void _onChangeOpacity(
-    ChangeOpacity event,
-    Emitter<CanvasState> emit,
-  ) {
+  void _onChangeOpacity(ChangeOpacity event, Emitter<CanvasState> emit) {
     emit(state.copyWith(opacity: event.opacity.clamp(0.0, 1.0)));
   }
 
@@ -393,10 +386,7 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     emit(state.copyWith(color: event.color));
   }
 
-  void _onChangeBrushType(
-    ChangeBrushType event,
-    Emitter<CanvasState> emit,
-  ) {
+  void _onChangeBrushType(ChangeBrushType event, Emitter<CanvasState> emit) {
     emit(state.copyWith(brushType: event.brushType));
   }
 
@@ -404,11 +394,12 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     ChangeContourSettings event,
     Emitter<CanvasState> emit,
   ) {
-    emit(state.copyWith(
-      contourColor: event.color ?? state.contourColor,
-      contourOpacity: event.opacity ?? state.contourOpacity,
-      contourWidth: event.width ?? state.contourWidth,
-    ));
+    emit(
+      state.copyWith(
+        contourColor: event.color ?? state.contourColor,
+        contourOpacity: event.opacity ?? state.contourOpacity,
+      ),
+    );
     _scheduleAutosave();
   }
 
@@ -416,10 +407,7 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     emit(state.copyWith(transform: Matrix4.identity()));
   }
 
-  void _onUpdateTransform(
-    UpdateTransform event,
-    Emitter<CanvasState> emit,
-  ) {
+  void _onUpdateTransform(UpdateTransform event, Emitter<CanvasState> emit) {
     emit(state.copyWith(transform: event.transform));
   }
 
@@ -431,11 +419,27 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     emit(state.copyWith(isEraser: event.tool == CanvasTool.eraser));
   }
 
+  /// Loads the watermark PNG, returning null if it cannot be read.
+  ///
+  /// Cached because the asset never changes at runtime. A missing watermark must
+  /// not break exporting, so failures degrade to an unwatermarked export.
+  Future<Uint8List?> _loadWatermark() async {
+    if (_watermarkBytes != null) return _watermarkBytes;
+    try {
+      final ByteData data =
+          await rootBundle.load(AppImages.watermarkAssetKey);
+      return _watermarkBytes = data.buffer.asUint8List();
+    } catch (e, stackTrace) {
+      ErrorHandler.report(e, stackTrace);
+      return null;
+    }
+  }
+
   Future<void> _onExportImage(
     ExportImage event,
     Emitter<CanvasState> emit,
   ) async {
-    if (state.contour == null) return;
+    if (state.contour == null || state.contourSvg == null) return;
 
     try {
       emit(state.copyWith(status: CanvasStatus.exporting, error: null));
@@ -443,18 +447,20 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
       final filePath = await _exportImageUseCase.execute(
         ExportImageParams(
           projectId: state.contour!.id,
-          contourSvg: state.contour!.svgData,
+          contourSvg: state.contourSvg!,
           contourColor: state.contourColor,
           contourOpacity: state.contourOpacity,
-          contourWidth: state.contourWidth,
+          watermarkBytes: await _loadWatermark(),
         ),
       );
 
       if (filePath == null) {
-        emit(state.copyWith(
-          status: CanvasStatus.error,
-          error: LocaleKeys.export_failed.tr(),
-        ));
+        emit(
+          state.copyWith(
+            status: CanvasStatus.error,
+            error: LocaleKeys.export_failed.tr(),
+          ),
+        );
         return;
       }
 
@@ -465,7 +471,9 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
           await _saveImageToGalleryUseCase.execute(filePath);
       }
 
-      add(ExportImageFinished(filePath: filePath, exportType: event.exportType));
+      add(
+        ExportImageFinished(filePath: filePath, exportType: event.exportType),
+      );
     } catch (e, stackTrace) {
       ErrorHandler.report(e, stackTrace);
       emit(state.copyWith(status: CanvasStatus.error, error: e.toString()));
@@ -476,11 +484,13 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     ExportImageFinished event,
     Emitter<CanvasState> emit,
   ) {
-    emit(state.copyWith(
-      status: CanvasStatus.ready,
-      exportedFilePath: event.filePath,
-      lastExportType: event.exportType,
-    ));
+    emit(
+      state.copyWith(
+        status: CanvasStatus.ready,
+        exportedFilePath: event.filePath,
+        lastExportType: event.exportType,
+      ),
+    );
   }
 
   double _effectiveSize(double pressure) {
@@ -495,26 +505,33 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
       contourId: _contourId,
       userId: '',
       data: <String, dynamic>{
-        'strokes': effectiveState.strokes.asMap().entries.map((MapEntry<int, StrokeEntity> entry) {
+        'strokes': effectiveState.strokes.asMap().entries.map((
+          MapEntry<int, StrokeEntity> entry,
+        ) {
           final StrokeEntity stroke = entry.value;
           return <String, dynamic>{
             'id': '${_contourId}_${entry.key}',
             'project_id': _contourId,
             'points': stroke.points
-                .map((StrokePoint p) =>
-                    <double>[p.offset.dx, p.offset.dy, p.pressure])
+                .map(
+                  (StrokePoint p) => <double>[
+                    p.offset.dx,
+                    p.offset.dy,
+                    p.pressure,
+                  ],
+                )
                 .toList(),
             'color': stroke.color,
             'size': stroke.size,
             'opacity': stroke.opacity,
             'brushType': stroke.brushType.name,
             'brushId': stroke.brushId,
+            'isPressureSensitive': stroke.isPressureSensitive,
           };
         }).toList(),
         'settings': <String, dynamic>{
           'contourColor': effectiveState.contourColor.toARGB32(),
           'contourOpacity': effectiveState.contourOpacity,
-          'contourWidth': effectiveState.contourWidth,
         },
         if (thumbnailPath != null) 'thumbnailPath': thumbnailPath,
       },
@@ -529,22 +546,42 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
 
     return strokesJson.map((dynamic json) {
       final map = json as Map<String, dynamic>;
+      final List<StrokePoint> points = (map['points'] as List<dynamic>).map((
+        dynamic row,
+      ) {
+        final list = row as List<dynamic>;
+        return StrokePoint(
+          offset: Offset(list[0] as double, list[1] as double),
+          pressure: list.length > 2 ? list[2] as double : 1.0,
+        );
+      }).toList();
       return StrokeEntity(
-        points: (map['points'] as List<dynamic>)
-            .map((dynamic row) {
-              final list = row as List<dynamic>;
-              return StrokePoint(
-                offset: Offset(list[0] as double, list[1] as double),
-                pressure: list.length > 2 ? list[2] as double : 1.0,
-              );
-            })
-            .toList(),
+        points: points,
         color: map['color'] as int,
         size: (map['size'] as num).toDouble(),
         opacity: (map['opacity'] as num).toDouble(),
         brushType: BrushType.values.byName(map['brushType'] as String),
+        brushId: map['brushId'] as String?,
+        // Older saves didn't persist the flag (and it defaulted to true on
+        // load): recover it from pressure variance. Non-pressure strokes
+        // store exactly 1.0 at every point, so constant pressure means the
+        // stroke can be rendered as a single uniform-width path.
+        isPressureSensitive:
+            map['isPressureSensitive'] as bool? ??
+            _hasVariablePressure(points),
       );
     }).toList();
+  }
+
+  /// Whether pressure differs across [points] (i.e. the stroke truly needs
+  /// variable-width, per-segment rendering).
+  bool _hasVariablePressure(List<StrokePoint> points) {
+    if (points.length < 2) return false;
+    final double first = points.first.pressure;
+    for (final StrokePoint point in points) {
+      if (point.pressure != first) return true;
+    }
+    return false;
   }
 
   void _scheduleAutosave() {

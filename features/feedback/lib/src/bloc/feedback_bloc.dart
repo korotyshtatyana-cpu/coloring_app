@@ -10,11 +10,10 @@ class FeedbackBloc extends Bloc<FeedbackEvent, FeedbackState> {
   final SubmitFeedbackUseCase _submitFeedbackUseCase;
 
   FeedbackBloc({
-    required SubmitFeedbackUseCase submitFeedbackUseCase,
+    required this._submitFeedbackUseCase,
     required FeedbackType type,
     required String initialEmail,
-  }) : _submitFeedbackUseCase = submitFeedbackUseCase,
-       super(FeedbackState(type: type, email: initialEmail)) {
+  }) : super(FeedbackState(type: type, email: initialEmail)) {
     on<ChangeMessage>(_onChangeMessage);
     on<AddAttachments>(_onAddAttachments);
     on<RemoveAttachment>(_onRemoveAttachment);

@@ -8,7 +8,7 @@ class FeedbackRemoteProvider {
   final SupabaseClient _client;
 
   /// Creates a [FeedbackRemoteProvider] with the given [_client].
-  FeedbackRemoteProvider({required SupabaseClient client}) : _client = client;
+  FeedbackRemoteProvider({required this._client});
 
   /// Submits feedback to the `feedback` table and uploads attachments.
   Future<void> submitFeedback({

@@ -7,8 +7,7 @@ class FeedbackRepositoryImpl implements FeedbackRepository {
   final FeedbackRemoteProvider _remoteProvider;
 
   /// Creates a [FeedbackRepositoryImpl] with the given [_remoteProvider].
-  FeedbackRepositoryImpl({required FeedbackRemoteProvider remoteProvider})
-      : _remoteProvider = remoteProvider;
+  FeedbackRepositoryImpl({required this._remoteProvider});
 
   @override
   Future<void> submitFeedback(FeedbackEntity feedback) {

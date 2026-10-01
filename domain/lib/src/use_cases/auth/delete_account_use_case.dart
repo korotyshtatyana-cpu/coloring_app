@@ -1,5 +1,4 @@
 import '../../../domain.dart';
-import '../use_case.dart';
 
 /// Triggers the account deletion process for the current user.
 class DeleteAccountUseCase implements FutureUseCase<NoParams, void> {

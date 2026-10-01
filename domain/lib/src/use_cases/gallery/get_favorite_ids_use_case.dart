@@ -1,5 +1,4 @@
 import '../../../domain.dart';
-import '../use_case.dart';
 
 /// Returns identifiers of contours marked as favorite by the current user.
 class GetFavoriteIdsUseCase implements FutureUseCase<NoParams, List<String>> {
