@@ -7,6 +7,15 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../bloc/canvas_bloc.dart';
 import '../../painters/canvas_painter.dart';
 
+/// Largest baked buffer edge, in physical pixels.
+///
+/// The buffer is `pageSize * pixelRatio`, which reaches 3917x5875 on a
+/// 1536x2304 page at dpr 2.55 (~88 MB). That height exceeds the 4096 texture
+/// limit, so the buffer can never be retained by the raster cache and is
+/// re-uploaded every frame. Lowering the edge trades stroke sharpness under
+/// zoom for a buffer the GPU can actually keep resident.
+const int _kMaxBufferEdge = 2048;
+
 /// Widget that maintains a raster buffer (bitmap) of all finished strokes.
 ///
 /// This is the key optimization for large projects: instead of drawing
@@ -69,14 +78,34 @@ class _RasterCanvasBufferState extends State<RasterCanvasBuffer> {
       },
       child: _bakedImage == null
           ? const SizedBox.shrink()
-          : CustomPaint(
-              size: widget.size,
-              painter: BitmapPainter(image: _bakedImage!),
+          : RepaintBoundary(
+              // Gives the buffer its own layer so it can be retained by the
+              // raster cache instead of being re-uploaded on every frame.
+              child: CustomPaint(
+                size: widget.size,
+                painter: BitmapPainter(image: _bakedImage!),
+              ),
             ),
     );
   }
 
   Future<void> _updateBuffer(List<StrokeEntity> newStrokes) async {
+    // Nothing drawn yet: there is no bitmap worth keeping. Baking a blank page
+    // allocates a full-page image (tens of MB on a large contour) that has to
+    // be uploaded to the GPU and kept resident, and it is all white, so the
+    // page background is drawn by the stack instead. Undo back to an empty
+    // page releases the buffer here.
+    if (newStrokes.isEmpty) {
+      _bakedStrokes = <StrokeEntity>[];
+      if (_bakedImage != null && mounted) {
+        setState(() {
+          _bakedImage!.dispose();
+          _bakedImage = null;
+        });
+      }
+      return;
+    }
+
     if (_isBaking) {
       _pendingStrokes = newStrokes;
       return;
@@ -109,10 +138,23 @@ class _RasterCanvasBufferState extends State<RasterCanvasBuffer> {
     }
   }
 
+  /// Device pixel ratio for the baked buffer, capped so the largest edge fits
+  /// within [_kMaxBufferEdge].
+  double _bufferPixelRatio(Size size) {
+    final double dpr =
+        (MediaQuery.maybeDevicePixelRatioOf(context) ?? 2.0).clamp(2.0, 3.5);
+    final double longestEdge =
+        size.width > size.height ? size.width : size.height;
+    if (longestEdge <= 0) {
+      return dpr;
+    }
+    final double capped = _kMaxBufferEdge / longestEdge;
+    return capped < dpr ? capped : dpr;
+  }
+
   Future<void> _fullRebake(List<StrokeEntity> strokes) async {
     final Size size = widget.size;
-    final double pixelRatio =
-        (MediaQuery.maybeDevicePixelRatioOf(context) ?? 2.0).clamp(2.0, 3.5);
+    final double pixelRatio = _bufferPixelRatio(size);
     final int imageWidth = (size.width * pixelRatio).round();
     final int imageHeight = (size.height * pixelRatio).round();
 
@@ -152,8 +194,7 @@ class _RasterCanvasBufferState extends State<RasterCanvasBuffer> {
     }
 
     final Size size = widget.size;
-    final double pixelRatio =
-        (MediaQuery.maybeDevicePixelRatioOf(context) ?? 2.0).clamp(2.0, 3.5);
+    final double pixelRatio = _bufferPixelRatio(size);
     final int imageWidth = (size.width * pixelRatio).round();
     final int imageHeight = (size.height * pixelRatio).round();
 

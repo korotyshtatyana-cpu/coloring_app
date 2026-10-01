@@ -9,6 +9,9 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
+
+import '../utils/perf_log.dart';
 
 import '../bloc/canvas_bloc.dart';
 import '../onboarding/canvas_onboarding_dialog.dart';
@@ -151,6 +154,10 @@ class _CanvasContentState extends State<CanvasContent>
   static const double _maxScaleFactor = 5.0; // relative to the fit scale
   static const double _boundaryMargin = 64.0;
 
+  /// Frame budget of the display in milliseconds, from its refresh rate.
+  double _frameBudgetMs = 16.6;
+  bool _didReportEnvironment = false;
+
   /// Extra scene space around the page where stroke points are still
   /// recorded, as a multiple of the largest page side. The pointer can travel
   /// up to a full viewport away from the page (at the minimum zoom), so the
@@ -170,6 +177,12 @@ class _CanvasContentState extends State<CanvasContent>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // TEMPORARY: unconditional, so it is possible to tell "the flag never made
+    // it into the build" from "the gated logs are firing somewhere else".
+    debugPrint('[canvas-perf] CanvasContent init, enabled=$kCanvasPerfLog');
+    if (kCanvasPerfLog) {
+      SchedulerBinding.instance.addTimingsCallback(_perfReportFrameTimings);
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         showCanvasOnboarding(context);
@@ -177,9 +190,65 @@ class _CanvasContentState extends State<CanvasContent>
     });
   }
 
+  /// Logs the UI and raster cost of a frame, plus what painted in it.
+  ///
+  /// Only frames that missed the budget are logged, so the output stays
+  /// readable instead of flooding, and the painter counts attribute the raster
+  /// cost to a specific layer.
+  void _perfReportFrameTimings(List<FrameTiming> timings) {
+    if (timings.isEmpty) return;
+    final FrameTiming last = timings.last;
+    final double buildMs =
+        last.buildDuration.inMicroseconds / Duration.microsecondsPerMillisecond;
+    final double rasterMs =
+        last.rasterDuration.inMicroseconds / Duration.microsecondsPerMillisecond;
+    if (buildMs < _frameBudgetMs && rasterMs < _frameBudgetMs) return;
+    debugPrint(
+      '[perf] build=${buildMs.toStringAsFixed(1)}ms '
+      'raster=${rasterMs.toStringAsFixed(1)}ms '
+      'budget=${_frameBudgetMs.toStringAsFixed(1)}ms',
+    );
+    perfReportPaints('[perf]');
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final double refreshRate = View.of(context).display.refreshRate;
+    if (refreshRate > 0) {
+      _frameBudgetMs = 1000 / refreshRate;
+    }
+    if (kCanvasPerfLog && !_didReportEnvironment) {
+      final double dpr = View.of(context).devicePixelRatio;
+      // Deferred by one frame: the contour has not loaded yet at this point, so
+      // reading its size here reports nulls.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _didReportEnvironment) {
+          return;
+        }
+        _didReportEnvironment = true;
+        final Size? page = context.read<CanvasBloc>().state.contourSize;
+        perfLogOnce(
+          'env',
+          'impeller=${ui.ImageFilter.isShaderFilterSupported} '
+          'dpr=$dpr '
+          'pageLogical=${page?.width.round()}x${page?.height.round()} '
+          'pagePhysical='
+          '${page == null ? null : '${(page.width * dpr).round()}x${(page.height * dpr).round()}'} '
+          'budgetMs=${_frameBudgetMs.toStringAsFixed(1)}',
+        );
+      });
+    }
+  }
+
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    if (kCanvasPerfLog) {
+      SchedulerBinding.instance.removeTimingsCallback(
+        _perfReportFrameTimings,
+      );
+    }
     _transformationController.dispose();
     _activeStroke.dispose();
     _disposeEyedropperImage();

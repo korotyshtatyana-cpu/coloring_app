@@ -38,6 +38,10 @@ class CanvasStack extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: <Widget>[
+          // Layer 0: The white page. Drawn here rather than baked into the
+          // stroke bitmap so that an untouched page costs nothing at all.
+          const ColoredBox(color: Colors.white),
+
           // Layer 1: Finished strokes (rasterized background)
           RasterCanvasBuffer(size: canvasSize),
 

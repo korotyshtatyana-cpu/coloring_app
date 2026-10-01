@@ -4,6 +4,8 @@ import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart' show PictureInfo;
 
+import '../utils/perf_log.dart';
+
 /// Extra space around stroke bounds for the mask-filter blur.
 /// The blur sigma is 4, and the visible bleed stays within ~3 sigma.
 const double _blurMargin = 12;
@@ -156,6 +158,7 @@ class BitmapPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    perfCountPaint('bitmap(${image.width}x${image.height})');
     canvas.drawImageRect(
       image,
       Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
@@ -186,6 +189,10 @@ class ActiveStrokePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     if (stroke.points.length < 2) return;
+    perfCountPaint(
+      'stroke(${stroke.brushType.name},op=${stroke.opacity},'
+      'n=${stroke.points.length},pressure=${stroke.isPressureSensitive})',
+    );
 
     final bool useLayer = stroke.opacity < 1.0;
     Rect? layerBounds = rawBounds;
@@ -245,20 +252,64 @@ class ActiveStrokePainter extends CustomPainter {
 /// CustomPainter that renders the contour SVG as vector graphics.
 class ContourPainter extends CustomPainter {
   final PictureInfo pictureInfo;
+
+  /// Pre-rasterized contour, preferred when available.
+  ///
+  /// Replaying thousands of vector paths costs over 100 ms per frame, and
+  /// tinting them needs a page-sized `saveLayer`, so the cached raster is used
+  /// instead.
+  final ui.Image? rasterImage;
+
   final Color color;
   final double opacity;
 
   ContourPainter({
     required this.pictureInfo,
+    this.rasterImage,
     required this.color,
     required this.opacity,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
+    final ui.Image? image = rasterImage;
+    if (image != null) {
+      perfCountPaint('contour-raster(${image.width}x${image.height})');
+      // The tint rides on the paint of the draw call, so the filter is applied
+      // to the pixels being drawn and no page-sized offscreen buffer is needed.
+      canvas.drawImageRect(
+        image,
+        Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
+        Offset.zero & size,
+        Paint()
+          ..colorFilter = ColorFilter.mode(
+            color.withValues(alpha: opacity),
+            BlendMode.srcIn,
+          ),
+      );
+      return;
+    }
+
+    perfCountPaint(
+      'contour(size=${size.width.round()}x${size.height.round()},'
+      'tint=${!_isIdentityTint})',
+    );
     final Size svgSize = pictureInfo.size;
     final double scaleX = size.width / svgSize.width;
     final double scaleY = size.height / svgSize.height;
+
+    // `ColorFilter.mode(white, srcIn)` at opacity 1 is a no-op, so the layer
+    // can be skipped entirely. Drawing the picture directly avoids allocating a
+    // page-sized offscreen buffer and running the filter over every path, which
+    // dominates the repaint cost for contours with thousands of paths.
+    if (_isIdentityTint) {
+      canvas
+        ..save()
+        ..scale(scaleX, scaleY)
+        ..drawPicture(pictureInfo.picture)
+        ..restore();
+      return;
+    }
 
     final Paint layerPaint = Paint()
       ..colorFilter = ColorFilter.mode(
@@ -272,9 +323,14 @@ class ContourPainter extends CustomPainter {
     canvas.restore();
   }
 
+  /// Whether the color filter leaves the vector unchanged.
+  bool get _isIdentityTint =>
+      color.r == 1 && color.g == 1 && color.b == 1 && opacity == 1;
+
   @override
   bool shouldRepaint(covariant ContourPainter oldDelegate) {
     return oldDelegate.pictureInfo != pictureInfo ||
+        oldDelegate.rasterImage != rasterImage ||
         oldDelegate.color != color ||
         oldDelegate.opacity != opacity;
   }
