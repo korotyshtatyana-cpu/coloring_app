@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 
 import '../../entities/stroke_entity.dart';
@@ -19,6 +21,12 @@ class ExportImageParams {
   /// Explicit strokes to render. When null, strokes are loaded from storage.
   final List<StrokeEntity>? strokes;
 
+  /// PNG bytes of the watermark to stamp on the exported image.
+  ///
+  /// Passed as bytes rather than an asset path so that this layer stays free of
+  /// asset-bundle concerns. Null leaves the export unwatermarked.
+  final Uint8List? watermarkBytes;
+
   /// Creates [ExportImageParams].
   const ExportImageParams({
     required this.projectId,
@@ -26,5 +34,6 @@ class ExportImageParams {
     required this.contourColor,
     required this.contourOpacity,
     this.strokes,
+    this.watermarkBytes,
   });
 }

@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:core/core.dart';
+import 'package:core_ui/core_ui.dart';
 import 'package:domain/domain.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 part 'canvas_event.dart';
 part 'canvas_state.dart';
@@ -12,6 +15,9 @@ part 'canvas_state.dart';
 /// BLoC responsible for canvas drawing state and tool settings.
 class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
   final String _contourId;
+
+  /// Cached watermark bytes, loaded lazily on first export.
+  Uint8List? _watermarkBytes;
   final AddStrokeUseCase _addStrokeUseCase;
   final SaveProjectUseCase _saveProjectUseCase;
   final LoadProjectUseCase _loadProjectUseCase;
@@ -413,6 +419,22 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     emit(state.copyWith(isEraser: event.tool == CanvasTool.eraser));
   }
 
+  /// Loads the watermark PNG, returning null if it cannot be read.
+  ///
+  /// Cached because the asset never changes at runtime. A missing watermark must
+  /// not break exporting, so failures degrade to an unwatermarked export.
+  Future<Uint8List?> _loadWatermark() async {
+    if (_watermarkBytes != null) return _watermarkBytes;
+    try {
+      final ByteData data =
+          await rootBundle.load(AppImages.watermarkAssetKey);
+      return _watermarkBytes = data.buffer.asUint8List();
+    } catch (e, stackTrace) {
+      ErrorHandler.report(e, stackTrace);
+      return null;
+    }
+  }
+
   Future<void> _onExportImage(
     ExportImage event,
     Emitter<CanvasState> emit,
@@ -428,6 +450,7 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
           contourSvg: state.contourSvg!,
           contourColor: state.contourColor,
           contourOpacity: state.contourOpacity,
+          watermarkBytes: await _loadWatermark(),
         ),
       );
 

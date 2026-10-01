@@ -197,6 +197,7 @@ class CanvasRepositoryImpl implements CanvasRepository {
       contourOpacity: params.contourOpacity,
       strokes: strokes,
       targetSize: targetSize,
+      watermarkBytes: params.watermarkBytes,
     );
   }
 

@@ -34,4 +34,15 @@ class AppImages {
 
   /// Path to eraser icon.
   static const String eraser = '$_iconsPath/eraser.svg';
+
+  /// Watermark stamped onto exported images.
+  static const String watermark = '$_basePath/watermark.png';
+
+  /// Bundle key for [watermark], for consumers reading raw asset bytes.
+  ///
+  /// `rootBundle` has no `package:` argument like `Image.asset`, so assets of a
+  /// dependency are addressed by the `packages/<name>/` prefix. Plain asset paths
+  /// only resolve for widgets.
+  static const String watermarkAssetKey =
+      'packages/$packageName/$watermark';
 }
