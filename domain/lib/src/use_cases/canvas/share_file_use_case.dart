@@ -1,5 +1,4 @@
 import '../../../domain.dart';
-import '../use_case.dart';
 
 /// Shares a file at a given path using the platform share sheet.
 class ShareFileUseCase implements FutureUseCase<String, void> {

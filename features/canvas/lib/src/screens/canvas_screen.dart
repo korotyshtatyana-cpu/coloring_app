@@ -498,14 +498,11 @@ class _CanvasContentState extends State<CanvasContent>
         return;
       }
 
-      // The pointer is claimed for the whole gesture: the stroke is only
-      // seeded here if the press landed on the page, and keeps running even
-      // if the finger then leaves the page.
+      // The pointer is claimed for the whole gesture and keeps running even
+      // if the finger moves outside the canvas boundaries.
       _activeDrawPointer = event.pointer;
       final Offset point = _viewportToScene(event.localPosition);
-      if (_isPointOnPage(point)) {
-        _startDrawingLocally(point, event.pressure);
-      }
+      _startDrawingLocally(point, event.pressure);
     }
   }
 
@@ -527,16 +524,12 @@ class _CanvasContentState extends State<CanvasContent>
         _initialTransform != null) {
       _handleTwoFingerGesture(canvasSize);
     } else if (event.pointer == _activeDrawPointer) {
-      // The stroke is never interrupted by the page edges: the pointer may
-      // leave the page and come back, and the line stays a single stroke
-      // (CanvasStack clips the ink to the page, so the excursion is invisible).
+      // The stroke is never interrupted by canvas edges: the pointer may
+      // leave the canvas and come back, and the line stays a single stroke
+      // (CanvasStack clips the ink to the page, so any excursion is visually clipped).
       final Offset point = _viewportToScene(event.localPosition);
       if (_activeStroke.stroke == null) {
-        // The press landed outside the page: start the stroke as soon as the
-        // pointer comes back onto it.
-        if (_isPointOnPage(point)) {
-          _startDrawingLocally(point, event.pressure);
-        }
+        _startDrawingLocally(point, event.pressure);
       } else {
         _addPointLocally(point, event.pressure);
       }
@@ -723,15 +716,6 @@ class _CanvasContentState extends State<CanvasContent>
   Offset _viewportToScene(Offset viewportPoint) {
     final Matrix4 inverse = Matrix4.inverted(_transformationController.value);
     return MatrixUtils.transformPoint(inverse, viewportPoint);
-  }
-
-  /// Whether [point] in scene coordinates is on the page (page bounds are
-  /// inclusive, so a press exactly on the edge still starts a stroke).
-  bool _isPointOnPage(Offset point) {
-    return point.dx >= _pageRect.left &&
-        point.dx <= _pageRect.right &&
-        point.dy >= _pageRect.top &&
-        point.dy <= _pageRect.bottom;
   }
 
   /// Clamps a scene point to the stroke bleed around the page.

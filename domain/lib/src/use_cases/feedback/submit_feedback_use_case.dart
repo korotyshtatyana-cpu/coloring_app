@@ -1,6 +1,4 @@
-import '../../entities/feedback_entity.dart';
-import '../../repositories/feedback_repository.dart';
-import '../use_case.dart';
+import '../../../domain.dart';
 
 /// Use case for submitting user feedback.
 class SubmitFeedbackUseCase implements FutureUseCase<FeedbackEntity, void> {

@@ -1,5 +1,4 @@
 import '../../../domain.dart';
-import '../use_case.dart';
 
 /// Parameters for [GetContoursUseCase].
 class GetContoursParams {

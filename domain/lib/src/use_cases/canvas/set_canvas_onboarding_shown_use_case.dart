@@ -1,5 +1,4 @@
 import '../../../domain.dart';
-import '../use_case.dart';
 
 /// Use case to mark the canvas onboarding slider as shown.
 class SetCanvasOnboardingShownUseCase

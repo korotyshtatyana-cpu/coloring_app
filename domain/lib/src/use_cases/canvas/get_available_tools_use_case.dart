@@ -1,5 +1,4 @@
 import '../../../domain.dart';
-import '../use_case.dart';
 
 /// Retrieves the list of all available drawing tools (brushes and erasers).
 class GetAvailableToolsUseCase implements FutureUseCase<NoParams, List<ToolEntity>> {

@@ -1,5 +1,4 @@
 import '../../../domain.dart';
-import '../use_case.dart';
 
 /// Toggles favorite status of a contour for the current user.
 class ToggleFavoriteUseCase implements FutureUseCase<String, void> {

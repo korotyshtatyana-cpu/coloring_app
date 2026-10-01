@@ -18,19 +18,13 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
 
   /// Creates a [GalleryBloc] with the required use cases.
   GalleryBloc({
-    required GetContoursUseCase getContoursUseCase,
-    required GetUsedCategoriesUseCase getUsedCategoriesUseCase,
-    required GetContoursByIdsUseCase getContoursByIdsUseCase,
-    required ToggleFavoriteUseCase toggleFavoriteUseCase,
-    required GetFavoriteIdsUseCase getFavoriteIdsUseCase,
-    required GetWorkInProgressUseCase getWorkInProgressUseCase,
-  })  : _getContoursUseCase = getContoursUseCase,
-        _getUsedCategoriesUseCase = getUsedCategoriesUseCase,
-        _getContoursByIdsUseCase = getContoursByIdsUseCase,
-        _toggleFavoriteUseCase = toggleFavoriteUseCase,
-        _getFavoriteIdsUseCase = getFavoriteIdsUseCase,
-        _getWorkInProgressUseCase = getWorkInProgressUseCase,
-        super(const GalleryState()) {
+    required this._getContoursUseCase,
+    required this._getUsedCategoriesUseCase,
+    required this._getContoursByIdsUseCase,
+    required this._toggleFavoriteUseCase,
+    required this._getFavoriteIdsUseCase,
+    required this._getWorkInProgressUseCase,
+  })  : super(const GalleryState()) {
     on<LoadContours>(
       _onLoadContours,
       transformer: droppable(),

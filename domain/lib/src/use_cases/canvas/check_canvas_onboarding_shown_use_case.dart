@@ -1,5 +1,4 @@
 import '../../../domain.dart';
-import '../use_case.dart';
 
 /// Use case to check if the canvas onboarding slider has been shown.
 class CheckCanvasOnboardingShownUseCase

@@ -1,5 +1,4 @@
 import '../../../domain.dart';
-import '../use_case.dart';
 
 /// Retrieves the saved language code.
 class GetSettingsUseCase implements FutureUseCase<NoParams, String?> {

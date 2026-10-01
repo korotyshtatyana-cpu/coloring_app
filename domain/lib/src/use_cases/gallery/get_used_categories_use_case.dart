@@ -1,5 +1,4 @@
 import '../../../domain.dart';
-import '../use_case.dart';
 
 /// Fetches the list of categories that have at least one contour.
 class GetUsedCategoriesUseCase implements FutureUseCase<void, List<ContourCategory>> {

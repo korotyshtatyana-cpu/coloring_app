@@ -1,5 +1,4 @@
 import '../../../domain.dart';
-import '../use_case.dart';
 
 /// Checks whether the user is authenticated.
 class CheckAuthUseCase implements FutureUseCase<NoParams, bool> {

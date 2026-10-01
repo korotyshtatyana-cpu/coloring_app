@@ -13,7 +13,7 @@ class AppRouter extends RootStackRouter {
   final AuthGuard _authGuard;
 
   /// Creates an [AppRouter] with the injected [_authGuard].
-  AppRouter({required AuthGuard authGuard}) : _authGuard = authGuard;
+  AppRouter({required this._authGuard});
 
   @override
   RouteType get defaultRouteType => const RouteType.adaptive();

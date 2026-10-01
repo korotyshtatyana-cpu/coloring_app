@@ -1,5 +1,4 @@
 import '../../../domain.dart';
-import '../use_case.dart';
 
 /// Saves a project to local storage and triggers cloud sync.
 class SaveProjectUseCase implements FutureUseCase<ProjectEntity, void> {

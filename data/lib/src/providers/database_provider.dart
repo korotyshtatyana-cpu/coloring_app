@@ -174,7 +174,7 @@ class AppDatabase extends _$AppDatabase {
             // Since this is a cache, we can drop and recreate or just add new.
             // For simplicity and since it's a major change in data content
             // (XML vs URL), we'll use a manual SQL to rename.
-            await m.issueCustomQuery('ALTER TABLE contours RENAME COLUMN svg_data TO svg_url;');
+            await customStatement('ALTER TABLE contours RENAME COLUMN svg_data TO svg_url;');
           }
         },
       );

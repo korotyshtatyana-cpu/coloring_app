@@ -1,5 +1,4 @@
 import '../../../domain.dart';
-import '../use_case.dart';
 
 /// Saves an exported image file to the device gallery.
 class SaveImageToGalleryUseCase implements FutureUseCase<String, void> {
