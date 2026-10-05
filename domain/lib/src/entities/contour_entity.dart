@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 
+import 'contour_access_type.dart';
 import 'contour_category.dart';
 
 /// Domain entity representing a coloring contour.
@@ -22,6 +23,12 @@ class ContourEntity extends Equatable {
   /// Creation timestamp.
   final DateTime? createdAt;
 
+  /// Monetization access type of the project.
+  final ContourAccessType accessType;
+
+  /// Price in cents for paid projects, `null` for every other access type.
+  final int? price;
+
   /// Creates a [ContourEntity].
   const ContourEntity({
     required this.id,
@@ -30,9 +37,19 @@ class ContourEntity extends Equatable {
     required this.svgUrl,
     required this.previewUrl,
     this.createdAt,
+    this.accessType = ContourAccessType.free,
+    this.price,
   });
 
   @override
-  List<Object?> get props =>
-      <Object?>[id, title, category, svgUrl, previewUrl, createdAt];
+  List<Object?> get props => <Object?>[
+    id,
+    title,
+    category,
+    svgUrl,
+    previewUrl,
+    createdAt,
+    accessType,
+    price,
+  ];
 }
