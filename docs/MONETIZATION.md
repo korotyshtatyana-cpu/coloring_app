@@ -11,6 +11,8 @@ Two subscription plans are available:
 - **No Ads** — removes all ads from the app
 - **Premium** — removes ads AND unlocks all paid projects
 
+**Requirement:** The app requires an active internet connection. There is no offline mode.
+
 ---
 
 ## 1. Project Access Types
@@ -196,6 +198,13 @@ The avatar frame color reflects subscription status:
 ### No Internet
 
 Modal dialog: "No internet connection. Please check your network and try again."
+
+The app requires an active connection for:
+- Opening any project
+- Watching Rewarded Video
+- Making purchases
+- Checking subscription status
+- Syncing projects with the cloud
 
 ### Pending Purchase (Billing not confirmed)
 
