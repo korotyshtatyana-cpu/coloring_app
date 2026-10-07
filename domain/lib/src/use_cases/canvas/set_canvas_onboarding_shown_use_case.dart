@@ -1,8 +1,7 @@
 import '../../../domain.dart';
 
 /// Use case to mark the canvas onboarding slider as shown.
-class SetCanvasOnboardingShownUseCase
-    implements FutureUseCase<NoParams, void> {
+class SetCanvasOnboardingShownUseCase implements FutureUseCase<NoParams, void> {
   /// Repository for settings.
   final SettingsRepository repository;
 

@@ -15,14 +15,9 @@ class CanvasLocalProvider {
   CanvasLocalProvider({required this._database});
 
   /// Saves the project and its strokes locally.
-  Future<void> saveProject(
-    ProjectModel project,
-    List<StrokeEntity> strokes,
-  ) async {
+  Future<void> saveProject(ProjectModel project, List<StrokeEntity> strokes) async {
     await _database.transaction(() async {
-      await _database
-          .into(_database.projects)
-          .insertOnConflictUpdate(_toProjectCompanion(project));
+      await _database.into(_database.projects).insertOnConflictUpdate(_toProjectCompanion(project));
 
       await (_database.delete(
         _database.strokes,
@@ -49,17 +44,14 @@ class CanvasLocalProvider {
   /// never rewritten unless the project as a whole is re-saved.
   Future<void> appendStroke(String projectId, StrokeEntity stroke) async {
     final StrokeModel model = StrokeMapper.toModel(stroke, projectId);
-    await _database
-        .into(_database.strokes)
-        .insertOnConflictUpdate(_toStrokeCompanion(model));
+    await _database.into(_database.strokes).insertOnConflictUpdate(_toStrokeCompanion(model));
   }
 
   /// Loads a project for the given contour.
   Future<ProjectModel?> loadProject(String contourId) async {
-    final Project? row =
-        await (_database.select(_database.projects)
-              ..where(($ProjectsTable row) => row.contourId.equals(contourId)))
-            .getSingleOrNull();
+    final Project? row = await (_database.select(
+      _database.projects,
+    )..where(($ProjectsTable row) => row.contourId.equals(contourId))).getSingleOrNull();
 
     return row == null ? null : _projectFromCompanion(row);
   }
@@ -70,9 +62,7 @@ class CanvasLocalProvider {
       _database.strokes,
     )..where(($StrokesTable row) => row.projectId.equals(projectId))).get();
 
-    return rows
-        .map((Stroke row) => StrokeMapper.toEntity(_strokeFromCompanion(row)))
-        .toList();
+    return rows.map((Stroke row) => StrokeMapper.toEntity(_strokeFromCompanion(row))).toList();
   }
 
   /// Loads available tools from the database.
@@ -130,12 +120,12 @@ class CanvasLocalProvider {
     final ProjectModel? project = await loadProject(contourId);
     if (project != null) {
       await _database.transaction(() async {
-        await (_database.delete(_database.strokes)
-              ..where(($StrokesTable row) => row.projectId.equals(project.id)))
-            .go();
-        await (_database.delete(_database.projects)
-              ..where(($ProjectsTable row) => row.id.equals(project.id)))
-            .go();
+        await (_database.delete(
+          _database.strokes,
+        )..where(($StrokesTable row) => row.projectId.equals(project.id))).go();
+        await (_database.delete(
+          _database.projects,
+        )..where(($ProjectsTable row) => row.id.equals(project.id))).go();
       });
       await _deleteThumbnailFor(contourId);
     }

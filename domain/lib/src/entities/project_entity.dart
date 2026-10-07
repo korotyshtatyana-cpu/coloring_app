@@ -31,6 +31,5 @@ class ProjectEntity extends Equatable {
   });
 
   @override
-  List<Object?> get props =>
-      <Object?>[id, contourId, userId, data, lastOpened, createdAt];
+  List<Object?> get props => <Object?>[id, contourId, userId, data, lastOpened, createdAt];
 }

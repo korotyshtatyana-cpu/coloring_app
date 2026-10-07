@@ -1,8 +1,7 @@
 import '../../../domain.dart';
 
 /// Renders a project thumbnail image and returns its file path.
-class RenderProjectThumbnailUseCase
-    implements FutureUseCase<ExportImageParams, String?> {
+class RenderProjectThumbnailUseCase implements FutureUseCase<ExportImageParams, String?> {
   final CanvasRepository _repository;
 
   /// Creates a use case with the given [_repository].

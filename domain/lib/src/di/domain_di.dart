@@ -11,153 +11,103 @@ abstract class DomainDI {
 
   static void _initUseCases() {
     appLocator.registerLazySingleton<CheckAuthUseCase>(
-      () => CheckAuthUseCase(
-        repository: appLocator<AuthRepository>(),
-      ),
+      () => CheckAuthUseCase(repository: appLocator<AuthRepository>()),
     );
 
     appLocator.registerLazySingleton<SignInUseCase>(
-      () => SignInUseCase(
-        repository: appLocator<AuthRepository>(),
-      ),
+      () => SignInUseCase(repository: appLocator<AuthRepository>()),
     );
 
     appLocator.registerLazySingleton<SignInSilentlyUseCase>(
-      () => SignInSilentlyUseCase(
-        repository: appLocator<AuthRepository>(),
-      ),
+      () => SignInSilentlyUseCase(repository: appLocator<AuthRepository>()),
     );
 
     appLocator.registerLazySingleton<GetCurrentUserUseCase>(
-      () => GetCurrentUserUseCase(
-        repository: appLocator<AuthRepository>(),
-      ),
+      () => GetCurrentUserUseCase(repository: appLocator<AuthRepository>()),
     );
 
     appLocator.registerLazySingleton<DeleteAccountUseCase>(
-      () => DeleteAccountUseCase(
-        repository: appLocator<AuthRepository>(),
-      ),
+      () => DeleteAccountUseCase(repository: appLocator<AuthRepository>()),
     );
 
     appLocator.registerLazySingleton<GetContoursUseCase>(
-      () => GetContoursUseCase(
-        repository: appLocator<GalleryRepository>(),
-      ),
+      () => GetContoursUseCase(repository: appLocator<GalleryRepository>()),
     );
 
     appLocator.registerLazySingleton<GetUsedCategoriesUseCase>(
-      () => GetUsedCategoriesUseCase(
-        repository: appLocator<GalleryRepository>(),
-      ),
+      () => GetUsedCategoriesUseCase(repository: appLocator<GalleryRepository>()),
     );
 
     appLocator.registerLazySingleton<GetContoursByIdsUseCase>(
-      () => GetContoursByIdsUseCase(
-        repository: appLocator<GalleryRepository>(),
-      ),
+      () => GetContoursByIdsUseCase(repository: appLocator<GalleryRepository>()),
     );
 
     appLocator.registerLazySingleton<GetFavoriteIdsUseCase>(
-      () => GetFavoriteIdsUseCase(
-        repository: appLocator<GalleryRepository>(),
-      ),
+      () => GetFavoriteIdsUseCase(repository: appLocator<GalleryRepository>()),
     );
 
     appLocator.registerLazySingleton<ToggleFavoriteUseCase>(
-      () => ToggleFavoriteUseCase(
-        repository: appLocator<GalleryRepository>(),
-      ),
+      () => ToggleFavoriteUseCase(repository: appLocator<GalleryRepository>()),
     );
 
     appLocator.registerLazySingleton<GetWorkInProgressUseCase>(
-      () => GetWorkInProgressUseCase(
-        repository: appLocator<GalleryRepository>(),
-      ),
+      () => GetWorkInProgressUseCase(repository: appLocator<GalleryRepository>()),
     );
 
     appLocator.registerLazySingleton<GetContourByIdUseCase>(
-      () => GetContourByIdUseCase(
-        repository: appLocator<GalleryRepository>(),
-      ),
+      () => GetContourByIdUseCase(repository: appLocator<GalleryRepository>()),
     );
 
     appLocator.registerLazySingleton<GetAvailableToolsUseCase>(
-      () => GetAvailableToolsUseCase(
-        repository: appLocator<CanvasRepository>(),
-      ),
+      () => GetAvailableToolsUseCase(repository: appLocator<CanvasRepository>()),
     );
 
     appLocator.registerLazySingleton<AddStrokeUseCase>(
-      () => AddStrokeUseCase(
-        repository: appLocator<CanvasRepository>(),
-      ),
+      () => AddStrokeUseCase(repository: appLocator<CanvasRepository>()),
     );
 
     appLocator.registerLazySingleton<SaveProjectUseCase>(
-      () => SaveProjectUseCase(
-        repository: appLocator<CanvasRepository>(),
-      ),
+      () => SaveProjectUseCase(repository: appLocator<CanvasRepository>()),
     );
 
     appLocator.registerLazySingleton<LoadProjectUseCase>(
-      () => LoadProjectUseCase(
-        repository: appLocator<CanvasRepository>(),
-      ),
+      () => LoadProjectUseCase(repository: appLocator<CanvasRepository>()),
     );
 
     appLocator.registerLazySingleton<ExportImageUseCase>(
-      () => ExportImageUseCase(
-        repository: appLocator<CanvasRepository>(),
-      ),
+      () => ExportImageUseCase(repository: appLocator<CanvasRepository>()),
     );
 
     appLocator.registerLazySingleton<RenderProjectThumbnailUseCase>(
-      () => RenderProjectThumbnailUseCase(
-        repository: appLocator<CanvasRepository>(),
-      ),
+      () => RenderProjectThumbnailUseCase(repository: appLocator<CanvasRepository>()),
     );
 
     appLocator.registerLazySingleton<ShareFileUseCase>(
-      () => ShareFileUseCase(
-        repository: appLocator<ShareRepository>(),
-      ),
+      () => ShareFileUseCase(repository: appLocator<ShareRepository>()),
     );
 
     appLocator.registerLazySingleton<SaveImageToGalleryUseCase>(
-      () => SaveImageToGalleryUseCase(
-        repository: appLocator<CanvasRepository>(),
-      ),
+      () => SaveImageToGalleryUseCase(repository: appLocator<CanvasRepository>()),
     );
 
     appLocator.registerLazySingleton<GetSettingsUseCase>(
-      () => GetSettingsUseCase(
-        repository: appLocator<SettingsRepository>(),
-      ),
+      () => GetSettingsUseCase(repository: appLocator<SettingsRepository>()),
     );
 
     appLocator.registerLazySingleton<UpdateSettingsUseCase>(
-      () => UpdateSettingsUseCase(
-        repository: appLocator<SettingsRepository>(),
-      ),
+      () => UpdateSettingsUseCase(repository: appLocator<SettingsRepository>()),
     );
 
     appLocator.registerLazySingleton<CheckCanvasOnboardingShownUseCase>(
-      () => CheckCanvasOnboardingShownUseCase(
-        repository: appLocator<SettingsRepository>(),
-      ),
+      () => CheckCanvasOnboardingShownUseCase(repository: appLocator<SettingsRepository>()),
     );
 
     appLocator.registerLazySingleton<SetCanvasOnboardingShownUseCase>(
-      () => SetCanvasOnboardingShownUseCase(
-        repository: appLocator<SettingsRepository>(),
-      ),
+      () => SetCanvasOnboardingShownUseCase(repository: appLocator<SettingsRepository>()),
     );
 
     appLocator.registerLazySingleton<SubmitFeedbackUseCase>(
-      () => SubmitFeedbackUseCase(
-        repository: appLocator<FeedbackRepository>(),
-      ),
+      () => SubmitFeedbackUseCase(repository: appLocator<FeedbackRepository>()),
     );
   }
 }

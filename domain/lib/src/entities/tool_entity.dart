@@ -23,10 +23,5 @@ class ToolEntity extends Equatable {
   });
 
   @override
-  List<Object?> get props => [
-        id,
-        nameKey,
-        previewPath,
-        isPressureSensitive,
-      ];
+  List<Object?> get props => [id, nameKey, previewPath, isPressureSensitive];
 }

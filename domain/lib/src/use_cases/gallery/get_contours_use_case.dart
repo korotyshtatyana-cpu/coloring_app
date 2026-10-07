@@ -12,16 +12,11 @@ class GetContoursParams {
   final ContourCategory? category;
 
   /// Creates parameters for fetching contours.
-  const GetContoursParams({
-    required this.limit,
-    required this.offset,
-    this.category,
-  });
+  const GetContoursParams({required this.limit, required this.offset, this.category});
 }
 
 /// Fetches a paginated list of contours.
-class GetContoursUseCase
-    implements FutureUseCase<GetContoursParams, List<ContourEntity>> {
+class GetContoursUseCase implements FutureUseCase<GetContoursParams, List<ContourEntity>> {
   final GalleryRepository _repository;
 
   /// Creates a use case with the given [_repository].
@@ -29,11 +24,7 @@ class GetContoursUseCase
 
   @override
   Future<List<ContourEntity>> execute([GetContoursParams? params]) {
-    final GetContoursParams p = params ??
-        const GetContoursParams(
-          limit: 20,
-          offset: 0,
-        );
+    final GetContoursParams p = params ?? const GetContoursParams(limit: 20, offset: 0);
 
     return _repository.getContours(
       limit: p.limit,

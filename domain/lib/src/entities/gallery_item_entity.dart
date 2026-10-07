@@ -16,10 +16,7 @@ class GalleryItemEntity extends Equatable {
   final ProjectAccess access;
 
   /// Creates a [GalleryItemEntity].
-  const GalleryItemEntity({
-    required this.contour,
-    required this.access,
-  });
+  const GalleryItemEntity({required this.contour, required this.access});
 
   @override
   List<Object?> get props => <Object?>[contour, access];

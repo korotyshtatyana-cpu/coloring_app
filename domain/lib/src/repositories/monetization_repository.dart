@@ -1,3 +1,4 @@
+import '../entities/pending_purchase_entity.dart';
 import '../entities/subscription_entity.dart';
 import '../entities/user_entitlement_entity.dart';
 
@@ -33,4 +34,14 @@ abstract class MonetizationRepository {
     required String contourId,
     required String purchaseToken,
   });
+
+  /// Queues a purchase that the store has not confirmed yet.
+  Future<void> enqueuePendingPurchase({
+    required String userId,
+    required String productId,
+    String? purchaseToken,
+  });
+
+  /// Returns the user's purchases still awaiting confirmation.
+  Future<List<PendingPurchaseEntity>> getPendingPurchases(String userId);
 }

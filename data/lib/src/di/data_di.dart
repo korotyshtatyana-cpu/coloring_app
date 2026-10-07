@@ -32,9 +32,7 @@ abstract class DataDI {
   }
 
   static void _initRepositories(AppConfig config) {
-    appLocator.registerLazySingleton<ShareRepository>(
-      () => const ShareRepositoryImpl(),
-    );
+    appLocator.registerLazySingleton<ShareRepository>(() => const ShareRepositoryImpl());
 
     appLocator.registerLazySingleton<AuthRemoteProvider>(
       () => AuthRemoteProvider(
@@ -44,8 +42,7 @@ abstract class DataDI {
     );
 
     appLocator.registerLazySingleton<GalleryRemoteProvider>(
-      () =>
-          GalleryRemoteProvider(client: appLocator<SupabaseProvider>().client),
+      () => GalleryRemoteProvider(client: appLocator<SupabaseProvider>().client),
     );
 
     appLocator.registerLazySingleton<GalleryLocalProvider>(
@@ -87,14 +84,11 @@ abstract class DataDI {
     );
 
     appLocator.registerLazySingleton<SettingsRepository>(
-      () =>
-          SettingsRepositoryImpl(preferences: appLocator<SharedPreferences>()),
+      () => SettingsRepositoryImpl(preferences: appLocator<SharedPreferences>()),
     );
 
     appLocator.registerLazySingleton<FeedbackRepository>(
-      () => FeedbackRepositoryImpl(
-        remoteProvider: appLocator<FeedbackRemoteProvider>(),
-      ),
+      () => FeedbackRepositoryImpl(remoteProvider: appLocator<FeedbackRemoteProvider>()),
     );
   }
 }

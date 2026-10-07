@@ -9,10 +9,7 @@ class AddStrokeParams {
   final StrokeEntity stroke;
 
   /// Creates parameters for adding a stroke.
-  const AddStrokeParams({
-    required this.projectId,
-    required this.stroke,
-  });
+  const AddStrokeParams({required this.projectId, required this.stroke});
 }
 
 /// Adds a stroke to a project.

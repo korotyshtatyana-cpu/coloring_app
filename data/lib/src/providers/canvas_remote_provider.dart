@@ -41,27 +41,20 @@ class CanvasRemoteProvider {
   /// Uploads a project thumbnail to Supabase Storage and returns its public
   /// URL. The object path is `user_id/contour_id.png` in the
   /// `project_thumbnails` bucket, so each user has their own copy.
-  Future<String> uploadThumbnail({
-    required String contourId,
-    required Uint8List pngBytes,
-  }) async {
+  Future<String> uploadThumbnail({required String contourId, required Uint8List pngBytes}) async {
     final User? user = _client.auth.currentUser;
     if (user == null) {
       throw Exception(RequestConstants.userNotAuthenticated);
     }
 
-    final String path =
-        '${user.id}/$contourId${RequestConstants.thumbnailFileExtension}';
+    final String path = '${user.id}/$contourId${RequestConstants.thumbnailFileExtension}';
 
     await _client.storage
         .from(RequestConstants.thumbnailsBucket)
         .uploadBinary(
           path,
           pngBytes,
-          fileOptions: const FileOptions(
-            contentType: RequestConstants.pngMimeType,
-            upsert: true,
-          ),
+          fileOptions: const FileOptions(contentType: RequestConstants.pngMimeType, upsert: true),
         );
 
     final String publicUrl = _client.storage
@@ -99,8 +92,7 @@ class CanvasRemoteProvider {
       contourId: contourId,
       userId: user.id,
       data: response.first[RequestConstants.dataColumn] as Map<String, dynamic>,
-      lastOpened: DateTime.parse(
-          response.first[RequestConstants.lastOpenedColumn] as String),
+      lastOpened: DateTime.parse(response.first[RequestConstants.lastOpenedColumn] as String),
       createdAt: DateTime.now(),
     );
   }

@@ -36,8 +36,7 @@ class GetGalleryItemsUseCase
   final MonetizationRepository _repository;
 
   /// Creates a use case with the given [_repository].
-  const GetGalleryItemsUseCase({required MonetizationRepository repository})
-      : _repository = repository;
+  const GetGalleryItemsUseCase({required this._repository});
 
   @override
   Future<List<GalleryItemEntity>> execute([GetGalleryItemsParams? params]) {
@@ -47,9 +46,7 @@ class GetGalleryItemsUseCase
 
     final GetGalleryItemsParams p = params;
     if (p.contours.isEmpty) {
-      return Future<List<GalleryItemEntity>>.value(
-        const <GalleryItemEntity>[],
-      );
+      return Future<List<GalleryItemEntity>>.value(const <GalleryItemEntity>[]);
     }
 
     return Future.wait<Object?>(<Future<Object?>>[
@@ -57,14 +54,12 @@ class GetGalleryItemsUseCase
       _repository.isNoAdsPurchased(p.userId),
       _repository.getAllEntitlements(p.userId),
     ]).then((List<Object?> values) {
-      final SubscriptionEntity? subscription =
-          values[0] as SubscriptionEntity?;
+      final SubscriptionEntity? subscription = values[0] as SubscriptionEntity?;
       final bool noAdsPurchased = values[1] as bool? ?? false;
       final List<UserEntitlementEntity> entitlements =
           values[2] as List<UserEntitlementEntity>? ?? const [];
 
-      final Map<String, UserEntitlementEntity> byContourId =
-          <String, UserEntitlementEntity>{
+      final Map<String, UserEntitlementEntity> byContourId = <String, UserEntitlementEntity>{
         for (final UserEntitlementEntity e in entitlements) e.contourId: e,
       };
 

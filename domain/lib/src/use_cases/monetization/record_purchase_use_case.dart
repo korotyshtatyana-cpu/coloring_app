@@ -27,8 +27,7 @@ class RecordPurchaseUseCase implements FutureUseCase<RecordPurchaseParams, void>
   final MonetizationRepository _repository;
 
   /// Creates a use case with the given [_repository].
-  const RecordPurchaseUseCase({required MonetizationRepository repository})
-    : _repository = repository;
+  const RecordPurchaseUseCase({required this._repository});
 
   @override
   Future<void> execute([RecordPurchaseParams? params]) {

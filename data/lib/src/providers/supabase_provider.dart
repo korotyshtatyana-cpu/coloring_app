@@ -11,10 +11,7 @@ class SupabaseProvider {
 
   /// Initializes Supabase with the configured URL and anon key.
   Future<void> initialize() async {
-    await Supabase.initialize(
-      url: _config.supabaseUrl,
-      publishableKey: _config.supabaseAnonKey,
-    );
+    await Supabase.initialize(url: _config.supabaseUrl, publishableKey: _config.supabaseAnonKey);
     _client = Supabase.instance.client;
   }
 

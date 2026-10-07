@@ -25,10 +25,7 @@ class FeedbackRemoteProvider {
       final String fileName = '${DateTime.now().millisecondsSinceEpoch}_${p.basename(file.path)}';
       final String storagePath = userId != null ? '$userId/$fileName' : 'anonymous/$fileName';
 
-      await _client.storage.from(RequestConstants.feedbackBucket).upload(
-            storagePath,
-            file,
-          );
+      await _client.storage.from(RequestConstants.feedbackBucket).upload(storagePath, file);
 
       final String url = _client.storage
           .from(RequestConstants.feedbackBucket)

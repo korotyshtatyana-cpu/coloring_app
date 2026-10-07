@@ -1,8 +1,7 @@
 import '../../../domain.dart';
 
 /// Use case to check if the canvas onboarding slider has been shown.
-class CheckCanvasOnboardingShownUseCase
-    implements FutureUseCase<NoParams, bool> {
+class CheckCanvasOnboardingShownUseCase implements FutureUseCase<NoParams, bool> {
   /// Repository for settings.
   final SettingsRepository repository;
 

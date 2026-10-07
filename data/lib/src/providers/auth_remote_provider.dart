@@ -16,8 +16,7 @@ class AuthRemoteProvider {
 
   /// Creates a provider with the given [_client] and optional [googleSignIn].
   AuthRemoteProvider({required this._client, required String googleWebClientId})
-    : _googleSignIn = GoogleSignIn.instance
-        ..initialize(serverClientId: googleWebClientId);
+    : _googleSignIn = GoogleSignIn.instance..initialize(serverClientId: googleWebClientId);
 
   /// Identifier of the currently authenticated user, or `null`.
   String? get currentUserId => _client.auth.currentUser?.id;
@@ -34,9 +33,7 @@ class AuthRemoteProvider {
 
     final Map<String, dynamic>? metadata = user.userMetadata;
     final String name =
-        (metadata?['full_name'] as String?) ??
-        (metadata?['name'] as String?) ??
-        'User';
+        (metadata?['full_name'] as String?) ?? (metadata?['name'] as String?) ?? 'User';
 
     return UserModel(
       id: user.id,
@@ -97,8 +94,7 @@ class AuthRemoteProvider {
 
   Future<UserModel> _signInWithGoogleSilently() async {
     final GoogleSignIn googleSignIn = _googleSignIn ?? GoogleSignIn.instance;
-    final Future<GoogleSignInAccount?>? attempt = googleSignIn
-        .attemptLightweightAuthentication();
+    final Future<GoogleSignInAccount?>? attempt = googleSignIn.attemptLightweightAuthentication();
     final GoogleSignInAccount? account = attempt == null ? null : await attempt;
     if (account == null) {
       // Fallback: when lightweight silent auth is unavailable (e.g. after an app update),
@@ -108,9 +104,7 @@ class AuthRemoteProvider {
     return _signInWithGoogleAccount(account);
   }
 
-  Future<UserModel> _signInWithGoogleAccount(
-    GoogleSignInAccount account,
-  ) async {
+  Future<UserModel> _signInWithGoogleAccount(GoogleSignInAccount account) async {
     final GoogleSignInAuthentication auth = account.authentication;
     final String? idToken = auth.idToken;
 
@@ -135,14 +129,13 @@ class AuthRemoteProvider {
     final String rawNonce = _generateNonce();
     final String hashedNonce = _sha256(rawNonce);
 
-    final AuthorizationCredentialAppleID credential =
-        await SignInWithApple.getAppleIDCredential(
-          scopes: <AppleIDAuthorizationScopes>[
-            AppleIDAuthorizationScopes.email,
-            AppleIDAuthorizationScopes.fullName,
-          ],
-          nonce: hashedNonce,
-        );
+    final AuthorizationCredentialAppleID credential = await SignInWithApple.getAppleIDCredential(
+      scopes: <AppleIDAuthorizationScopes>[
+        AppleIDAuthorizationScopes.email,
+        AppleIDAuthorizationScopes.fullName,
+      ],
+      nonce: hashedNonce,
+    );
 
     final String? idToken = credential.identityToken;
     if (idToken == null) {
@@ -175,10 +168,7 @@ class AuthRemoteProvider {
 
   String _generateNonce() {
     final Random secureRandom = Random.secure();
-    final List<int> randomBytes = List<int>.generate(
-      32,
-      (_) => secureRandom.nextInt(256),
-    );
+    final List<int> randomBytes = List<int>.generate(32, (_) => secureRandom.nextInt(256));
     return base64UrlEncode(randomBytes);
   }
 

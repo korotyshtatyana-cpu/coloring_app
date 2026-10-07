@@ -6,6 +6,9 @@ abstract final class RequestConstants {
   static const String favoritesTable = 'favorites';
   static const String projectsTable = 'projects';
   static const String feedbackTable = 'feedback';
+  static const String subscriptionsTable = 'subscriptions';
+  static const String userEntitlementsTable = 'user_entitlements';
+  static const String pendingPurchasesTable = 'pending_purchases';
 
   // Supabase Storage buckets
   static const String thumbnailsBucket = 'project_thumbnails';
@@ -19,8 +22,7 @@ abstract final class RequestConstants {
   static const String selectAll = '*';
   static const String selectContourId = 'contour_id';
   static const String selectProjectData = 'contour_id, data, last_opened';
-  static const String selectProjectThumbnails =
-      'contour_id, thumbnail_url, last_opened';
+  static const String selectProjectThumbnails = 'contour_id, thumbnail_url, last_opened';
 
   // Supabase columns
   static const String createdAtColumn = 'created_at';
@@ -30,6 +32,22 @@ abstract final class RequestConstants {
   static const String lastOpenedColumn = 'last_opened';
   static const String dataColumn = 'data';
   static const String thumbnailUrlColumn = 'thumbnail_url';
+  static const String updatedAtColumn = 'updated_at';
+  static const String planTypeColumn = 'plan_type';
+  static const String isActiveColumn = 'is_active';
+  static const String startedAtColumn = 'started_at';
+  static const String expiresAtColumn = 'expires_at';
+  static const String purchaseTokenColumn = 'purchase_token';
+  static const String grantedAtColumn = 'granted_at';
+  static const String productIdColumn = 'product_id';
+  static const String statusColumn = 'status';
+  static const String errorMessageColumn = 'error_message';
+  static const String resolvedAtColumn = 'resolved_at';
+  static const String typeColumn = 'type';
+  static const String idColumn = 'id';
+  static const String noAdsPurchasedColumn = 'no_ads_purchased';
+  static const String accessTypeColumn = 'access_type';
+  static const String priceColumn = 'price';
 
   // Supabase query parameters
   static const String limitParam = 'limit';
@@ -39,6 +57,25 @@ abstract final class RequestConstants {
   static const String userIdParam = 'user_id';
   static const String contourIdParam = 'contour_id';
   static const String onConflictUserContour = 'user_id,contour_id';
+  static const String onConflictUserContourUpdate = 'user_id,contour_id';
+
+  // Monetization column selections
+  static const String selectNoAdsPurchased = 'no_ads_purchased';
+
+  // Monetization enum values stored in the database
+  static const String planTypeNoAds = 'no_ads';
+  static const String planTypePremium = 'premium';
+
+  static const String entitlementTypePurchase = 'purchase';
+  static const String entitlementTypeRewardedUnlock = 'rewarded_unlock';
+  static const String entitlementTypeSubscriptionAccess = 'subscription_access';
+
+  static const String pendingPurchaseStatusPending = 'pending';
+  static const String pendingPurchaseStatusResolved = 'resolved';
+  static const String pendingPurchaseStatusFailed = 'failed';
+
+  // Monetization defaults
+  static const String defaultContourAccessType = 'free';
 
   // RPC functions and parameters
   static const String toggleFavoriteRpc = 'toggle_favorite';
@@ -53,8 +90,7 @@ abstract final class RequestConstants {
   static const String appleIdTokenNull = 'Apple idToken is null';
   static const String appleSignInFailed = 'Failed to sign in with Apple';
   static const String platformNotSupported = 'Platform is not supported';
-  static const String silentSignInNotAvailable =
-      'Silent sign-in is not available';
+  static const String silentSignInNotAvailable = 'Silent sign-in is not available';
 
   // Postgres error codes
   static const String codeUniqueViolation = '23505';

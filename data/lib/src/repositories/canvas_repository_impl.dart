@@ -24,8 +24,7 @@ class CanvasRepositoryImpl implements CanvasRepository {
   final CanvasLocalProvider _localProvider;
   final AuthRemoteProvider _authRemoteProvider;
 
-  final Map<String, List<StrokeEntity>> _strokes =
-      <String, List<StrokeEntity>>{};
+  final Map<String, List<StrokeEntity>> _strokes = <String, List<StrokeEntity>>{};
 
   /// Longest side of the exported image in pixels.
   static const double _exportTargetSize = 1024;
@@ -129,10 +128,7 @@ class CanvasRepositoryImpl implements CanvasRepository {
 
   @override
   Future<String?> exportImage(ExportImageParams params) async {
-    final ByteData? byteData = await _renderCanvasPng(
-      params,
-      _exportTargetSize,
-    );
+    final ByteData? byteData = await _renderCanvasPng(params, _exportTargetSize);
     if (byteData == null) return null;
 
     final directory = await getTemporaryDirectory();
@@ -146,10 +142,7 @@ class CanvasRepositoryImpl implements CanvasRepository {
 
   @override
   Future<String?> renderProjectThumbnail(ExportImageParams params) async {
-    final ByteData? byteData = await _renderCanvasPng(
-      params,
-      _thumbnailTargetSize,
-    );
+    final ByteData? byteData = await _renderCanvasPng(params, _thumbnailTargetSize);
     if (byteData == null) return null;
 
     final directory = await getApplicationDocumentsDirectory();
@@ -184,12 +177,8 @@ class CanvasRepositoryImpl implements CanvasRepository {
 
   /// Renders the whole canvas (white background, strokes and contour) into
   /// PNG bytes with the longest side equal to [targetSize].
-  Future<ByteData?> _renderCanvasPng(
-    ExportImageParams params,
-    double targetSize,
-  ) async {
-    final strokes =
-        params.strokes ?? await _loadStrokesForProject(params.projectId);
+  Future<ByteData?> _renderCanvasPng(ExportImageParams params, double targetSize) async {
+    final strokes = params.strokes ?? await _loadStrokesForProject(params.projectId);
 
     return CanvasRenderingService.renderCanvasPng(
       contourSvg: params.contourSvg,
@@ -224,9 +213,8 @@ class CanvasRepositoryImpl implements CanvasRepository {
     }
     return strokesJson
         .map(
-          (dynamic json) => StrokeMapper.toEntity(
-            StrokeModel.fromJson(json as Map<String, dynamic>),
-          ),
+          (dynamic json) =>
+              StrokeMapper.toEntity(StrokeModel.fromJson(json as Map<String, dynamic>)),
         )
         .toList();
   }

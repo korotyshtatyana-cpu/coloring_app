@@ -1,3 +1,5 @@
+import '../constants/request_constants.dart';
+
 /// Data transfer object for a user.
 class UserModel {
   /// User unique identifier.
@@ -12,12 +14,16 @@ class UserModel {
   /// Optional avatar URL.
   final String? avatarUrl;
 
+  /// Whether the user permanently owns the No Ads plan.
+  final bool noAdsPurchased;
+
   /// Creates a [UserModel].
   const UserModel({
     required this.id,
     required this.email,
     required this.name,
     this.avatarUrl,
+    this.noAdsPurchased = false,
   });
 
   /// Creates a [UserModel] from a JSON map.
@@ -27,6 +33,7 @@ class UserModel {
       email: json['email'] as String,
       name: json['name'] as String,
       avatarUrl: json['avatar_url'] as String?,
+      noAdsPurchased: json[RequestConstants.noAdsPurchasedColumn] as bool? ?? false,
     );
   }
 
@@ -37,6 +44,7 @@ class UserModel {
       'email': email,
       'name': name,
       'avatar_url': avatarUrl,
+      RequestConstants.noAdsPurchasedColumn: noAdsPurchased,
     };
   }
 }

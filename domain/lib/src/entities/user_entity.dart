@@ -15,12 +15,7 @@ class UserEntity extends Equatable {
   final String? avatarUrl;
 
   /// Creates a [UserEntity].
-  const UserEntity({
-    required this.id,
-    required this.email,
-    required this.name,
-    this.avatarUrl,
-  });
+  const UserEntity({required this.id, required this.email, required this.name, this.avatarUrl});
 
   @override
   List<Object?> get props => <Object?>[id, email, name, avatarUrl];

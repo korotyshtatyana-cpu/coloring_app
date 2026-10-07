@@ -17,9 +17,7 @@ class $ProjectsTable extends Projects with TableInfo<$ProjectsTable, Project> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _contourIdMeta = const VerificationMeta(
-    'contourId',
-  );
+  static const VerificationMeta _contourIdMeta = const VerificationMeta('contourId');
   @override
   late final GeneratedColumn<String> contourId = GeneratedColumn<String>(
     'contour_id',
@@ -38,17 +36,15 @@ class $ProjectsTable extends Projects with TableInfo<$ProjectsTable, Project> {
     requiredDuringInsert: true,
   );
   @override
-  late final GeneratedColumnWithTypeConverter<Map<String, dynamic>, String>
-  data = GeneratedColumn<String>(
-    'data',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  ).withConverter<Map<String, dynamic>>($ProjectsTable.$converterdata);
-  static const VerificationMeta _lastOpenedMeta = const VerificationMeta(
-    'lastOpened',
-  );
+  late final GeneratedColumnWithTypeConverter<Map<String, dynamic>, String> data =
+      GeneratedColumn<String>(
+        'data',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<Map<String, dynamic>>($ProjectsTable.$converterdata);
+  static const VerificationMeta _lastOpenedMeta = const VerificationMeta('lastOpened');
   @override
   late final GeneratedColumn<DateTime> lastOpened = GeneratedColumn<DateTime>(
     'last_opened',
@@ -57,9 +53,7 @@ class $ProjectsTable extends Projects with TableInfo<$ProjectsTable, Project> {
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _createdAtMeta = const VerificationMeta(
-    'createdAt',
-  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta('createdAt');
   @override
   late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
     'created_at',
@@ -69,24 +63,14 @@ class $ProjectsTable extends Projects with TableInfo<$ProjectsTable, Project> {
     requiredDuringInsert: true,
   );
   @override
-  List<GeneratedColumn> get $columns => [
-    id,
-    contourId,
-    userId,
-    data,
-    lastOpened,
-    createdAt,
-  ];
+  List<GeneratedColumn> get $columns => [id, contourId, userId, data, lastOpened, createdAt];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
   static const String $name = 'projects';
   @override
-  VerificationContext validateIntegrity(
-    Insertable<Project> instance, {
-    bool isInserting = false,
-  }) {
+  VerificationContext validateIntegrity(Insertable<Project> instance, {bool isInserting = false}) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
@@ -103,10 +87,7 @@ class $ProjectsTable extends Projects with TableInfo<$ProjectsTable, Project> {
       context.missing(_contourIdMeta);
     }
     if (data.containsKey('user_id')) {
-      context.handle(
-        _userIdMeta,
-        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
-      );
+      context.handle(_userIdMeta, userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta));
     } else if (isInserting) {
       context.missing(_userIdMeta);
     }
@@ -139,10 +120,7 @@ class $ProjectsTable extends Projects with TableInfo<$ProjectsTable, Project> {
   Project map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return Project(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}id'],
-      )!,
+      id: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}id'])!,
       contourId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}contour_id'],
@@ -152,10 +130,7 @@ class $ProjectsTable extends Projects with TableInfo<$ProjectsTable, Project> {
         data['${effectivePrefix}user_id'],
       )!,
       data: $ProjectsTable.$converterdata.fromSql(
-        attachedDatabase.typeMapping.read(
-          DriftSqlType.string,
-          data['${effectivePrefix}data'],
-        )!,
+        attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}data'])!,
       ),
       lastOpened: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
@@ -173,8 +148,7 @@ class $ProjectsTable extends Projects with TableInfo<$ProjectsTable, Project> {
     return $ProjectsTable(attachedDatabase, alias);
   }
 
-  static TypeConverter<Map<String, dynamic>, String> $converterdata =
-      const MapConverter();
+  static TypeConverter<Map<String, dynamic>, String> $converterdata = const MapConverter();
 }
 
 class Project extends DataClass implements Insertable<Project> {
@@ -228,10 +202,7 @@ class Project extends DataClass implements Insertable<Project> {
     );
   }
 
-  factory Project.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
+  factory Project.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return Project(
       id: serializer.fromJson<String>(json['id']),
@@ -276,9 +247,7 @@ class Project extends DataClass implements Insertable<Project> {
       contourId: data.contourId.present ? data.contourId.value : this.contourId,
       userId: data.userId.present ? data.userId.value : this.userId,
       data: data.data.present ? data.data.value : this.data,
-      lastOpened: data.lastOpened.present
-          ? data.lastOpened.value
-          : this.lastOpened,
+      lastOpened: data.lastOpened.present ? data.lastOpened.value : this.lastOpened,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -297,8 +266,7 @@ class Project extends DataClass implements Insertable<Project> {
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, contourId, userId, data, lastOpened, createdAt);
+  int get hashCode => Object.hash(id, contourId, userId, data, lastOpened, createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -395,9 +363,7 @@ class ProjectsCompanion extends UpdateCompanion<Project> {
       map['user_id'] = Variable<String>(userId.value);
     }
     if (data.present) {
-      map['data'] = Variable<String>(
-        $ProjectsTable.$converterdata.toSql(data.value),
-      );
+      map['data'] = Variable<String>($ProjectsTable.$converterdata.toSql(data.value));
     }
     if (lastOpened.present) {
       map['last_opened'] = Variable<DateTime>(lastOpened.value);
@@ -440,9 +406,7 @@ class $StrokesTable extends Strokes with TableInfo<$StrokesTable, Stroke> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _projectIdMeta = const VerificationMeta(
-    'projectId',
-  );
+  static const VerificationMeta _projectIdMeta = const VerificationMeta('projectId');
   @override
   late final GeneratedColumn<String> projectId = GeneratedColumn<String>(
     'project_id',
@@ -452,14 +416,14 @@ class $StrokesTable extends Strokes with TableInfo<$StrokesTable, Stroke> {
     requiredDuringInsert: true,
   );
   @override
-  late final GeneratedColumnWithTypeConverter<List<List<double>>, String>
-  points = GeneratedColumn<String>(
-    'points',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  ).withConverter<List<List<double>>>($StrokesTable.$converterpoints);
+  late final GeneratedColumnWithTypeConverter<List<List<double>>, String> points =
+      GeneratedColumn<String>(
+        'points',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<List<List<double>>>($StrokesTable.$converterpoints);
   static const VerificationMeta _colorMeta = const VerificationMeta('color');
   @override
   late final GeneratedColumn<int> color = GeneratedColumn<int>(
@@ -478,9 +442,7 @@ class $StrokesTable extends Strokes with TableInfo<$StrokesTable, Stroke> {
     type: DriftSqlType.double,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _opacityMeta = const VerificationMeta(
-    'opacity',
-  );
+  static const VerificationMeta _opacityMeta = const VerificationMeta('opacity');
   @override
   late final GeneratedColumn<double> opacity = GeneratedColumn<double>(
     'opacity',
@@ -489,9 +451,7 @@ class $StrokesTable extends Strokes with TableInfo<$StrokesTable, Stroke> {
     type: DriftSqlType.double,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _brushTypeMeta = const VerificationMeta(
-    'brushType',
-  );
+  static const VerificationMeta _brushTypeMeta = const VerificationMeta('brushType');
   @override
   late final GeneratedColumn<String> brushType = GeneratedColumn<String>(
     'brush_type',
@@ -500,9 +460,7 @@ class $StrokesTable extends Strokes with TableInfo<$StrokesTable, Stroke> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _brushIdMeta = const VerificationMeta(
-    'brushId',
-  );
+  static const VerificationMeta _brushIdMeta = const VerificationMeta('brushId');
   @override
   late final GeneratedColumn<String> brushId = GeneratedColumn<String>(
     'brush_id',
@@ -511,8 +469,9 @@ class $StrokesTable extends Strokes with TableInfo<$StrokesTable, Stroke> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _isPressureSensitiveMeta =
-      const VerificationMeta('isPressureSensitive');
+  static const VerificationMeta _isPressureSensitiveMeta = const VerificationMeta(
+    'isPressureSensitive',
+  );
   @override
   late final GeneratedColumn<bool> isPressureSensitive = GeneratedColumn<bool>(
     'is_pressure_sensitive',
@@ -543,10 +502,7 @@ class $StrokesTable extends Strokes with TableInfo<$StrokesTable, Stroke> {
   String get actualTableName => $name;
   static const String $name = 'strokes';
   @override
-  VerificationContext validateIntegrity(
-    Insertable<Stroke> instance, {
-    bool isInserting = false,
-  }) {
+  VerificationContext validateIntegrity(Insertable<Stroke> instance, {bool isInserting = false}) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
@@ -563,26 +519,17 @@ class $StrokesTable extends Strokes with TableInfo<$StrokesTable, Stroke> {
       context.missing(_projectIdMeta);
     }
     if (data.containsKey('color')) {
-      context.handle(
-        _colorMeta,
-        color.isAcceptableOrUnknown(data['color']!, _colorMeta),
-      );
+      context.handle(_colorMeta, color.isAcceptableOrUnknown(data['color']!, _colorMeta));
     } else if (isInserting) {
       context.missing(_colorMeta);
     }
     if (data.containsKey('size')) {
-      context.handle(
-        _sizeMeta,
-        size.isAcceptableOrUnknown(data['size']!, _sizeMeta),
-      );
+      context.handle(_sizeMeta, size.isAcceptableOrUnknown(data['size']!, _sizeMeta));
     } else if (isInserting) {
       context.missing(_sizeMeta);
     }
     if (data.containsKey('opacity')) {
-      context.handle(
-        _opacityMeta,
-        opacity.isAcceptableOrUnknown(data['opacity']!, _opacityMeta),
-      );
+      context.handle(_opacityMeta, opacity.isAcceptableOrUnknown(data['opacity']!, _opacityMeta));
     } else if (isInserting) {
       context.missing(_opacityMeta);
     }
@@ -595,10 +542,7 @@ class $StrokesTable extends Strokes with TableInfo<$StrokesTable, Stroke> {
       context.missing(_brushTypeMeta);
     }
     if (data.containsKey('brush_id')) {
-      context.handle(
-        _brushIdMeta,
-        brushId.isAcceptableOrUnknown(data['brush_id']!, _brushIdMeta),
-      );
+      context.handle(_brushIdMeta, brushId.isAcceptableOrUnknown(data['brush_id']!, _brushIdMeta));
     }
     if (data.containsKey('is_pressure_sensitive')) {
       context.handle(
@@ -618,28 +562,16 @@ class $StrokesTable extends Strokes with TableInfo<$StrokesTable, Stroke> {
   Stroke map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return Stroke(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}id'],
-      )!,
+      id: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}id'])!,
       projectId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}project_id'],
       )!,
       points: $StrokesTable.$converterpoints.fromSql(
-        attachedDatabase.typeMapping.read(
-          DriftSqlType.string,
-          data['${effectivePrefix}points'],
-        )!,
+        attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}points'])!,
       ),
-      color: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}color'],
-      )!,
-      size: attachedDatabase.typeMapping.read(
-        DriftSqlType.double,
-        data['${effectivePrefix}size'],
-      )!,
+      color: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}color'])!,
+      size: attachedDatabase.typeMapping.read(DriftSqlType.double, data['${effectivePrefix}size'])!,
       opacity: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}opacity'],
@@ -664,8 +596,7 @@ class $StrokesTable extends Strokes with TableInfo<$StrokesTable, Stroke> {
     return $StrokesTable(attachedDatabase, alias);
   }
 
-  static TypeConverter<List<List<double>>, String> $converterpoints =
-      const PointsConverter();
+  static TypeConverter<List<List<double>>, String> $converterpoints = const PointsConverter();
 }
 
 class Stroke extends DataClass implements Insertable<Stroke> {
@@ -712,9 +643,7 @@ class Stroke extends DataClass implements Insertable<Stroke> {
     map['id'] = Variable<String>(id);
     map['project_id'] = Variable<String>(projectId);
     {
-      map['points'] = Variable<String>(
-        $StrokesTable.$converterpoints.toSql(points),
-      );
+      map['points'] = Variable<String>($StrokesTable.$converterpoints.toSql(points));
     }
     map['color'] = Variable<int>(color);
     map['size'] = Variable<double>(size);
@@ -736,17 +665,12 @@ class Stroke extends DataClass implements Insertable<Stroke> {
       size: Value(size),
       opacity: Value(opacity),
       brushType: Value(brushType),
-      brushId: brushId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(brushId),
+      brushId: brushId == null && nullToAbsent ? const Value.absent() : Value(brushId),
       isPressureSensitive: Value(isPressureSensitive),
     );
   }
 
-  factory Stroke.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
+  factory Stroke.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return Stroke(
       id: serializer.fromJson<String>(json['id']),
@@ -757,9 +681,7 @@ class Stroke extends DataClass implements Insertable<Stroke> {
       opacity: serializer.fromJson<double>(json['opacity']),
       brushType: serializer.fromJson<String>(json['brushType']),
       brushId: serializer.fromJson<String?>(json['brushId']),
-      isPressureSensitive: serializer.fromJson<bool>(
-        json['isPressureSensitive'],
-      ),
+      isPressureSensitive: serializer.fromJson<bool>(json['isPressureSensitive']),
     );
   }
   @override
@@ -920,8 +842,7 @@ class StrokesCompanion extends UpdateCompanion<Stroke> {
       if (opacity != null) 'opacity': opacity,
       if (brushType != null) 'brush_type': brushType,
       if (brushId != null) 'brush_id': brushId,
-      if (isPressureSensitive != null)
-        'is_pressure_sensitive': isPressureSensitive,
+      if (isPressureSensitive != null) 'is_pressure_sensitive': isPressureSensitive,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -962,9 +883,7 @@ class StrokesCompanion extends UpdateCompanion<Stroke> {
       map['project_id'] = Variable<String>(projectId.value);
     }
     if (points.present) {
-      map['points'] = Variable<String>(
-        $StrokesTable.$converterpoints.toSql(points.value),
-      );
+      map['points'] = Variable<String>($StrokesTable.$converterpoints.toSql(points.value));
     }
     if (color.present) {
       map['color'] = Variable<int>(color.value);
@@ -1022,9 +941,7 @@ class $BrushesTable extends Brushes with TableInfo<$BrushesTable, Brushe> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _nameKeyMeta = const VerificationMeta(
-    'nameKey',
-  );
+  static const VerificationMeta _nameKeyMeta = const VerificationMeta('nameKey');
   @override
   late final GeneratedColumn<String> nameKey = GeneratedColumn<String>(
     'name_key',
@@ -1033,9 +950,7 @@ class $BrushesTable extends Brushes with TableInfo<$BrushesTable, Brushe> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _previewPathMeta = const VerificationMeta(
-    'previewPath',
-  );
+  static const VerificationMeta _previewPathMeta = const VerificationMeta('previewPath');
   @override
   late final GeneratedColumn<String> previewPath = GeneratedColumn<String>(
     'preview_path',
@@ -1044,8 +959,9 @@ class $BrushesTable extends Brushes with TableInfo<$BrushesTable, Brushe> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _isPressureSensitiveMeta =
-      const VerificationMeta('isPressureSensitive');
+  static const VerificationMeta _isPressureSensitiveMeta = const VerificationMeta(
+    'isPressureSensitive',
+  );
   @override
   late final GeneratedColumn<bool> isPressureSensitive = GeneratedColumn<bool>(
     'is_pressure_sensitive',
@@ -1058,22 +974,14 @@ class $BrushesTable extends Brushes with TableInfo<$BrushesTable, Brushe> {
     ),
   );
   @override
-  List<GeneratedColumn> get $columns => [
-    id,
-    nameKey,
-    previewPath,
-    isPressureSensitive,
-  ];
+  List<GeneratedColumn> get $columns => [id, nameKey, previewPath, isPressureSensitive];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
   static const String $name = 'brushes';
   @override
-  VerificationContext validateIntegrity(
-    Insertable<Brushe> instance, {
-    bool isInserting = false,
-  }) {
+  VerificationContext validateIntegrity(Insertable<Brushe> instance, {bool isInserting = false}) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
@@ -1082,20 +990,14 @@ class $BrushesTable extends Brushes with TableInfo<$BrushesTable, Brushe> {
       context.missing(_idMeta);
     }
     if (data.containsKey('name_key')) {
-      context.handle(
-        _nameKeyMeta,
-        nameKey.isAcceptableOrUnknown(data['name_key']!, _nameKeyMeta),
-      );
+      context.handle(_nameKeyMeta, nameKey.isAcceptableOrUnknown(data['name_key']!, _nameKeyMeta));
     } else if (isInserting) {
       context.missing(_nameKeyMeta);
     }
     if (data.containsKey('preview_path')) {
       context.handle(
         _previewPathMeta,
-        previewPath.isAcceptableOrUnknown(
-          data['preview_path']!,
-          _previewPathMeta,
-        ),
+        previewPath.isAcceptableOrUnknown(data['preview_path']!, _previewPathMeta),
       );
     } else if (isInserting) {
       context.missing(_previewPathMeta);
@@ -1120,10 +1022,7 @@ class $BrushesTable extends Brushes with TableInfo<$BrushesTable, Brushe> {
   Brushe map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return Brushe(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}id'],
-      )!,
+      id: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}id'])!,
       nameKey: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}name_key'],
@@ -1182,18 +1081,13 @@ class Brushe extends DataClass implements Insertable<Brushe> {
     );
   }
 
-  factory Brushe.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
+  factory Brushe.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return Brushe(
       id: serializer.fromJson<String>(json['id']),
       nameKey: serializer.fromJson<String>(json['nameKey']),
       previewPath: serializer.fromJson<String>(json['previewPath']),
-      isPressureSensitive: serializer.fromJson<bool>(
-        json['isPressureSensitive'],
-      ),
+      isPressureSensitive: serializer.fromJson<bool>(json['isPressureSensitive']),
     );
   }
   @override
@@ -1207,24 +1101,18 @@ class Brushe extends DataClass implements Insertable<Brushe> {
     };
   }
 
-  Brushe copyWith({
-    String? id,
-    String? nameKey,
-    String? previewPath,
-    bool? isPressureSensitive,
-  }) => Brushe(
-    id: id ?? this.id,
-    nameKey: nameKey ?? this.nameKey,
-    previewPath: previewPath ?? this.previewPath,
-    isPressureSensitive: isPressureSensitive ?? this.isPressureSensitive,
-  );
+  Brushe copyWith({String? id, String? nameKey, String? previewPath, bool? isPressureSensitive}) =>
+      Brushe(
+        id: id ?? this.id,
+        nameKey: nameKey ?? this.nameKey,
+        previewPath: previewPath ?? this.previewPath,
+        isPressureSensitive: isPressureSensitive ?? this.isPressureSensitive,
+      );
   Brushe copyWithCompanion(BrushesCompanion data) {
     return Brushe(
       id: data.id.present ? data.id.value : this.id,
       nameKey: data.nameKey.present ? data.nameKey.value : this.nameKey,
-      previewPath: data.previewPath.present
-          ? data.previewPath.value
-          : this.previewPath,
+      previewPath: data.previewPath.present ? data.previewPath.value : this.previewPath,
       isPressureSensitive: data.isPressureSensitive.present
           ? data.isPressureSensitive.value
           : this.isPressureSensitive,
@@ -1243,8 +1131,7 @@ class Brushe extends DataClass implements Insertable<Brushe> {
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, nameKey, previewPath, isPressureSensitive);
+  int get hashCode => Object.hash(id, nameKey, previewPath, isPressureSensitive);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1289,8 +1176,7 @@ class BrushesCompanion extends UpdateCompanion<Brushe> {
       if (id != null) 'id': id,
       if (nameKey != null) 'name_key': nameKey,
       if (previewPath != null) 'preview_path': previewPath,
-      if (isPressureSensitive != null)
-        'is_pressure_sensitive': isPressureSensitive,
+      if (isPressureSensitive != null) 'is_pressure_sensitive': isPressureSensitive,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1368,9 +1254,7 @@ class $ContoursTable extends Contours with TableInfo<$ContoursTable, Contour> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _categoryMeta = const VerificationMeta(
-    'category',
-  );
+  static const VerificationMeta _categoryMeta = const VerificationMeta('category');
   @override
   late final GeneratedColumn<String> category = GeneratedColumn<String>(
     'category',
@@ -1388,9 +1272,7 @@ class $ContoursTable extends Contours with TableInfo<$ContoursTable, Contour> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _previewUrlMeta = const VerificationMeta(
-    'previewUrl',
-  );
+  static const VerificationMeta _previewUrlMeta = const VerificationMeta('previewUrl');
   @override
   late final GeneratedColumn<String> previewUrl = GeneratedColumn<String>(
     'preview_url',
@@ -1399,9 +1281,7 @@ class $ContoursTable extends Contours with TableInfo<$ContoursTable, Contour> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _createdAtMeta = const VerificationMeta(
-    'createdAt',
-  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta('createdAt');
   @override
   late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
     'created_at',
@@ -1409,6 +1289,25 @@ class $ContoursTable extends Contours with TableInfo<$ContoursTable, Contour> {
     false,
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
+  );
+  static const VerificationMeta _accessTypeMeta = const VerificationMeta('accessType');
+  @override
+  late final GeneratedColumn<String> accessType = GeneratedColumn<String>(
+    'access_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('free'),
+  );
+  static const VerificationMeta _priceMeta = const VerificationMeta('price');
+  @override
+  late final GeneratedColumn<int> price = GeneratedColumn<int>(
+    'price',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
   );
   @override
   List<GeneratedColumn> get $columns => [
@@ -1418,6 +1317,8 @@ class $ContoursTable extends Contours with TableInfo<$ContoursTable, Contour> {
     svgUrl,
     previewUrl,
     createdAt,
+    accessType,
+    price,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1425,10 +1326,7 @@ class $ContoursTable extends Contours with TableInfo<$ContoursTable, Contour> {
   String get actualTableName => $name;
   static const String $name = 'contours';
   @override
-  VerificationContext validateIntegrity(
-    Insertable<Contour> instance, {
-    bool isInserting = false,
-  }) {
+  VerificationContext validateIntegrity(Insertable<Contour> instance, {bool isInserting = false}) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
@@ -1437,10 +1335,7 @@ class $ContoursTable extends Contours with TableInfo<$ContoursTable, Contour> {
       context.missing(_idMeta);
     }
     if (data.containsKey('title')) {
-      context.handle(
-        _titleMeta,
-        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
-      );
+      context.handle(_titleMeta, title.isAcceptableOrUnknown(data['title']!, _titleMeta));
     } else if (isInserting) {
       context.missing(_titleMeta);
     }
@@ -1453,10 +1348,7 @@ class $ContoursTable extends Contours with TableInfo<$ContoursTable, Contour> {
       context.missing(_categoryMeta);
     }
     if (data.containsKey('svg_url')) {
-      context.handle(
-        _svgUrlMeta,
-        svgUrl.isAcceptableOrUnknown(data['svg_url']!, _svgUrlMeta),
-      );
+      context.handle(_svgUrlMeta, svgUrl.isAcceptableOrUnknown(data['svg_url']!, _svgUrlMeta));
     } else if (isInserting) {
       context.missing(_svgUrlMeta);
     }
@@ -1476,6 +1368,15 @@ class $ContoursTable extends Contours with TableInfo<$ContoursTable, Contour> {
     } else if (isInserting) {
       context.missing(_createdAtMeta);
     }
+    if (data.containsKey('access_type')) {
+      context.handle(
+        _accessTypeMeta,
+        accessType.isAcceptableOrUnknown(data['access_type']!, _accessTypeMeta),
+      );
+    }
+    if (data.containsKey('price')) {
+      context.handle(_priceMeta, price.isAcceptableOrUnknown(data['price']!, _priceMeta));
+    }
     return context;
   }
 
@@ -1485,10 +1386,7 @@ class $ContoursTable extends Contours with TableInfo<$ContoursTable, Contour> {
   Contour map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return Contour(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}id'],
-      )!,
+      id: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}id'])!,
       title: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}title'],
@@ -1509,6 +1407,11 @@ class $ContoursTable extends Contours with TableInfo<$ContoursTable, Contour> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      accessType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}access_type'],
+      )!,
+      price: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}price']),
     );
   }
 
@@ -1536,6 +1439,12 @@ class Contour extends DataClass implements Insertable<Contour> {
 
   /// Creation timestamp.
   final DateTime createdAt;
+
+  /// Raw monetization access type: `free`, `rewarded` or `paid`.
+  final String accessType;
+
+  /// Price in cents for paid projects, null otherwise.
+  final int? price;
   const Contour({
     required this.id,
     required this.title,
@@ -1543,6 +1452,8 @@ class Contour extends DataClass implements Insertable<Contour> {
     required this.svgUrl,
     required this.previewUrl,
     required this.createdAt,
+    required this.accessType,
+    this.price,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1553,6 +1464,10 @@ class Contour extends DataClass implements Insertable<Contour> {
     map['svg_url'] = Variable<String>(svgUrl);
     map['preview_url'] = Variable<String>(previewUrl);
     map['created_at'] = Variable<DateTime>(createdAt);
+    map['access_type'] = Variable<String>(accessType);
+    if (!nullToAbsent || price != null) {
+      map['price'] = Variable<int>(price);
+    }
     return map;
   }
 
@@ -1564,13 +1479,12 @@ class Contour extends DataClass implements Insertable<Contour> {
       svgUrl: Value(svgUrl),
       previewUrl: Value(previewUrl),
       createdAt: Value(createdAt),
+      accessType: Value(accessType),
+      price: price == null && nullToAbsent ? const Value.absent() : Value(price),
     );
   }
 
-  factory Contour.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
+  factory Contour.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return Contour(
       id: serializer.fromJson<String>(json['id']),
@@ -1579,6 +1493,8 @@ class Contour extends DataClass implements Insertable<Contour> {
       svgUrl: serializer.fromJson<String>(json['svgUrl']),
       previewUrl: serializer.fromJson<String>(json['previewUrl']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      accessType: serializer.fromJson<String>(json['accessType']),
+      price: serializer.fromJson<int?>(json['price']),
     );
   }
   @override
@@ -1591,6 +1507,8 @@ class Contour extends DataClass implements Insertable<Contour> {
       'svgUrl': serializer.toJson<String>(svgUrl),
       'previewUrl': serializer.toJson<String>(previewUrl),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'accessType': serializer.toJson<String>(accessType),
+      'price': serializer.toJson<int?>(price),
     };
   }
 
@@ -1601,6 +1519,8 @@ class Contour extends DataClass implements Insertable<Contour> {
     String? svgUrl,
     String? previewUrl,
     DateTime? createdAt,
+    String? accessType,
+    Value<int?> price = const Value.absent(),
   }) => Contour(
     id: id ?? this.id,
     title: title ?? this.title,
@@ -1608,6 +1528,8 @@ class Contour extends DataClass implements Insertable<Contour> {
     svgUrl: svgUrl ?? this.svgUrl,
     previewUrl: previewUrl ?? this.previewUrl,
     createdAt: createdAt ?? this.createdAt,
+    accessType: accessType ?? this.accessType,
+    price: price.present ? price.value : this.price,
   );
   Contour copyWithCompanion(ContoursCompanion data) {
     return Contour(
@@ -1615,10 +1537,10 @@ class Contour extends DataClass implements Insertable<Contour> {
       title: data.title.present ? data.title.value : this.title,
       category: data.category.present ? data.category.value : this.category,
       svgUrl: data.svgUrl.present ? data.svgUrl.value : this.svgUrl,
-      previewUrl: data.previewUrl.present
-          ? data.previewUrl.value
-          : this.previewUrl,
+      previewUrl: data.previewUrl.present ? data.previewUrl.value : this.previewUrl,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      accessType: data.accessType.present ? data.accessType.value : this.accessType,
+      price: data.price.present ? data.price.value : this.price,
     );
   }
 
@@ -1630,14 +1552,16 @@ class Contour extends DataClass implements Insertable<Contour> {
           ..write('category: $category, ')
           ..write('svgUrl: $svgUrl, ')
           ..write('previewUrl: $previewUrl, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('accessType: $accessType, ')
+          ..write('price: $price')
           ..write(')'))
         .toString();
   }
 
   @override
   int get hashCode =>
-      Object.hash(id, title, category, svgUrl, previewUrl, createdAt);
+      Object.hash(id, title, category, svgUrl, previewUrl, createdAt, accessType, price);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1647,7 +1571,9 @@ class Contour extends DataClass implements Insertable<Contour> {
           other.category == this.category &&
           other.svgUrl == this.svgUrl &&
           other.previewUrl == this.previewUrl &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.accessType == this.accessType &&
+          other.price == this.price);
 }
 
 class ContoursCompanion extends UpdateCompanion<Contour> {
@@ -1657,6 +1583,8 @@ class ContoursCompanion extends UpdateCompanion<Contour> {
   final Value<String> svgUrl;
   final Value<String> previewUrl;
   final Value<DateTime> createdAt;
+  final Value<String> accessType;
+  final Value<int?> price;
   final Value<int> rowid;
   const ContoursCompanion({
     this.id = const Value.absent(),
@@ -1665,6 +1593,8 @@ class ContoursCompanion extends UpdateCompanion<Contour> {
     this.svgUrl = const Value.absent(),
     this.previewUrl = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.accessType = const Value.absent(),
+    this.price = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ContoursCompanion.insert({
@@ -1674,6 +1604,8 @@ class ContoursCompanion extends UpdateCompanion<Contour> {
     required String svgUrl,
     required String previewUrl,
     required DateTime createdAt,
+    this.accessType = const Value.absent(),
+    this.price = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        title = Value(title),
@@ -1688,6 +1620,8 @@ class ContoursCompanion extends UpdateCompanion<Contour> {
     Expression<String>? svgUrl,
     Expression<String>? previewUrl,
     Expression<DateTime>? createdAt,
+    Expression<String>? accessType,
+    Expression<int>? price,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1697,6 +1631,8 @@ class ContoursCompanion extends UpdateCompanion<Contour> {
       if (svgUrl != null) 'svg_url': svgUrl,
       if (previewUrl != null) 'preview_url': previewUrl,
       if (createdAt != null) 'created_at': createdAt,
+      if (accessType != null) 'access_type': accessType,
+      if (price != null) 'price': price,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1708,6 +1644,8 @@ class ContoursCompanion extends UpdateCompanion<Contour> {
     Value<String>? svgUrl,
     Value<String>? previewUrl,
     Value<DateTime>? createdAt,
+    Value<String>? accessType,
+    Value<int?>? price,
     Value<int>? rowid,
   }) {
     return ContoursCompanion(
@@ -1717,6 +1655,8 @@ class ContoursCompanion extends UpdateCompanion<Contour> {
       svgUrl: svgUrl ?? this.svgUrl,
       previewUrl: previewUrl ?? this.previewUrl,
       createdAt: createdAt ?? this.createdAt,
+      accessType: accessType ?? this.accessType,
+      price: price ?? this.price,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1742,6 +1682,12 @@ class ContoursCompanion extends UpdateCompanion<Contour> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (accessType.present) {
+      map['access_type'] = Variable<String>(accessType.value);
+    }
+    if (price.present) {
+      map['price'] = Variable<int>(price.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1757,6 +1703,8 @@ class ContoursCompanion extends UpdateCompanion<Contour> {
           ..write('svgUrl: $svgUrl, ')
           ..write('previewUrl: $previewUrl, ')
           ..write('createdAt: $createdAt, ')
+          ..write('accessType: $accessType, ')
+          ..write('price: $price, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1774,12 +1722,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [
-    projects,
-    strokes,
-    brushes,
-    contours,
-  ];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [projects, strokes, brushes, contours];
 }
 
 typedef $$ProjectsTableCreateCompanionBuilder =
@@ -1803,8 +1746,7 @@ typedef $$ProjectsTableUpdateCompanionBuilder =
       Value<int> rowid,
     });
 
-class $$ProjectsTableFilterComposer
-    extends Composer<_$AppDatabase, $ProjectsTable> {
+class $$ProjectsTableFilterComposer extends Composer<_$AppDatabase, $ProjectsTable> {
   $$ProjectsTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -1812,44 +1754,29 @@ class $$ProjectsTableFilterComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<String> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
+  ColumnFilters<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<String> get contourId => $composableBuilder(
-    column: $table.contourId,
-    builder: (column) => ColumnFilters(column),
-  );
+  ColumnFilters<String> get contourId =>
+      $composableBuilder(column: $table.contourId, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<String> get userId => $composableBuilder(
-    column: $table.userId,
-    builder: (column) => ColumnFilters(column),
-  );
+  ColumnFilters<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => ColumnFilters(column));
 
-  ColumnWithTypeConverterFilters<
-    Map<String, dynamic>,
-    Map<String, dynamic>,
-    String
-  >
-  get data => $composableBuilder(
-    column: $table.data,
-    builder: (column) => ColumnWithTypeConverterFilters(column),
-  );
+  ColumnWithTypeConverterFilters<Map<String, dynamic>, Map<String, dynamic>, String> get data =>
+      $composableBuilder(
+        column: $table.data,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
 
-  ColumnFilters<DateTime> get lastOpened => $composableBuilder(
-    column: $table.lastOpened,
-    builder: (column) => ColumnFilters(column),
-  );
+  ColumnFilters<DateTime> get lastOpened =>
+      $composableBuilder(column: $table.lastOpened, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnFilters(column),
-  );
+  ColumnFilters<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => ColumnFilters(column));
 }
 
-class $$ProjectsTableOrderingComposer
-    extends Composer<_$AppDatabase, $ProjectsTable> {
+class $$ProjectsTableOrderingComposer extends Composer<_$AppDatabase, $ProjectsTable> {
   $$ProjectsTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -1857,39 +1784,26 @@ class $$ProjectsTableOrderingComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<String> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
+  ColumnOrderings<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<String> get contourId => $composableBuilder(
-    column: $table.contourId,
-    builder: (column) => ColumnOrderings(column),
-  );
+  ColumnOrderings<String> get contourId =>
+      $composableBuilder(column: $table.contourId, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<String> get userId => $composableBuilder(
-    column: $table.userId,
-    builder: (column) => ColumnOrderings(column),
-  );
+  ColumnOrderings<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<String> get data => $composableBuilder(
-    column: $table.data,
-    builder: (column) => ColumnOrderings(column),
-  );
+  ColumnOrderings<String> get data =>
+      $composableBuilder(column: $table.data, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<DateTime> get lastOpened => $composableBuilder(
-    column: $table.lastOpened,
-    builder: (column) => ColumnOrderings(column),
-  );
+  ColumnOrderings<DateTime> get lastOpened =>
+      $composableBuilder(column: $table.lastOpened, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnOrderings(column),
-  );
+  ColumnOrderings<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => ColumnOrderings(column));
 }
 
-class $$ProjectsTableAnnotationComposer
-    extends Composer<_$AppDatabase, $ProjectsTable> {
+class $$ProjectsTableAnnotationComposer extends Composer<_$AppDatabase, $ProjectsTable> {
   $$ProjectsTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -1909,10 +1823,8 @@ class $$ProjectsTableAnnotationComposer
   GeneratedColumnWithTypeConverter<Map<String, dynamic>, String> get data =>
       $composableBuilder(column: $table.data, builder: (column) => column);
 
-  GeneratedColumn<DateTime> get lastOpened => $composableBuilder(
-    column: $table.lastOpened,
-    builder: (column) => column,
-  );
+  GeneratedColumn<DateTime> get lastOpened =>
+      $composableBuilder(column: $table.lastOpened, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -1938,10 +1850,8 @@ class $$ProjectsTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () =>
-              $$ProjectsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$ProjectsTableOrderingComposer($db: db, $table: table),
+          createFilteringComposer: () => $$ProjectsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () => $$ProjectsTableOrderingComposer($db: db, $table: table),
           createComputedFieldComposer: () =>
               $$ProjectsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
@@ -1980,9 +1890,8 @@ class $$ProjectsTableTableManager
                 createdAt: createdAt,
                 rowid: rowid,
               ),
-          withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
-              .toList(),
+          withReferenceMapper: (p0) =>
+              p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -2029,8 +1938,7 @@ typedef $$StrokesTableUpdateCompanionBuilder =
       Value<int> rowid,
     });
 
-class $$StrokesTableFilterComposer
-    extends Composer<_$AppDatabase, $StrokesTable> {
+class $$StrokesTableFilterComposer extends Composer<_$AppDatabase, $StrokesTable> {
   $$StrokesTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -2038,46 +1946,32 @@ class $$StrokesTableFilterComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<String> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
+  ColumnFilters<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<String> get projectId => $composableBuilder(
-    column: $table.projectId,
-    builder: (column) => ColumnFilters(column),
-  );
+  ColumnFilters<String> get projectId =>
+      $composableBuilder(column: $table.projectId, builder: (column) => ColumnFilters(column));
 
-  ColumnWithTypeConverterFilters<List<List<double>>, List<List<double>>, String>
-  get points => $composableBuilder(
-    column: $table.points,
-    builder: (column) => ColumnWithTypeConverterFilters(column),
-  );
+  ColumnWithTypeConverterFilters<List<List<double>>, List<List<double>>, String> get points =>
+      $composableBuilder(
+        column: $table.points,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
 
-  ColumnFilters<int> get color => $composableBuilder(
-    column: $table.color,
-    builder: (column) => ColumnFilters(column),
-  );
+  ColumnFilters<int> get color =>
+      $composableBuilder(column: $table.color, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get size => $composableBuilder(
-    column: $table.size,
-    builder: (column) => ColumnFilters(column),
-  );
+  ColumnFilters<double> get size =>
+      $composableBuilder(column: $table.size, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<double> get opacity => $composableBuilder(
-    column: $table.opacity,
-    builder: (column) => ColumnFilters(column),
-  );
+  ColumnFilters<double> get opacity =>
+      $composableBuilder(column: $table.opacity, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<String> get brushType => $composableBuilder(
-    column: $table.brushType,
-    builder: (column) => ColumnFilters(column),
-  );
+  ColumnFilters<String> get brushType =>
+      $composableBuilder(column: $table.brushType, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<String> get brushId => $composableBuilder(
-    column: $table.brushId,
-    builder: (column) => ColumnFilters(column),
-  );
+  ColumnFilters<String> get brushId =>
+      $composableBuilder(column: $table.brushId, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<bool> get isPressureSensitive => $composableBuilder(
     column: $table.isPressureSensitive,
@@ -2085,8 +1979,7 @@ class $$StrokesTableFilterComposer
   );
 }
 
-class $$StrokesTableOrderingComposer
-    extends Composer<_$AppDatabase, $StrokesTable> {
+class $$StrokesTableOrderingComposer extends Composer<_$AppDatabase, $StrokesTable> {
   $$StrokesTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -2094,45 +1987,29 @@ class $$StrokesTableOrderingComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<String> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
+  ColumnOrderings<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<String> get projectId => $composableBuilder(
-    column: $table.projectId,
-    builder: (column) => ColumnOrderings(column),
-  );
+  ColumnOrderings<String> get projectId =>
+      $composableBuilder(column: $table.projectId, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<String> get points => $composableBuilder(
-    column: $table.points,
-    builder: (column) => ColumnOrderings(column),
-  );
+  ColumnOrderings<String> get points =>
+      $composableBuilder(column: $table.points, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<int> get color => $composableBuilder(
-    column: $table.color,
-    builder: (column) => ColumnOrderings(column),
-  );
+  ColumnOrderings<int> get color =>
+      $composableBuilder(column: $table.color, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get size => $composableBuilder(
-    column: $table.size,
-    builder: (column) => ColumnOrderings(column),
-  );
+  ColumnOrderings<double> get size =>
+      $composableBuilder(column: $table.size, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get opacity => $composableBuilder(
-    column: $table.opacity,
-    builder: (column) => ColumnOrderings(column),
-  );
+  ColumnOrderings<double> get opacity =>
+      $composableBuilder(column: $table.opacity, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<String> get brushType => $composableBuilder(
-    column: $table.brushType,
-    builder: (column) => ColumnOrderings(column),
-  );
+  ColumnOrderings<String> get brushType =>
+      $composableBuilder(column: $table.brushType, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<String> get brushId => $composableBuilder(
-    column: $table.brushId,
-    builder: (column) => ColumnOrderings(column),
-  );
+  ColumnOrderings<String> get brushId =>
+      $composableBuilder(column: $table.brushId, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<bool> get isPressureSensitive => $composableBuilder(
     column: $table.isPressureSensitive,
@@ -2140,8 +2017,7 @@ class $$StrokesTableOrderingComposer
   );
 }
 
-class $$StrokesTableAnnotationComposer
-    extends Composer<_$AppDatabase, $StrokesTable> {
+class $$StrokesTableAnnotationComposer extends Composer<_$AppDatabase, $StrokesTable> {
   $$StrokesTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -2173,10 +2049,8 @@ class $$StrokesTableAnnotationComposer
   GeneratedColumn<String> get brushId =>
       $composableBuilder(column: $table.brushId, builder: (column) => column);
 
-  GeneratedColumn<bool> get isPressureSensitive => $composableBuilder(
-    column: $table.isPressureSensitive,
-    builder: (column) => column,
-  );
+  GeneratedColumn<bool> get isPressureSensitive =>
+      $composableBuilder(column: $table.isPressureSensitive, builder: (column) => column);
 }
 
 class $$StrokesTableTableManager
@@ -2199,10 +2073,8 @@ class $$StrokesTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () =>
-              $$StrokesTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$StrokesTableOrderingComposer($db: db, $table: table),
+          createFilteringComposer: () => $$StrokesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () => $$StrokesTableOrderingComposer($db: db, $table: table),
           createComputedFieldComposer: () =>
               $$StrokesTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
@@ -2253,9 +2125,8 @@ class $$StrokesTableTableManager
                 isPressureSensitive: isPressureSensitive,
                 rowid: rowid,
               ),
-          withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
-              .toList(),
+          withReferenceMapper: (p0) =>
+              p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -2292,8 +2163,7 @@ typedef $$BrushesTableUpdateCompanionBuilder =
       Value<int> rowid,
     });
 
-class $$BrushesTableFilterComposer
-    extends Composer<_$AppDatabase, $BrushesTable> {
+class $$BrushesTableFilterComposer extends Composer<_$AppDatabase, $BrushesTable> {
   $$BrushesTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -2301,20 +2171,14 @@ class $$BrushesTableFilterComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<String> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
+  ColumnFilters<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<String> get nameKey => $composableBuilder(
-    column: $table.nameKey,
-    builder: (column) => ColumnFilters(column),
-  );
+  ColumnFilters<String> get nameKey =>
+      $composableBuilder(column: $table.nameKey, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<String> get previewPath => $composableBuilder(
-    column: $table.previewPath,
-    builder: (column) => ColumnFilters(column),
-  );
+  ColumnFilters<String> get previewPath =>
+      $composableBuilder(column: $table.previewPath, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<bool> get isPressureSensitive => $composableBuilder(
     column: $table.isPressureSensitive,
@@ -2322,8 +2186,7 @@ class $$BrushesTableFilterComposer
   );
 }
 
-class $$BrushesTableOrderingComposer
-    extends Composer<_$AppDatabase, $BrushesTable> {
+class $$BrushesTableOrderingComposer extends Composer<_$AppDatabase, $BrushesTable> {
   $$BrushesTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -2331,20 +2194,14 @@ class $$BrushesTableOrderingComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<String> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
+  ColumnOrderings<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<String> get nameKey => $composableBuilder(
-    column: $table.nameKey,
-    builder: (column) => ColumnOrderings(column),
-  );
+  ColumnOrderings<String> get nameKey =>
+      $composableBuilder(column: $table.nameKey, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<String> get previewPath => $composableBuilder(
-    column: $table.previewPath,
-    builder: (column) => ColumnOrderings(column),
-  );
+  ColumnOrderings<String> get previewPath =>
+      $composableBuilder(column: $table.previewPath, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<bool> get isPressureSensitive => $composableBuilder(
     column: $table.isPressureSensitive,
@@ -2352,8 +2209,7 @@ class $$BrushesTableOrderingComposer
   );
 }
 
-class $$BrushesTableAnnotationComposer
-    extends Composer<_$AppDatabase, $BrushesTable> {
+class $$BrushesTableAnnotationComposer extends Composer<_$AppDatabase, $BrushesTable> {
   $$BrushesTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -2367,15 +2223,11 @@ class $$BrushesTableAnnotationComposer
   GeneratedColumn<String> get nameKey =>
       $composableBuilder(column: $table.nameKey, builder: (column) => column);
 
-  GeneratedColumn<String> get previewPath => $composableBuilder(
-    column: $table.previewPath,
-    builder: (column) => column,
-  );
+  GeneratedColumn<String> get previewPath =>
+      $composableBuilder(column: $table.previewPath, builder: (column) => column);
 
-  GeneratedColumn<bool> get isPressureSensitive => $composableBuilder(
-    column: $table.isPressureSensitive,
-    builder: (column) => column,
-  );
+  GeneratedColumn<bool> get isPressureSensitive =>
+      $composableBuilder(column: $table.isPressureSensitive, builder: (column) => column);
 }
 
 class $$BrushesTableTableManager
@@ -2398,10 +2250,8 @@ class $$BrushesTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () =>
-              $$BrushesTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$BrushesTableOrderingComposer($db: db, $table: table),
+          createFilteringComposer: () => $$BrushesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () => $$BrushesTableOrderingComposer($db: db, $table: table),
           createComputedFieldComposer: () =>
               $$BrushesTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
@@ -2432,9 +2282,8 @@ class $$BrushesTableTableManager
                 isPressureSensitive: isPressureSensitive,
                 rowid: rowid,
               ),
-          withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
-              .toList(),
+          withReferenceMapper: (p0) =>
+              p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -2462,6 +2311,8 @@ typedef $$ContoursTableCreateCompanionBuilder =
       required String svgUrl,
       required String previewUrl,
       required DateTime createdAt,
+      Value<String> accessType,
+      Value<int?> price,
       Value<int> rowid,
     });
 typedef $$ContoursTableUpdateCompanionBuilder =
@@ -2472,11 +2323,12 @@ typedef $$ContoursTableUpdateCompanionBuilder =
       Value<String> svgUrl,
       Value<String> previewUrl,
       Value<DateTime> createdAt,
+      Value<String> accessType,
+      Value<int?> price,
       Value<int> rowid,
     });
 
-class $$ContoursTableFilterComposer
-    extends Composer<_$AppDatabase, $ContoursTable> {
+class $$ContoursTableFilterComposer extends Composer<_$AppDatabase, $ContoursTable> {
   $$ContoursTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -2484,39 +2336,32 @@ class $$ContoursTableFilterComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<String> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
+  ColumnFilters<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<String> get title => $composableBuilder(
-    column: $table.title,
-    builder: (column) => ColumnFilters(column),
-  );
+  ColumnFilters<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<String> get category => $composableBuilder(
-    column: $table.category,
-    builder: (column) => ColumnFilters(column),
-  );
+  ColumnFilters<String> get category =>
+      $composableBuilder(column: $table.category, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<String> get svgUrl => $composableBuilder(
-    column: $table.svgUrl,
-    builder: (column) => ColumnFilters(column),
-  );
+  ColumnFilters<String> get svgUrl =>
+      $composableBuilder(column: $table.svgUrl, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<String> get previewUrl => $composableBuilder(
-    column: $table.previewUrl,
-    builder: (column) => ColumnFilters(column),
-  );
+  ColumnFilters<String> get previewUrl =>
+      $composableBuilder(column: $table.previewUrl, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnFilters(column),
-  );
+  ColumnFilters<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get accessType =>
+      $composableBuilder(column: $table.accessType, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get price =>
+      $composableBuilder(column: $table.price, builder: (column) => ColumnFilters(column));
 }
 
-class $$ContoursTableOrderingComposer
-    extends Composer<_$AppDatabase, $ContoursTable> {
+class $$ContoursTableOrderingComposer extends Composer<_$AppDatabase, $ContoursTable> {
   $$ContoursTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -2524,39 +2369,32 @@ class $$ContoursTableOrderingComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<String> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
+  ColumnOrderings<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<String> get title => $composableBuilder(
-    column: $table.title,
-    builder: (column) => ColumnOrderings(column),
-  );
+  ColumnOrderings<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<String> get category => $composableBuilder(
-    column: $table.category,
-    builder: (column) => ColumnOrderings(column),
-  );
+  ColumnOrderings<String> get category =>
+      $composableBuilder(column: $table.category, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<String> get svgUrl => $composableBuilder(
-    column: $table.svgUrl,
-    builder: (column) => ColumnOrderings(column),
-  );
+  ColumnOrderings<String> get svgUrl =>
+      $composableBuilder(column: $table.svgUrl, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<String> get previewUrl => $composableBuilder(
-    column: $table.previewUrl,
-    builder: (column) => ColumnOrderings(column),
-  );
+  ColumnOrderings<String> get previewUrl =>
+      $composableBuilder(column: $table.previewUrl, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnOrderings(column),
-  );
+  ColumnOrderings<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get accessType =>
+      $composableBuilder(column: $table.accessType, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get price =>
+      $composableBuilder(column: $table.price, builder: (column) => ColumnOrderings(column));
 }
 
-class $$ContoursTableAnnotationComposer
-    extends Composer<_$AppDatabase, $ContoursTable> {
+class $$ContoursTableAnnotationComposer extends Composer<_$AppDatabase, $ContoursTable> {
   $$ContoursTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -2576,13 +2414,17 @@ class $$ContoursTableAnnotationComposer
   GeneratedColumn<String> get svgUrl =>
       $composableBuilder(column: $table.svgUrl, builder: (column) => column);
 
-  GeneratedColumn<String> get previewUrl => $composableBuilder(
-    column: $table.previewUrl,
-    builder: (column) => column,
-  );
+  GeneratedColumn<String> get previewUrl =>
+      $composableBuilder(column: $table.previewUrl, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get accessType =>
+      $composableBuilder(column: $table.accessType, builder: (column) => column);
+
+  GeneratedColumn<int> get price =>
+      $composableBuilder(column: $table.price, builder: (column) => column);
 }
 
 class $$ContoursTableTableManager
@@ -2605,10 +2447,8 @@ class $$ContoursTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () =>
-              $$ContoursTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$ContoursTableOrderingComposer($db: db, $table: table),
+          createFilteringComposer: () => $$ContoursTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () => $$ContoursTableOrderingComposer($db: db, $table: table),
           createComputedFieldComposer: () =>
               $$ContoursTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
@@ -2619,6 +2459,8 @@ class $$ContoursTableTableManager
                 Value<String> svgUrl = const Value.absent(),
                 Value<String> previewUrl = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<String> accessType = const Value.absent(),
+                Value<int?> price = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ContoursCompanion(
                 id: id,
@@ -2627,6 +2469,8 @@ class $$ContoursTableTableManager
                 svgUrl: svgUrl,
                 previewUrl: previewUrl,
                 createdAt: createdAt,
+                accessType: accessType,
+                price: price,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -2637,6 +2481,8 @@ class $$ContoursTableTableManager
                 required String svgUrl,
                 required String previewUrl,
                 required DateTime createdAt,
+                Value<String> accessType = const Value.absent(),
+                Value<int?> price = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ContoursCompanion.insert(
                 id: id,
@@ -2645,11 +2491,12 @@ class $$ContoursTableTableManager
                 svgUrl: svgUrl,
                 previewUrl: previewUrl,
                 createdAt: createdAt,
+                accessType: accessType,
+                price: price,
                 rowid: rowid,
               ),
-          withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
-              .toList(),
+          withReferenceMapper: (p0) =>
+              p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -2673,12 +2520,8 @@ typedef $$ContoursTableProcessedTableManager =
 class $AppDatabaseManager {
   final _$AppDatabase _db;
   $AppDatabaseManager(this._db);
-  $$ProjectsTableTableManager get projects =>
-      $$ProjectsTableTableManager(_db, _db.projects);
-  $$StrokesTableTableManager get strokes =>
-      $$StrokesTableTableManager(_db, _db.strokes);
-  $$BrushesTableTableManager get brushes =>
-      $$BrushesTableTableManager(_db, _db.brushes);
-  $$ContoursTableTableManager get contours =>
-      $$ContoursTableTableManager(_db, _db.contours);
+  $$ProjectsTableTableManager get projects => $$ProjectsTableTableManager(_db, _db.projects);
+  $$StrokesTableTableManager get strokes => $$StrokesTableTableManager(_db, _db.strokes);
+  $$BrushesTableTableManager get brushes => $$BrushesTableTableManager(_db, _db.brushes);
+  $$ContoursTableTableManager get contours => $$ContoursTableTableManager(_db, _db.contours);
 }

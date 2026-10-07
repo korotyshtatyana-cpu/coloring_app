@@ -12,10 +12,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
   /// Creates a repository with the given [_remoteProvider] and
   /// [_localProvider].
-  AuthRepositoryImpl({
-    required this._remoteProvider,
-    required this._localProvider,
-  });
+  AuthRepositoryImpl({required this._remoteProvider, required this._localProvider});
 
   @override
   Future<bool> checkAuth() {

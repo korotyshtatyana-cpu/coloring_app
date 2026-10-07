@@ -33,8 +33,8 @@ class Projects extends Table {
 
   @override
   List<Set<Column>> get uniqueKeys => [
-        {contourId, userId}
-      ];
+    {contourId, userId},
+  ];
 }
 
 /// Local strokes table.
@@ -108,6 +108,12 @@ class Contours extends Table {
   /// Creation timestamp.
   DateTimeColumn get createdAt => dateTime()();
 
+  /// Raw monetization access type: `free`, `rewarded` or `paid`.
+  TextColumn get accessType => text().withDefault(const Constant('free'))();
+
+  /// Price in cents for paid projects, null otherwise.
+  IntColumn get price => integer().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -154,36 +160,41 @@ class AppDatabase extends _$AppDatabase {
 
   /// Current database schema version.
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-        onCreate: (m) => m.createAll(),
-        onUpgrade: (m, from, to) async {
-          if (from < 2) {
-            // Create the new brushes table
-            await m.createTable(brushes);
-            // Add missing columns to strokes
-            await m.addColumn(strokes, strokes.brushId);
-            await m.addColumn(strokes, strokes.isPressureSensitive);
-          }
-          if (from < 3) {
-            // Rename svgData to svgUrl in contours table.
-            // Drift doesn't support direct column renaming in migrations easily
-            // for all platforms without manual SQL or recreating the table.
-            // Since this is a cache, we can drop and recreate or just add new.
-            // For simplicity and since it's a major change in data content
-            // (XML vs URL), we'll use a manual SQL to rename.
-            await customStatement('ALTER TABLE contours RENAME COLUMN svg_data TO svg_url;');
-          }
-        },
-      );
+    onCreate: (m) => m.createAll(),
+    onUpgrade: (m, from, to) async {
+      if (from < 2) {
+        // Create the new brushes table
+        await m.createTable(brushes);
+        // Add missing columns to strokes
+        await m.addColumn(strokes, strokes.brushId);
+        await m.addColumn(strokes, strokes.isPressureSensitive);
+      }
+      if (from < 3) {
+        // Rename svgData to svgUrl in contours table.
+        // Drift doesn't support direct column renaming in migrations easily
+        // for all platforms without manual SQL or recreating the table.
+        // Since this is a cache, we can drop and recreate or just add new.
+        // For simplicity and since it's a major change in data content
+        // (XML vs URL), we'll use a manual SQL to rename.
+        await customStatement('ALTER TABLE contours RENAME COLUMN svg_data TO svg_url;');
+      }
+      if (from < 4) {
+        // Add monetization fields to the contour cache so access data
+        // survives being read from the local database.
+        await m.addColumn(contours, contours.accessType);
+        await m.addColumn(contours, contours.price);
+      }
+    },
+  );
 
   static LazyDatabase _openConnection() {
     return LazyDatabase(() async {
       final Directory dbFolder = await getApplicationDocumentsDirectory();
-      final File file =
-          File(path.join(dbFolder.path, 'coloring_pro_db.sqlite'));
+      final File file = File(path.join(dbFolder.path, 'coloring_pro_db.sqlite'));
       return NativeDatabase.createInBackground(file);
     });
   }

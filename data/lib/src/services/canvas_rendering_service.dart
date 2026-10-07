@@ -30,17 +30,10 @@ abstract final class CanvasRenderingService {
   }) async {
     // Strokes live in canvas (viewBox) coordinates; scale them to fit the
     // output while keeping the canvas aspect ratio.
-    final Size rawSize = SvgUtils.parseViewBoxSize(contourSvg) ??
-        Size(targetSize, targetSize);
+    final Size rawSize = SvgUtils.parseViewBoxSize(contourSvg) ?? Size(targetSize, targetSize);
     final Size canvasSize = Size(rawSize.width * 1.5, rawSize.height * 1.5);
-    final double scale = min(
-      targetSize / canvasSize.width,
-      targetSize / canvasSize.height,
-    );
-    final Size outputSize = Size(
-      canvasSize.width * scale,
-      canvasSize.height * scale,
-    );
+    final double scale = min(targetSize / canvasSize.width, targetSize / canvasSize.height);
+    final Size outputSize = Size(canvasSize.width * scale, canvasSize.height * scale);
 
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder);
@@ -76,9 +69,7 @@ abstract final class CanvasRenderingService {
       outputSize.width.round(),
       outputSize.height.round(),
     );
-    final ByteData? byteData = await image.toByteData(
-      format: ui.ImageByteFormat.png,
-    );
+    final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
     image.dispose();
     return byteData;
   }
@@ -90,12 +81,8 @@ abstract final class CanvasRenderingService {
   static Future<ui.Image?> _decodeWatermark(Uint8List? bytes) async {
     if (bytes == null || bytes.isEmpty) return null;
     try {
-      final ui.ImmutableBuffer buffer = await ui.ImmutableBuffer.fromUint8List(
-        bytes,
-      );
-      final ui.ImageDescriptor descriptor = await ui.ImageDescriptor.encoded(
-        buffer,
-      );
+      final ui.ImmutableBuffer buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
+      final ui.ImageDescriptor descriptor = await ui.ImageDescriptor.encoded(buffer);
       final ui.Codec codec = await descriptor.instantiateCodec();
       final ui.FrameInfo frame = await codec.getNextFrame();
       final ui.Image image = frame.image;
@@ -128,12 +115,7 @@ abstract final class CanvasRenderingService {
     );
     canvas.drawImageRect(
       watermark,
-      Rect.fromLTWH(
-        0,
-        0,
-        watermark.width.toDouble(),
-        watermark.height.toDouble(),
-      ),
+      Rect.fromLTWH(0, 0, watermark.width.toDouble(), watermark.height.toDouble()),
       dest,
       Paint()..filterQuality = FilterQuality.high,
     );
@@ -148,10 +130,7 @@ abstract final class CanvasRenderingService {
       // layer once with the stroke opacity. This avoids darker overlaps at
       // segment joints, so a semi-transparent stroke looks like a uniform
       // line instead of a chain of dots.
-      canvas.saveLayer(
-        null,
-        Paint()..color = Colors.white.withValues(alpha: stroke.opacity),
-      );
+      canvas.saveLayer(null, Paint()..color = Colors.white.withValues(alpha: stroke.opacity));
     }
 
     final paint = Paint()
@@ -160,8 +139,7 @@ abstract final class CanvasRenderingService {
       ..strokeJoin = StrokeJoin.round
       ..style = PaintingStyle.stroke;
 
-    if (stroke.brushType == BrushType.watercolor ||
-        stroke.brushType == BrushType.airbrush) {
+    if (stroke.brushType == BrushType.watercolor || stroke.brushType == BrushType.airbrush) {
       paint.maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
     }
 
@@ -190,10 +168,7 @@ abstract final class CanvasRenderingService {
     required double opacity,
     required Size size,
   }) async {
-    final PictureInfo pictureInfo = await vg.loadPicture(
-      SvgStringLoader(svgData),
-      null,
-    );
+    final PictureInfo pictureInfo = await vg.loadPicture(SvgStringLoader(svgData), null);
 
     final Size svgSize = pictureInfo.size;
     final double scaleX = size.width / svgSize.width;
@@ -207,10 +182,7 @@ abstract final class CanvasRenderingService {
 
     final strokePicture = recorder.endRecording();
     final layerPaint = Paint()
-      ..colorFilter = ColorFilter.mode(
-        color.withValues(alpha: opacity),
-        BlendMode.srcIn,
-      );
+      ..colorFilter = ColorFilter.mode(color.withValues(alpha: opacity), BlendMode.srcIn);
 
     canvas.saveLayer(Offset.zero & size, layerPaint);
     canvas.drawPicture(strokePicture);

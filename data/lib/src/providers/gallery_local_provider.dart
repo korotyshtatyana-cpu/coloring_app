@@ -22,9 +22,9 @@ class GalleryLocalProvider {
 
   /// Loads a single cached contour by its identifier.
   Future<ContourModel?> getContourById(String id) async {
-    final Contour? row = await (_database.select(_database.contours)
-          ..where(($ContoursTable row) => row.id.equals(id)))
-        .getSingleOrNull();
+    final Contour? row = await (_database.select(
+      _database.contours,
+    )..where(($ContoursTable row) => row.id.equals(id))).getSingleOrNull();
     return row == null ? null : _fromRow(row);
   }
 
@@ -38,17 +38,18 @@ class GalleryLocalProvider {
   /// the last change, most recent first. Only projects with at least one stroke
   /// are included.
   Future<List<WorkInProgressEntity>> getWorkInProgress() async {
-    final List<Project> rows = await (_database.select(_database.projects)
-          ..orderBy(<OrderingTerm Function($ProjectsTable)>[
-            ($ProjectsTable row) => OrderingTerm.desc(row.lastOpened),
-          ]))
-        .get();
+    final List<Project> rows =
+        await (_database.select(_database.projects)
+              ..orderBy(<OrderingTerm Function($ProjectsTable)>[
+                ($ProjectsTable row) => OrderingTerm.desc(row.lastOpened),
+              ]))
+            .get();
 
     final List<WorkInProgressEntity> result = <WorkInProgressEntity>[];
     for (final Project row in rows) {
-      final List<Stroke> strokes = await (_database.select(_database.strokes)
-            ..where(($StrokesTable s) => s.projectId.equals(row.id)))
-          .get();
+      final List<Stroke> strokes = await (_database.select(
+        _database.strokes,
+      )..where(($StrokesTable s) => s.projectId.equals(row.id))).get();
 
       if (strokes.isNotEmpty) {
         result.add(
@@ -71,6 +72,8 @@ class GalleryLocalProvider {
       svgUrl: contour.svgUrl,
       previewUrl: contour.previewUrl,
       createdAt: contour.createdAt ?? DateTime.now(),
+      accessType: Value(contour.accessType),
+      price: Value(contour.price),
     );
   }
 
@@ -82,6 +85,8 @@ class GalleryLocalProvider {
       svgUrl: row.svgUrl,
       previewUrl: row.previewUrl,
       createdAt: row.createdAt,
+      accessType: row.accessType,
+      price: row.price,
     );
   }
 }

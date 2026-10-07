@@ -1,5 +1,7 @@
 import 'package:domain/domain.dart';
 
+import '../constants/request_constants.dart';
+
 /// Data transfer object for a contour.
 class ContourModel {
   /// Contour unique identifier.
@@ -20,6 +22,15 @@ class ContourModel {
   /// Creation timestamp.
   final DateTime? createdAt;
 
+  /// Raw monetization access type, for example `paid`.
+  ///
+  /// Kept as a string so unknown server values survive parsing; the mapping to
+  /// [ContourAccessType] happens in the mapper.
+  final String accessType;
+
+  /// Price in cents for paid projects, `null` otherwise.
+  final int? price;
+
   /// Creates a [ContourModel].
   const ContourModel({
     required this.id,
@@ -28,6 +39,8 @@ class ContourModel {
     required this.svgUrl,
     required this.previewUrl,
     this.createdAt,
+    this.accessType = RequestConstants.defaultContourAccessType,
+    this.price,
   });
 
   /// Creates a [ContourModel] from a JSON map.
@@ -38,9 +51,11 @@ class ContourModel {
       category: ContourCategory.values.byName(json['category'] as String),
       svgUrl: json['svg_data'] as String,
       previewUrl: json['preview_url'] as String,
-      createdAt: json['created_at'] == null
-          ? null
-          : DateTime.parse(json['created_at'] as String),
+      createdAt: json['created_at'] == null ? null : DateTime.parse(json['created_at'] as String),
+      accessType:
+          json[RequestConstants.accessTypeColumn] as String? ??
+          RequestConstants.defaultContourAccessType,
+      price: json[RequestConstants.priceColumn] as int?,
     );
   }
 
@@ -53,6 +68,8 @@ class ContourModel {
       'svg_data': svgUrl,
       'preview_url': previewUrl,
       if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
+      RequestConstants.accessTypeColumn: accessType,
+      RequestConstants.priceColumn: price,
     };
   }
 }

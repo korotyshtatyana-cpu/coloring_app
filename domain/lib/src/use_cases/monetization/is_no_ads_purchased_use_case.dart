@@ -5,8 +5,7 @@ class IsNoAdsPurchasedUseCase implements FutureUseCase<String, bool> {
   final MonetizationRepository _repository;
 
   /// Creates a use case with the given [_repository].
-  const IsNoAdsPurchasedUseCase({required MonetizationRepository repository})
-    : _repository = repository;
+  const IsNoAdsPurchasedUseCase({required this._repository});
 
   @override
   Future<bool> execute([String? params]) {

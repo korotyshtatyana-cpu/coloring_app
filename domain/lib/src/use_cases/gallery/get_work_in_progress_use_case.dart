@@ -2,8 +2,7 @@ import '../../../domain.dart';
 
 /// Returns started (work in progress) projects ordered by the date of
 /// the last change, most recent first.
-class GetWorkInProgressUseCase
-    implements FutureUseCase<NoParams, List<WorkInProgressEntity>> {
+class GetWorkInProgressUseCase implements FutureUseCase<NoParams, List<WorkInProgressEntity>> {
   final GalleryRepository _repository;
 
   /// Creates a use case with the given [_repository].

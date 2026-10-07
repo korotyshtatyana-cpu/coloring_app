@@ -17,8 +17,7 @@ class GrantRewardedUnlockUseCase implements FutureUseCase<GrantRewardedUnlockPar
   final MonetizationRepository _repository;
 
   /// Creates a use case with the given [_repository].
-  const GrantRewardedUnlockUseCase({required MonetizationRepository repository})
-    : _repository = repository;
+  const GrantRewardedUnlockUseCase({required this._repository});
 
   @override
   Future<void> execute([GrantRewardedUnlockParams? params]) {

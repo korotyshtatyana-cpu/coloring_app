@@ -8,8 +8,7 @@ class GetActiveSubscriptionUseCase implements FutureUseCase<String, Subscription
   final MonetizationRepository _repository;
 
   /// Creates a use case with the given [_repository].
-  const GetActiveSubscriptionUseCase({required MonetizationRepository repository})
-    : _repository = repository;
+  const GetActiveSubscriptionUseCase({required this._repository});
 
   @override
   Future<SubscriptionEntity?> execute([String? params]) {

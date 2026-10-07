@@ -12,10 +12,7 @@ class StrokePoint extends Equatable {
   final double pressure;
 
   /// Creates a [StrokePoint].
-  const StrokePoint({
-    required this.offset,
-    required this.pressure,
-  });
+  const StrokePoint({required this.offset, required this.pressure});
 
   @override
   List<Object?> get props => <Object?>[offset, pressure];
@@ -78,12 +75,12 @@ class StrokeEntity extends Equatable {
 
   @override
   List<Object?> get props => [
-        points,
-        color,
-        size,
-        opacity,
-        brushType,
-        brushId,
-        isPressureSensitive,
-      ];
+    points,
+    color,
+    size,
+    opacity,
+    brushType,
+    brushId,
+    isPressureSensitive,
+  ];
 }

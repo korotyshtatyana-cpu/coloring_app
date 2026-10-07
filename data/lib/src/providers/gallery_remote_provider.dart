@@ -28,9 +28,7 @@ class GalleryRemoteProvider {
         .order(RequestConstants.createdAtColumn, ascending: false)
         .range(offset, offset + limit - 1);
 
-    return response
-        .map((Map<String, dynamic> json) => ContourModel.fromJson(json))
-        .toList();
+    return response.map((Map<String, dynamic> json) => ContourModel.fromJson(json)).toList();
   }
 
   /// Fetches contours by their identifiers from Supabase.
@@ -57,9 +55,7 @@ class GalleryRemoteProvider {
 
     final List<Map<String, dynamic>> response = await query;
 
-    return response
-        .map((Map<String, dynamic> json) => ContourModel.fromJson(json))
-        .toList();
+    return response.map((Map<String, dynamic> json) => ContourModel.fromJson(json)).toList();
   }
 
   /// Returns the current user's started (work in progress) projects ordered
@@ -88,9 +84,7 @@ class GalleryRemoteProvider {
           (Map<String, dynamic> row) => WorkInProgressEntity(
             contourId: row[RequestConstants.contourIdColumn] as String,
             thumbnailPath: row[RequestConstants.thumbnailUrlColumn] as String?,
-            lastOpened: DateTime.parse(
-              row[RequestConstants.lastOpenedColumn] as String,
-            ),
+            lastOpened: DateTime.parse(row[RequestConstants.lastOpenedColumn] as String),
           ),
         )
         .toList();
@@ -111,10 +105,7 @@ class GalleryRemoteProvider {
         .order(RequestConstants.createdAtColumn, ascending: false);
 
     return response
-        .map(
-          (Map<String, dynamic> row) =>
-              row[RequestConstants.contourIdColumn] as String,
-        )
+        .map((Map<String, dynamic> row) => row[RequestConstants.contourIdColumn] as String)
         .toList();
   }
 
@@ -128,10 +119,7 @@ class GalleryRemoteProvider {
     try {
       await _client.rpc(
         RequestConstants.toggleFavoriteRpc,
-        params: {
-          RequestConstants.pUserId: user.id,
-          RequestConstants.pContourId: contourId,
-        },
+        params: {RequestConstants.pUserId: user.id, RequestConstants.pContourId: contourId},
       );
     } on PostgrestException catch (e) {
       // Catch unique constraint violation (duplicate key) to handle race conditions.
@@ -149,8 +137,7 @@ class GalleryRemoteProvider {
         .select(RequestConstants.categoryColumn);
 
     return response
-        .map((Map<String, dynamic> row) =>
-            row[RequestConstants.categoryColumn] as String)
+        .map((Map<String, dynamic> row) => row[RequestConstants.categoryColumn] as String)
         .toSet()
         .map((String name) => ContourCategory.values.byName(name))
         .toList();

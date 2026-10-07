@@ -22,8 +22,7 @@ class GetEntitlementUseCase implements FutureUseCase<GetEntitlementParams, UserE
   final MonetizationRepository _repository;
 
   /// Creates a use case with the given [_repository].
-  const GetEntitlementUseCase({required MonetizationRepository repository})
-    : _repository = repository;
+  const GetEntitlementUseCase({required this._repository});
 
   @override
   Future<UserEntitlementEntity?> execute([GetEntitlementParams? params]) {

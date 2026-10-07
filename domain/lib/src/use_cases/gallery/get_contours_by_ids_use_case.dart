@@ -33,12 +33,8 @@ class GetContoursByIdsUseCase
 
   @override
   Future<List<ContourEntity>> execute([GetContoursByIdsParams? params]) {
-    final GetContoursByIdsParams p = params ??
-        const GetContoursByIdsParams(
-          ids: <String>[],
-          limit: 20,
-          offset: 0,
-        );
+    final GetContoursByIdsParams p =
+        params ?? const GetContoursByIdsParams(ids: <String>[], limit: 20, offset: 0);
 
     return _repository.getContoursByIds(
       ids: p.ids,

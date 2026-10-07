@@ -208,11 +208,16 @@ The app requires an active connection for:
 
 ### Pending Purchase (Billing not confirmed)
 
-1. Save transaction to **pending queue** (local storage).
-2. Show dialog: "Payment is processing. We'll check it as soon as you're back online."
-3. On next app launch (or network restoration) → check queue via Google Play Billing.
-4. If unresolved after 24 hours → show: "Please contact the app support."
-5. Show user **what they can do**: "Check your internet connection and update the app."
+Sometimes Google Play Billing does not confirm a purchase immediately
+(network hiccup, Google server delay). To avoid losing the purchase:
+
+1. Save the transaction to the `pending_purchases` table on the server.
+2. Show dialog: "Payment is processing. We'll check it in a moment."
+3. When the app next checks (on next launch or when the network is stable),
+   verify the purchase status with Google Play Billing.
+4. If confirmed → grant access, mark the record as `resolved`.
+5. If failed → mark as `failed`, show the user what to do.
+6. If unresolved after 24 hours → show: "Please contact the app support."
 
 ### Purchase Refund
 
