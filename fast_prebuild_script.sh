@@ -12,5 +12,6 @@ echo "Running all prebuild scripts..."
 ./features/gallery/prebuild_script_gallery.sh
 ./features/canvas/prebuild_script_canvas.sh
 ./features/settings/prebuild_script_settings.sh
+./features/subscription/prebuild_script_subscription.sh
 
 echo "All prebuild scripts completed!"

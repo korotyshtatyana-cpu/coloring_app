@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../bloc/gallery_bloc.dart';
+import '../purchase_dialog.dart';
 import 'contour_card.dart';
 import 'project_access_badge.dart';
 
@@ -52,6 +53,12 @@ class GalleryContourCard extends StatelessWidget {
   }
 
   void _onTap(BuildContext context) {
+    // Locked paid project — offer to buy it or subscribe to Premium.
+    if (access == ProjectAccess.locked &&
+        contour.accessType == ContourAccessType.paid) {
+      PurchaseDialog.show(context, contour: contour);
+      return;
+    }
     // No reload here: GalleryScreen.didPopNext reloads the gallery with a
     // delay after returning from the canvas, once the final save finished.
     context.router.push(CanvasRoute(contourId: contour.id));

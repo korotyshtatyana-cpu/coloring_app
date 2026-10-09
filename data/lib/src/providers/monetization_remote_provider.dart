@@ -107,4 +107,18 @@ class MonetizationRemoteProvider {
         .map((Map<String, dynamic> json) => PendingPurchaseModel.fromJson(json))
         .toList();
   }
+
+  /// Returns the user's confirmed purchases, most recent first.
+  Future<List<PendingPurchaseModel>> getResolvedPurchases(String userId) async {
+    final List<Map<String, dynamic>> response = await _client
+        .from(RequestConstants.pendingPurchasesTable)
+        .select(RequestConstants.selectAll)
+        .eq(RequestConstants.userIdColumn, userId)
+        .eq(RequestConstants.statusColumn, RequestConstants.pendingPurchaseStatusResolved)
+        .order(RequestConstants.createdAtColumn, ascending: false);
+
+    return response
+        .map((Map<String, dynamic> json) => PendingPurchaseModel.fromJson(json))
+        .toList();
+  }
 }

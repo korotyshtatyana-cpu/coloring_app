@@ -3,6 +3,7 @@ import 'package:splash/splash.dart';
 import 'package:canvas/canvas.dart';
 import 'package:gallery/gallery.dart';
 import 'package:settings/settings.dart';
+import 'package:subscription/subscription.dart';
 
 import '../guards/auth_guard.dart';
 
@@ -34,6 +35,10 @@ class AppRouter extends RootStackRouter {
         ),
         AutoRoute(
           page: SettingsRoute.page,
+          guards: <AutoRouteGuard>[_authGuard],
+        ),
+        AutoRoute(
+          page: SubscriptionRoute.page,
           guards: <AutoRouteGuard>[_authGuard],
         ),
       ];

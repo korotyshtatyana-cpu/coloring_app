@@ -56,6 +56,7 @@ export 'src/use_cases/monetization/get_active_subscription_use_case.dart';
 export 'src/use_cases/monetization/get_entitlement_use_case.dart';
 export 'src/use_cases/monetization/get_gallery_items_use_case.dart';
 export 'src/use_cases/monetization/get_pending_purchases_use_case.dart';
+export 'src/use_cases/monetization/get_purchase_history_use_case.dart';
 export 'src/use_cases/monetization/get_subscription_plan_type_use_case.dart';
 export 'src/use_cases/monetization/grant_rewarded_unlock_use_case.dart';
 export 'src/use_cases/monetization/is_no_ads_purchased_use_case.dart';

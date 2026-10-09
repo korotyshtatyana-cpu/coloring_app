@@ -138,6 +138,10 @@ abstract class DomainDI {
       () => GetPendingPurchasesUseCase(repository: appLocator<MonetizationRepository>()),
     );
 
+    appLocator.registerLazySingleton<GetPurchaseHistoryUseCase>(
+      () => GetPurchaseHistoryUseCase(repository: appLocator<MonetizationRepository>()),
+    );
+
     appLocator.registerLazySingleton<GetSubscriptionPlanTypeUseCase>(
       () => const GetSubscriptionPlanTypeUseCase(),
     );

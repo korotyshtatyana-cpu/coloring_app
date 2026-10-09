@@ -44,4 +44,7 @@ abstract class MonetizationRepository {
 
   /// Returns the user's purchases still awaiting confirmation.
   Future<List<PendingPurchaseEntity>> getPendingPurchases(String userId);
+
+  /// Returns the user's confirmed purchases, most recent first.
+  Future<List<PendingPurchaseEntity>> getResolvedPurchases(String userId);
 }

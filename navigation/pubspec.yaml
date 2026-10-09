@@ -20,6 +20,8 @@ dependencies:
     path: ../features/canvas
   settings:
     path: ../features/settings
+  subscription:
+    path: ../features/subscription
 
   auto_route: ^11.1.0
 

@@ -56,6 +56,8 @@ abstract class AppColors {
 
   Color get averagePurple;
 
+  Color get premiumGold;
+
   Color get neonTeal;
 
   Color get darkBlueGray;
@@ -143,6 +145,9 @@ class LightColors implements AppColors {
 
   @override
   Color get averagePurple => const Color(0xFF7B35CA);
+
+  @override
+  Color get premiumGold => const Color(0xFFFFD700);
 
   @override
   Color get neonTeal => const Color(0xFF05D6BA);

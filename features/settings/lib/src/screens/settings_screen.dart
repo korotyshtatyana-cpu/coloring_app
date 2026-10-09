@@ -22,6 +22,10 @@ class SettingsScreen extends StatelessWidget {
         updateSettingsUseCase: appLocator<UpdateSettingsUseCase>(),
         getCurrentUserUseCase: appLocator<GetCurrentUserUseCase>(),
         deleteAccountUseCase: appLocator<DeleteAccountUseCase>(),
+        getActiveSubscriptionUseCase: appLocator<GetActiveSubscriptionUseCase>(),
+        isNoAdsPurchasedUseCase: appLocator<IsNoAdsPurchasedUseCase>(),
+        getSubscriptionPlanTypeUseCase:
+            appLocator<GetSubscriptionPlanTypeUseCase>(),
       )..add(LoadSettings(currentLocale: currentLocale)),
       child: const SettingsContent(),
     );

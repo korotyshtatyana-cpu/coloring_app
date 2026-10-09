@@ -44,6 +44,8 @@ dependency_overrides:
     path: ./features/canvas
   settings:
     path: ./features/settings
+  subscription:
+    path: ./features/subscription
   feedback:
     path: ./features/feedback
 

@@ -90,4 +90,10 @@ class MonetizationRepositoryImpl implements MonetizationRepository {
     final List<PendingPurchaseModel> models = await _remoteProvider.getPendingPurchases(userId);
     return models.map(PendingPurchaseMapper.toEntity).toList();
   }
+
+  @override
+  Future<List<PendingPurchaseEntity>> getResolvedPurchases(String userId) async {
+    final List<PendingPurchaseModel> models = await _remoteProvider.getResolvedPurchases(userId);
+    return models.map(PendingPurchaseMapper.toEntity).toList();
+  }
 }

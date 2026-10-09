@@ -1,13 +1,18 @@
 import 'dart:io';
 
+import 'package:auto_route/auto_route.dart';
 import 'package:core/core.dart';
 import 'package:core_ui/core_ui.dart';
+import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
+import 'package:subscription/subscription.dart';
 
 import '../bloc/settings_bloc.dart';
 import '../widgets/feedback/feedback_actions.dart';
 import '../widgets/language_picker.dart';
+import '../widgets/profile_status_row.dart';
 import '../widgets/profile_user_header.dart';
+import '../widgets/subscription_list_item.dart';
 
 /// UI implementation of the settings screen (Profile).
 class SettingsContent extends StatelessWidget {
@@ -45,7 +50,7 @@ class SettingsContent extends StatelessWidget {
           LocaleKeys.profile.tr(),
           style: AppFonts.appBarTitle.copyWith(
             color: colors.primaryText,
-            shadows: [],
+            shadows: <Shadow>[],
           ),
         ),
       ),
@@ -66,23 +71,40 @@ class SettingsContent extends StatelessWidget {
               );
             }
           },
-          child: Padding(
+          child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: <Widget>[
                 // 1. User Header
-                ProfileUserHeader(user: state.user),
+                ProfileUserHeader(
+                  user: state.user,
+                  planType: state.planType,
+                  noAdsPurchased: state.noAdsPurchased,
+                ),
                 const SizedBox(height: 24),
                 Divider(height: 1, thickness: 1, color: colors.accentLight),
                 const SizedBox(height: 24),
 
-                // 2. Language Selection
+                // 2. Subscription Status
+                ProfileStatusRow(
+                  title: LocaleKeys.profile_status.tr(),
+                  value: _statusText(state),
+                ),
+                const SizedBox(height: 16),
+                SubscriptionListItem(
+                  onTap: () => context.router.push(const SubscriptionRoute()),
+                ),
+                const SizedBox(height: 24),
+                Divider(height: 1, thickness: 1, color: colors.accentLight),
+                const SizedBox(height: 24),
+
+                // 3. Language Selection
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+                    children: <Widget>[
                       Text(
                         LocaleKeys.language.tr(),
                         style: AppFonts.semiBold20.copyWith(
@@ -98,13 +120,13 @@ class SettingsContent extends StatelessWidget {
                 Divider(height: 1, thickness: 1, color: colors.accentLight),
                 const SizedBox(height: 24),
 
-                // 3. Feedback Actions
+                // 4. Feedback Actions
                 FeedbackActions(email: state.user?.email),
                 const SizedBox(height: 24),
                 Divider(height: 1, thickness: 1, color: colors.accentLight),
+                const SizedBox(height: 24),
 
-                // 4. Delete Account
-                const Spacer(),
+                // 5. Delete Account
                 AppButton(
                   text: LocaleKeys.delete_account.tr(),
                   color: Colors.redAccent,
@@ -117,6 +139,29 @@ class SettingsContent extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _statusText(SettingsState state) {
+    final SubscriptionEntity? subscription = state.activeSubscription;
+    final SubscriptionPlanType? plan = state.planType;
+    if (plan != null && subscription != null) {
+      final String planTitle = plan == SubscriptionPlanType.premium
+          ? LocaleKeys.subscription_premium_title.tr()
+          : LocaleKeys.subscription_no_ads_title.tr();
+      return LocaleKeys.subscription_status_active.tr(
+        args: <String>[planTitle, _formatDate(subscription.expiresAt)],
+      );
+    }
+    if (state.noAdsPurchased) {
+      return LocaleKeys.subscription_no_ads_title.tr();
+    }
+    return LocaleKeys.subscription_status_inactive.tr();
+  }
+
+  String _formatDate(DateTime date) {
+    final String day = date.day.toString().padLeft(2, '0');
+    final String month = date.month.toString().padLeft(2, '0');
+    return '$day.$month.${date.year}';
   }
 
   void _showDeleteConfirmation(BuildContext context) {

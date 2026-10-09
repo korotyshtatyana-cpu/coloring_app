@@ -13,6 +13,9 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   final UpdateSettingsUseCase _updateSettingsUseCase;
   final GetCurrentUserUseCase _getCurrentUserUseCase;
   final DeleteAccountUseCase _deleteAccountUseCase;
+  final GetActiveSubscriptionUseCase _getActiveSubscriptionUseCase;
+  final IsNoAdsPurchasedUseCase _isNoAdsPurchasedUseCase;
+  final GetSubscriptionPlanTypeUseCase _getSubscriptionPlanTypeUseCase;
 
   /// Creates a [SettingsBloc] with the required use cases.
   SettingsBloc({
@@ -20,6 +23,9 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     required this._updateSettingsUseCase,
     required this._getCurrentUserUseCase,
     required this._deleteAccountUseCase,
+    required this._getActiveSubscriptionUseCase,
+    required this._isNoAdsPurchasedUseCase,
+    required this._getSubscriptionPlanTypeUseCase,
   }) : super(const SettingsState()) {
     on<LoadSettings>(_onLoadSettings);
     on<ChangeLanguage>(_onChangeLanguage);
@@ -39,10 +45,21 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       // Normalize existing codes
       code = _normalizeLocaleCode(code ?? event.currentLocale);
 
+      SubscriptionEntity? subscription;
+      bool noAdsPurchased = false;
+      if (user != null) {
+        subscription = await _getActiveSubscriptionUseCase.execute(user.id);
+        noAdsPurchased = await _isNoAdsPurchasedUseCase.execute(user.id);
+      }
+      final planType = _getSubscriptionPlanTypeUseCase.execute(subscription);
+
       emit(state.copyWith(
         status: SettingsStatus.success,
         locale: code ?? state.locale,
         user: user,
+        activeSubscription: subscription,
+        planType: planType,
+        noAdsPurchased: noAdsPurchased,
       ));
     } catch (e, stackTrace) {
       ErrorHandler.report(e, stackTrace);
