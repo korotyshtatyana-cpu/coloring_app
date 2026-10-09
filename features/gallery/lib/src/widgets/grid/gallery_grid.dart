@@ -11,10 +11,7 @@ class GalleryGrid extends StatelessWidget {
   final GalleryState state;
 
   /// Creates [GalleryGrid].
-  const GalleryGrid({
-    required this.state,
-    super.key,
-  });
+  const GalleryGrid({required this.state, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -48,6 +45,7 @@ class GalleryGrid extends StatelessWidget {
           isFavorite: isFavorite,
           isInProgress: isInProgress,
           thumbnailPath: state.workInProgressThumbnails[contour.id],
+          access: state.projectAccessById[contour.id],
         );
       },
     );

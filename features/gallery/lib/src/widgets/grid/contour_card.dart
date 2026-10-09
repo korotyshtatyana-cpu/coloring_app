@@ -26,6 +26,9 @@ class ContourCard extends StatelessWidget {
   /// Called when the favorite icon is tapped.
   final VoidCallback? onFavoriteTap;
 
+  /// Badge rendered in the bottom-right corner, typically the access-type icon.
+  final Widget? accessBadge;
+
   /// Creates a [ContourCard].
   const ContourCard({
     required this.title,
@@ -35,6 +38,7 @@ class ContourCard extends StatelessWidget {
     this.isInProgress = false,
     this.onTap,
     this.onFavoriteTap,
+    this.accessBadge,
     super.key,
   });
 
@@ -48,9 +52,7 @@ class ContourCard extends StatelessWidget {
         elevation: 4,
         shadowColor: colors.accentDark.withValues(alpha: 0.2),
         color: colors.secondaryBg,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppDimens.defaultBorder),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.defaultBorder)),
         clipBehavior: Clip.antiAlias,
         child: Stack(
           fit: StackFit.expand,
@@ -74,6 +76,7 @@ class ContourCard extends StatelessWidget {
                 ),
               ),
             ),
+            if (accessBadge != null) Positioned(bottom: 8, right: 8, child: accessBadge!),
           ],
         ),
       ),

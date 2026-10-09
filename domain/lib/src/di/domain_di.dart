@@ -109,5 +109,41 @@ abstract class DomainDI {
     appLocator.registerLazySingleton<SubmitFeedbackUseCase>(
       () => SubmitFeedbackUseCase(repository: appLocator<FeedbackRepository>()),
     );
+
+    appLocator.registerLazySingleton<GetActiveSubscriptionUseCase>(
+      () => GetActiveSubscriptionUseCase(repository: appLocator<MonetizationRepository>()),
+    );
+
+    appLocator.registerLazySingleton<IsNoAdsPurchasedUseCase>(
+      () => IsNoAdsPurchasedUseCase(repository: appLocator<MonetizationRepository>()),
+    );
+
+    appLocator.registerLazySingleton<GetEntitlementUseCase>(
+      () => GetEntitlementUseCase(repository: appLocator<MonetizationRepository>()),
+    );
+
+    appLocator.registerLazySingleton<GrantRewardedUnlockUseCase>(
+      () => GrantRewardedUnlockUseCase(repository: appLocator<MonetizationRepository>()),
+    );
+
+    appLocator.registerLazySingleton<RecordPurchaseUseCase>(
+      () => RecordPurchaseUseCase(repository: appLocator<MonetizationRepository>()),
+    );
+
+    appLocator.registerLazySingleton<EnqueuePendingPurchaseUseCase>(
+      () => EnqueuePendingPurchaseUseCase(repository: appLocator<MonetizationRepository>()),
+    );
+
+    appLocator.registerLazySingleton<GetPendingPurchasesUseCase>(
+      () => GetPendingPurchasesUseCase(repository: appLocator<MonetizationRepository>()),
+    );
+
+    appLocator.registerLazySingleton<GetSubscriptionPlanTypeUseCase>(
+      () => const GetSubscriptionPlanTypeUseCase(),
+    );
+
+    appLocator.registerLazySingleton<GetGalleryItemsUseCase>(
+      () => GetGalleryItemsUseCase(repository: appLocator<MonetizationRepository>()),
+    );
   }
 }

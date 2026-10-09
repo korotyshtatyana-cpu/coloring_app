@@ -50,6 +50,12 @@ class GalleryState extends Equatable {
   /// Started projects mapped to their thumbnail file paths, if any.
   final Map<String, String?> workInProgressThumbnails;
 
+  /// Access level of each loaded contour, keyed by contour id.
+  ///
+  /// Stays empty until the monetization status resolves, so the cards render
+  /// without access icons while the request is in flight.
+  final Map<String, ProjectAccess> projectAccessById;
+
   /// Creates a [GalleryState].
   const GalleryState({
     this.status = GalleryStatus.initial,
@@ -63,6 +69,7 @@ class GalleryState extends Equatable {
     this.favoriteIds = const <String>[],
     this.workInProgressIds = const <String>[],
     this.workInProgressThumbnails = const <String, String?>{},
+    this.projectAccessById = const <String, ProjectAccess>{},
   });
 
   @override
@@ -78,6 +85,7 @@ class GalleryState extends Equatable {
     favoriteIds,
     workInProgressIds,
     workInProgressThumbnails,
+    projectAccessById,
   ];
 
   /// Creates a copy with optional new values.
@@ -94,6 +102,7 @@ class GalleryState extends Equatable {
     List<String>? favoriteIds,
     List<String>? workInProgressIds,
     Map<String, String?>? workInProgressThumbnails,
+    Map<String, ProjectAccess>? projectAccessById,
   }) {
     return GalleryState(
       status: status ?? this.status,
@@ -106,8 +115,8 @@ class GalleryState extends Equatable {
       hasReachedMax: hasReachedMax ?? this.hasReachedMax,
       favoriteIds: favoriteIds ?? this.favoriteIds,
       workInProgressIds: workInProgressIds ?? this.workInProgressIds,
-      workInProgressThumbnails:
-          workInProgressThumbnails ?? this.workInProgressThumbnails,
+      workInProgressThumbnails: workInProgressThumbnails ?? this.workInProgressThumbnails,
+      projectAccessById: projectAccessById ?? this.projectAccessById,
     );
   }
 }

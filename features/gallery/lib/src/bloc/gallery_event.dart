@@ -57,6 +57,16 @@ class ToggleFavorite extends GalleryEvent {
   List<Object?> get props => <Object?>[contourId];
 }
 
+/// Recomputes the access level of every loaded contour.
+///
+/// Dispatched by the gallery after the contour page is known and whenever the
+/// user's subscription or entitlement state may have changed, e.g. after
+/// returning from the canvas or after a purchase is completed.
+class LoadMonetizationStatus extends GalleryEvent {
+  /// Creates a [LoadMonetizationStatus] event.
+  const LoadMonetizationStatus();
+}
+
 /// Filter types for the gallery.
 enum FilterType {
   /// All available contours.

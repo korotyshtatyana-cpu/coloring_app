@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../bloc/gallery_bloc.dart';
 import 'contour_card.dart';
+import 'project_access_badge.dart';
 
 /// Gallery-specific card displaying a contour preview and actions.
 class GalleryContourCard extends StatelessWidget {
@@ -21,12 +22,16 @@ class GalleryContourCard extends StatelessWidget {
   /// Path to the rendered project thumbnail, if the project was started.
   final String? thumbnailPath;
 
+  /// Access level resolved for the contour, or `null` while it is loading.
+  final ProjectAccess? access;
+
   /// Creates a [GalleryContourCard].
   const GalleryContourCard({
     required this.contour,
     required this.isFavorite,
     required this.isInProgress,
     this.thumbnailPath,
+    this.access,
     super.key,
   });
 
@@ -42,6 +47,7 @@ class GalleryContourCard extends StatelessWidget {
       isInProgress: isInProgress,
       onTap: () => _onTap(context),
       onFavoriteTap: () => _onFavoriteTap(context),
+      accessBadge: ProjectAccessBadge(access: access, accessType: contour.accessType),
     );
   }
 

@@ -15,6 +15,8 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
   final ToggleFavoriteUseCase _toggleFavoriteUseCase;
   final GetFavoriteIdsUseCase _getFavoriteIdsUseCase;
   final GetWorkInProgressUseCase _getWorkInProgressUseCase;
+  final GetGalleryItemsUseCase _getGalleryItemsUseCase;
+  final GetCurrentUserUseCase _getCurrentUserUseCase;
 
   /// Creates a [GalleryBloc] with the required use cases.
   GalleryBloc({
@@ -24,31 +26,24 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
     required this._toggleFavoriteUseCase,
     required this._getFavoriteIdsUseCase,
     required this._getWorkInProgressUseCase,
-  })  : super(const GalleryState()) {
-    on<LoadContours>(
-      _onLoadContours,
-      transformer: droppable(),
-    );
+    required this._getGalleryItemsUseCase,
+    required this._getCurrentUserUseCase,
+  }) : super(const GalleryState()) {
+    on<LoadContours>(_onLoadContours, transformer: droppable());
+    on<LoadMonetizationStatus>(_onLoadMonetizationStatus, transformer: restartable());
     on<ChangeFilter>(_onChangeFilter);
     on<SelectCategory>(_onSelectCategory);
     on<ToggleFavorite>(_onToggleFavorite);
   }
 
-  Future<void> _onLoadContours(
-    LoadContours event,
-    Emitter<GalleryState> emit,
-  ) async {
+  Future<void> _onLoadContours(LoadContours event, Emitter<GalleryState> emit) async {
     try {
-      emit(state.copyWith(
-        status: GalleryStatus.loading,
-        error: null,
-      ));
+      emit(state.copyWith(status: GalleryStatus.loading, error: null));
 
       // Fetch favorites and WIP IDs only on reset (first load or filter change)
       List<String> favoriteIds = state.favoriteIds;
       List<String> workInProgressIds = state.workInProgressIds;
-      Map<String, String?> workInProgressThumbnails =
-          state.workInProgressThumbnails;
+      Map<String, String?> workInProgressThumbnails = state.workInProgressThumbnails;
       List<ContourCategory> availableCategories = state.availableCategories;
 
       if (event.reset) {
@@ -56,8 +51,7 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
         availableCategories = await _getUsedCategoriesUseCase.execute();
         // Entries come ordered by the date of the last change, most recent
         // first; the ids below keep that order for the WIP filter.
-        final List<WorkInProgressEntity> workInProgress =
-            await _getWorkInProgressUseCase.execute();
+        final List<WorkInProgressEntity> workInProgress = await _getWorkInProgressUseCase.execute();
         workInProgressIds = workInProgress
             .map((WorkInProgressEntity entry) => entry.contourId)
             .toList();
@@ -115,8 +109,7 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
           hasReachedMax = true;
           currentPage = state.currentPage;
         } else {
-          final List<ContourEntity> pageContours =
-              await _getContoursByIdsUseCase.execute(
+          final List<ContourEntity> pageContours = await _getContoursByIdsUseCase.execute(
             GetContoursByIdsParams(
               ids: targetIds,
               limit: Constants.pageSize,
@@ -133,55 +126,82 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
         }
       }
 
-      emit(state.copyWith(
-        status: GalleryStatus.success,
-        contours: contours,
-        currentPage: currentPage,
-        hasReachedMax: hasReachedMax,
-        error: null,
-        favoriteIds: favoriteIds,
-        availableCategories: availableCategories,
-        workInProgressIds: workInProgressIds,
-        workInProgressThumbnails: workInProgressThumbnails,
-      ));
+      emit(
+        state.copyWith(
+          status: GalleryStatus.success,
+          contours: contours,
+          currentPage: currentPage,
+          hasReachedMax: hasReachedMax,
+          error: null,
+          favoriteIds: favoriteIds,
+          availableCategories: availableCategories,
+          workInProgressIds: workInProgressIds,
+          workInProgressThumbnails: workInProgressThumbnails,
+        ),
+      );
+
+      add(const LoadMonetizationStatus());
     } catch (e, stackTrace) {
       ErrorHandler.report(e, stackTrace);
-      emit(state.copyWith(
-        status: GalleryStatus.failure,
-        error: e.toString(),
-      ));
+      emit(state.copyWith(status: GalleryStatus.failure, error: e.toString()));
     }
   }
 
-  Future<void> _onChangeFilter(
-    ChangeFilter event,
+  Future<void> _onLoadMonetizationStatus(
+    LoadMonetizationStatus event,
     Emitter<GalleryState> emit,
   ) async {
-    emit(state.copyWith(
-      activeFilter: event.filter,
-      selectedCategory: ContourCategory.all,
-      currentPage: 0,
-      hasReachedMax: false,
-    ));
+    try {
+      if (state.contours.isEmpty) {
+        emit(state.copyWith(projectAccessById: const <String, ProjectAccess>{}));
+        return;
+      }
+
+      final UserEntity? user = await _getCurrentUserUseCase.execute();
+      if (user == null) {
+        emit(state.copyWith(projectAccessById: const <String, ProjectAccess>{}));
+        return;
+      }
+
+      final List<GalleryItemEntity> items = await _getGalleryItemsUseCase.execute(
+        GetGalleryItemsParams(
+          contours: state.contours,
+          userId: user.id,
+          inProgressContourIds: state.workInProgressIds.toSet(),
+        ),
+      );
+
+      emit(
+        state.copyWith(
+          projectAccessById: <String, ProjectAccess>{
+            for (final GalleryItemEntity item in items) item.contour.id: item.access,
+          },
+        ),
+      );
+    } catch (e, stackTrace) {
+      ErrorHandler.report(e, stackTrace);
+      emit(state.copyWith(status: GalleryStatus.failure, error: e.toString()));
+    }
+  }
+
+  Future<void> _onChangeFilter(ChangeFilter event, Emitter<GalleryState> emit) async {
+    emit(
+      state.copyWith(
+        activeFilter: event.filter,
+        selectedCategory: ContourCategory.all,
+        currentPage: 0,
+        hasReachedMax: false,
+      ),
+    );
     add(const LoadContours(reset: true));
   }
 
-  Future<void> _onSelectCategory(
-    SelectCategory event,
-    Emitter<GalleryState> emit,
-  ) async {
-    emit(state.copyWith(
-      selectedCategory: event.category,
-      currentPage: 0,
-      hasReachedMax: false,
-    ));
+  Future<void> _onSelectCategory(SelectCategory event, Emitter<GalleryState> emit) async {
+    emit(state.copyWith(selectedCategory: event.category, currentPage: 0, hasReachedMax: false));
     add(const LoadContours(reset: true));
   }
 
-  Future<void> _onToggleFavorite(
-    ToggleFavorite event,
-    Emitter<GalleryState> emit,
-  ) async {
+  Future<void> _onToggleFavorite(ToggleFavorite event, Emitter<GalleryState> emit) async {
     try {
       await _toggleFavoriteUseCase.execute(event.contourId);
 
@@ -195,7 +215,7 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
       emit(state.copyWith(favoriteIds: updatedFavorites));
     } catch (e, stackTrace) {
       ErrorHandler.handleError(e, stackTrace);
-      
+
       // On error, re-sync from server to ensure state consistency
       try {
         final syncedFavorites = await _getFavoriteIdsUseCase.execute();

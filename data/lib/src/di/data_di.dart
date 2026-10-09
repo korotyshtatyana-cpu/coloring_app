@@ -61,6 +61,10 @@ abstract class DataDI {
       () => CanvasLocalProvider(database: appLocator<AppDatabase>()),
     );
 
+    appLocator.registerLazySingleton<MonetizationRemoteProvider>(
+      () => MonetizationRemoteProvider(client: appLocator<SupabaseProvider>().client),
+    );
+
     appLocator.registerLazySingleton<AuthRepository>(
       () => AuthRepositoryImpl(
         remoteProvider: appLocator<AuthRemoteProvider>(),
@@ -73,6 +77,10 @@ abstract class DataDI {
         remoteProvider: appLocator<GalleryRemoteProvider>(),
         localProvider: appLocator<GalleryLocalProvider>(),
       ),
+    );
+
+    appLocator.registerLazySingleton<MonetizationRepository>(
+      () => MonetizationRepositoryImpl(remoteProvider: appLocator<MonetizationRemoteProvider>()),
     );
 
     appLocator.registerLazySingleton<CanvasRepository>(

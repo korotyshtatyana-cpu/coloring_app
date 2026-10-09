@@ -70,10 +70,7 @@ class _GalleryScreenState extends State<GalleryScreen> with AutoRouteAware {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<GalleryBloc>.value(
-      value: _bloc,
-      child: const GalleryContent(),
-    );
+    return BlocProvider<GalleryBloc>.value(value: _bloc, child: const GalleryContent());
   }
 
   GalleryBloc _createBloc() {
@@ -84,6 +81,8 @@ class _GalleryScreenState extends State<GalleryScreen> with AutoRouteAware {
       toggleFavoriteUseCase: appLocator<ToggleFavoriteUseCase>(),
       getFavoriteIdsUseCase: appLocator<GetFavoriteIdsUseCase>(),
       getWorkInProgressUseCase: appLocator<GetWorkInProgressUseCase>(),
+      getGalleryItemsUseCase: appLocator<GetGalleryItemsUseCase>(),
+      getCurrentUserUseCase: appLocator<GetCurrentUserUseCase>(),
     )..add(const LoadContours(reset: true));
   }
 }
