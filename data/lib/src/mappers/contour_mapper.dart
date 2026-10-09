@@ -15,6 +15,7 @@ abstract final class ContourMapper {
       createdAt: model.createdAt,
       accessType: _toAccessType(model.accessType),
       price: model.price,
+      productId: model.productId,
     );
   }
 
@@ -29,6 +30,7 @@ abstract final class ContourMapper {
       createdAt: entity.createdAt,
       accessType: entity.accessType.dbValue,
       price: entity.price,
+      productId: entity.productId,
     );
   }
 

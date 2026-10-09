@@ -74,6 +74,7 @@ class GalleryLocalProvider {
       createdAt: contour.createdAt ?? DateTime.now(),
       accessType: Value(contour.accessType),
       price: Value(contour.price),
+      productId: Value(contour.productId),
     );
   }
 
@@ -87,6 +88,7 @@ class GalleryLocalProvider {
       createdAt: row.createdAt,
       accessType: row.accessType,
       price: row.price,
+      productId: row.productId,
     );
   }
 }

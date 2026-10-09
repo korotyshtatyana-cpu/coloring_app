@@ -114,6 +114,9 @@ class Contours extends Table {
   /// Price in cents for paid projects, null otherwise.
   IntColumn get price => integer().nullable()();
 
+  /// Explicit store product identifier for paid projects, null otherwise.
+  TextColumn get productId => text().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -160,7 +163,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// Current database schema version.
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -187,6 +190,10 @@ class AppDatabase extends _$AppDatabase {
         // survives being read from the local database.
         await m.addColumn(contours, contours.accessType);
         await m.addColumn(contours, contours.price);
+      }
+      if (from < 5) {
+        // Add the explicit store product identifier used to buy paid projects.
+        await m.addColumn(contours, contours.productId);
       }
     },
   );

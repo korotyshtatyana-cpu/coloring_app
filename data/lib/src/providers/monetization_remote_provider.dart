@@ -14,6 +14,39 @@ class MonetizationRemoteProvider {
   /// Creates a provider with the given [_client].
   MonetizationRemoteProvider({required this._client});
 
+  /// Returns the identifier of the currently authenticated user, if any.
+  String? get currentUserId => _client.auth.currentUser?.id;
+
+  /// Verifies a store purchase with the `verify-purchase` Edge Function.
+  ///
+  /// The function derives the user from the JWT, validates the purchase with
+  /// the platform store and grants the matching entitlement. Throws when the
+  /// function rejects the purchase.
+  Future<void> verifyPurchase({
+    required String productId,
+    required String purchaseToken,
+    required String type,
+    required String platform,
+    String? contourId,
+  }) async {
+    final FunctionResponse response = await _client.functions.invoke(
+      RequestConstants.verifyPurchaseFunction,
+      body: <String, dynamic>{
+        RequestConstants.productIdColumn: productId,
+        RequestConstants.purchaseTokenColumn: purchaseToken,
+        RequestConstants.typeColumn: type,
+        RequestConstants.platformParam: platform,
+        if (contourId != null) RequestConstants.contourIdColumn: contourId,
+      },
+    );
+
+    if (response.status != 200) {
+      throw StateError(
+        response.data?.toString() ?? 'Purchase verification failed',
+      );
+    }
+  }
+
   /// Returns the user's active, unexpired subscription, or `null`.
   ///
   /// When several rows qualify, the one expiring last is returned so the user

@@ -29,6 +29,12 @@ class ContourEntity extends Equatable {
   /// Price in cents for paid projects, `null` for every other access type.
   final int? price;
 
+  /// Store product identifier used to buy the project individually.
+  ///
+  /// `null` for free and rewarded projects; when a paid project has no explicit
+  /// identifier the data layer falls back to `contour_{id}`.
+  final String? productId;
+
   /// Creates a [ContourEntity].
   const ContourEntity({
     required this.id,
@@ -39,6 +45,7 @@ class ContourEntity extends Equatable {
     this.createdAt,
     this.accessType = ContourAccessType.free,
     this.price,
+    this.productId,
   });
 
   @override
@@ -51,5 +58,6 @@ class ContourEntity extends Equatable {
     createdAt,
     accessType,
     price,
+    productId,
   ];
 }

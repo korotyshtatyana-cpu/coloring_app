@@ -14,6 +14,7 @@ abstract class DataDI {
     _initProviders();
     await _initServices(config);
     _initRepositories(config);
+    await _initBilling();
   }
 
   static Future<void> _initApi(AppConfig config) async {
@@ -33,6 +34,8 @@ abstract class DataDI {
 
   static void _initRepositories(AppConfig config) {
     appLocator.registerLazySingleton<ShareRepository>(() => const ShareRepositoryImpl());
+
+    appLocator.registerSingleton<BillingPlatform>(BillingPlatformFactory.create());
 
     appLocator.registerLazySingleton<AuthRemoteProvider>(
       () => AuthRemoteProvider(
@@ -80,7 +83,10 @@ abstract class DataDI {
     );
 
     appLocator.registerLazySingleton<MonetizationRepository>(
-      () => MonetizationRepositoryImpl(remoteProvider: appLocator<MonetizationRemoteProvider>()),
+      () => MonetizationRepositoryImpl(
+        remoteProvider: appLocator<MonetizationRemoteProvider>(),
+        billingPlatform: appLocator<BillingPlatform>(),
+      ),
     );
 
     appLocator.registerLazySingleton<CanvasRepository>(
@@ -98,5 +104,18 @@ abstract class DataDI {
     appLocator.registerLazySingleton<FeedbackRepository>(
       () => FeedbackRepositoryImpl(remoteProvider: appLocator<FeedbackRemoteProvider>()),
     );
+  }
+
+  static Future<void> _initBilling() async {
+    try {
+      // Resolve the repository eagerly so its purchase subscription is
+      // established before unfinished transactions are re-delivered.
+      appLocator<MonetizationRepository>();
+      await appLocator<BillingPlatform>().initialize();
+    } on UnimplementedError catch (_) {
+      appLocator<AppLogger>().warning('Billing platform is not implemented yet');
+    } on UnsupportedError catch (_) {
+      appLocator<AppLogger>().warning('Billing is not supported on this platform');
+    }
   }
 }

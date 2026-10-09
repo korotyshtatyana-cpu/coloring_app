@@ -149,5 +149,25 @@ abstract class DomainDI {
     appLocator.registerLazySingleton<GetGalleryItemsUseCase>(
       () => GetGalleryItemsUseCase(repository: appLocator<MonetizationRepository>()),
     );
+
+    appLocator.registerLazySingleton<GetBillingProductsUseCase>(
+      () => GetBillingProductsUseCase(repository: appLocator<MonetizationRepository>()),
+    );
+
+    appLocator.registerLazySingleton<BuySubscriptionUseCase>(
+      () => BuySubscriptionUseCase(repository: appLocator<MonetizationRepository>()),
+    );
+
+    appLocator.registerLazySingleton<BuyProjectUseCase>(
+      () => BuyProjectUseCase(repository: appLocator<MonetizationRepository>()),
+    );
+
+    appLocator.registerLazySingleton<RestorePurchasesUseCase>(
+      () => RestorePurchasesUseCase(repository: appLocator<MonetizationRepository>()),
+    );
+
+    appLocator.registerLazySingleton<WatchPurchaseUpdatesUseCase>(
+      () => WatchPurchaseUpdatesUseCase(repository: appLocator<MonetizationRepository>()),
+    );
   }
 }

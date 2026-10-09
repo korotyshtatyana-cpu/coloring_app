@@ -1,3 +1,5 @@
+import 'package:domain/domain.dart';
+
 /// Constants used for remote data requests and table names.
 abstract final class RequestConstants {
   // Supabase table names
@@ -9,6 +11,10 @@ abstract final class RequestConstants {
   static const String subscriptionsTable = 'subscriptions';
   static const String userEntitlementsTable = 'user_entitlements';
   static const String pendingPurchasesTable = 'pending_purchases';
+
+  // Supabase Edge Functions
+  static const String verifyPurchaseFunction = 'verify-purchase';
+  static const String googlePlayWebhookFunction = 'google-play-webhook';
 
   // Supabase Storage buckets
   static const String thumbnailsBucket = 'project_thumbnails';
@@ -56,6 +62,7 @@ abstract final class RequestConstants {
   static const String categoryParam = 'category';
   static const String userIdParam = 'user_id';
   static const String contourIdParam = 'contour_id';
+  static const String platformParam = 'platform';
   static const String onConflictUserContour = 'user_id,contour_id';
   static const String onConflictUserContourUpdate = 'user_id,contour_id';
 
@@ -76,6 +83,49 @@ abstract final class RequestConstants {
 
   // Monetization defaults
   static const String defaultContourAccessType = 'free';
+
+  // Google Play Billing product identifiers
+  static const String noAdsWeekProductId = 'no_ads_week';
+  static const String noAdsMonthProductId = 'no_ads_month';
+  static const String noAdsYearProductId = 'no_ads_year';
+  static const String premiumWeekProductId = 'premium_week';
+  static const String premiumMonthProductId = 'premium_month';
+  static const String premiumYearProductId = 'premium_year';
+
+  /// Every subscription product offered by the app.
+  static const List<String> subscriptionProductIds = <String>[
+    noAdsWeekProductId,
+    noAdsMonthProductId,
+    noAdsYearProductId,
+    premiumWeekProductId,
+    premiumMonthProductId,
+    premiumYearProductId,
+  ];
+
+  /// Prefix of the fallback product identifier of a paid project.
+  static const String contourProductIdPrefix = 'contour_';
+
+  // Billing verification payload values
+  static const String purchaseTypeSubscription = 'subscription';
+  static const String purchaseTypeProduct = 'product';
+  static const String platformGoogle = 'google';
+  static const String platformApple = 'apple';
+
+  // Billing recovery timings
+  static const Duration restoreResultTimeout = Duration(seconds: 4);
+
+  /// Returns the store product identifier for a [plan] and [interval].
+  static String subscriptionProductId(
+    SubscriptionPlanType plan,
+    SubscriptionInterval interval,
+  ) {
+    return '${plan.dbValue}_${interval.dbValue}';
+  }
+
+  /// Returns whether [productId] is one of the subscription SKUs.
+  static bool isSubscriptionProduct(String productId) {
+    return subscriptionProductIds.contains(productId);
+  }
 
   // RPC functions and parameters
   static const String toggleFavoriteRpc = 'toggle_favorite';

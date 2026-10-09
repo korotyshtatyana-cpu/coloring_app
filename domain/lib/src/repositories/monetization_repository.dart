@@ -1,5 +1,9 @@
+import '../entities/billing_product_entity.dart';
 import '../entities/pending_purchase_entity.dart';
+import '../entities/purchase_update_entity.dart';
 import '../entities/subscription_entity.dart';
+import '../entities/subscription_interval.dart';
+import '../entities/subscription_plan_type.dart';
 import '../entities/user_entitlement_entity.dart';
 
 /// Repository for monetization and billing operations.
@@ -47,4 +51,30 @@ abstract class MonetizationRepository {
 
   /// Returns the user's confirmed purchases, most recent first.
   Future<List<PendingPurchaseEntity>> getResolvedPurchases(String userId);
+
+  /// Stream of purchase and restore outcomes reported by the platform store.
+  Stream<PurchaseUpdateEntity> get purchaseUpdates;
+
+  /// Returns the store products available for purchase.
+  Future<List<BillingProductEntity>> getBillingProducts();
+
+  /// Starts the store purchase flow for a subscription [plan] and [interval].
+  Future<void> buySubscription({
+    required SubscriptionPlanType plan,
+    required SubscriptionInterval interval,
+  });
+
+  /// Starts the store purchase flow for a single project.
+  ///
+  /// When [productId] is `null` the data layer falls back to the project's
+  /// `contour_{contourId}` identifier.
+  Future<void> buyProject({
+    required String contourId,
+    String? productId,
+  });
+
+  /// Restores previously purchased subscriptions and projects.
+  ///
+  /// Restored purchases are verified and reported through [purchaseUpdates].
+  Future<void> restorePurchases();
 }

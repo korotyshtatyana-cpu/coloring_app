@@ -31,6 +31,9 @@ class ContourModel {
   /// Price in cents for paid projects, `null` otherwise.
   final int? price;
 
+  /// Explicit store product identifier for paid projects, `null` otherwise.
+  final String? productId;
+
   /// Creates a [ContourModel].
   const ContourModel({
     required this.id,
@@ -41,6 +44,7 @@ class ContourModel {
     this.createdAt,
     this.accessType = RequestConstants.defaultContourAccessType,
     this.price,
+    this.productId,
   });
 
   /// Creates a [ContourModel] from a JSON map.
@@ -56,6 +60,7 @@ class ContourModel {
           json[RequestConstants.accessTypeColumn] as String? ??
           RequestConstants.defaultContourAccessType,
       price: json[RequestConstants.priceColumn] as int?,
+      productId: json[RequestConstants.productIdColumn] as String?,
     );
   }
 
@@ -70,6 +75,7 @@ class ContourModel {
       if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
       RequestConstants.accessTypeColumn: accessType,
       RequestConstants.priceColumn: price,
+      RequestConstants.productIdColumn: productId,
     };
   }
 }

@@ -95,6 +95,14 @@ abstract class  LocaleKeys {
   static const error_purchase_pending_title = 'error_purchase_pending_title';
   static const error_purchase_pending_text = 'error_purchase_pending_text';
   static const error_contact_support = 'error_contact_support';
+  static const purchase_processing_title = 'purchase_processing_title';
+  static const purchase_processing_text = 'purchase_processing_text';
+  static const purchase_failed_title = 'purchase_failed_title';
+  static const purchase_failed_text = 'purchase_failed_text';
+  static const purchase_success_title = 'purchase_success_title';
+  static const purchase_success_text = 'purchase_success_text';
+  static const purchase_restore_success = 'purchase_restore_success';
+  static const purchase_restore_empty = 'purchase_restore_empty';
   static const contour_access_free = 'contour_access_free';
   static const contour_access_ads = 'contour_access_ads';
   static const contour_access_premium = 'contour_access_premium';

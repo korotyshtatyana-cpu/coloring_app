@@ -30,4 +30,8 @@ abstract final class Constants {
 
   /// Debounce duration for autosave after a stroke.
   static const Duration autosaveDebounce = Duration(milliseconds: 500);
+
+  /// Time after which an unresolved pending purchase is reported as stale and
+  /// the user is asked to contact support.
+  static const Duration stalePendingPurchaseThreshold = Duration(hours: 24);
 }

@@ -206,7 +206,7 @@ The app requires an active connection for:
 - Checking subscription status
 - Syncing projects with the cloud
 
-### Pending Purchase (Billing not confirmed)
+### 
 
 Sometimes Google Play Billing does not confirm a purchase immediately
 (network hiccup, Google server delay). To avoid losing the purchase:
@@ -411,3 +411,67 @@ contour_access_premium
 - Title: "Ad not completed"
 - Text: error message
 - Buttons: "Retry" / "Cancel"
+
+---
+
+## 14. Backend Verification (Supabase Edge Functions)
+
+Purchases are verified server-side; the client never marks a purchase as
+granted on its own.
+
+### `verify-purchase`
+
+- Authenticated with the caller's Supabase JWT; `user_id` is taken from the
+  token and any client supplied value is ignored.
+- Request body: `{ product_id, purchase_token, type, platform, contour_id? }`.
+- `platform` is `google` or `apple`.
+  - `google` — verified with the Android Publisher API
+    (`purchases.subscriptionsv2.get` for subscriptions,
+    `purchases.products.get` for one-time products).
+  - `apple` — **not implemented yet**, returns `501`.
+- Subscriptions are stored in `subscriptions` keyed by `purchase_token`;
+  individual projects grant a row in `user_entitlements`.
+- The matching `pending_purchases` row is marked `resolved`.
+
+### `google-play-webhook`
+
+- Receives Real-time Developer Notifications through a Cloud Pub/Sub push
+  subscription.
+- Push endpoint:
+  `https://<project-ref>.supabase.co/functions/v1/google-play-webhook?secret=<GOOGLE_PUBSUB_SECRET>`
+- Handles voids/refunds (removes `user_entitlements`, deactivates
+  `subscriptions`), one-time product cancellations, and Pub/Sub test
+  notifications.
+
+### Secrets
+
+| Secret | Purpose |
+|--------|---------|
+| `GOOGLE_SERVICE_ACCOUNT_JSON` | Service account for the Android Publisher API |
+| `GOOGLE_PLAY_PACKAGE_NAME` | Android application id |
+| `GOOGLE_PUBSUB_SECRET` | Shared secret guarding the Pub/Sub webhook |
+| `SUPABASE_URL` / `SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY` | Provided automatically |
+
+---
+
+## 15. Future: iOS Billing
+
+iOS billing is intentionally a stub for the current Android-only release. The
+data layer exposes a platform-agnostic `BillingPlatform` abstraction; the iOS
+implementation must satisfy the same contract.
+
+Checklist for the iOS release:
+
+1. Create the six subscription SKUs and the per-project products in App Store
+   Connect.
+2. Implement `AppleBillingPlatform` in
+   `data/lib/src/services/apple_billing_platform.dart` via `in_app_purchase`
+   (App Store) — replace the `UnimplementedError` stubs. Add the iOS-specific
+   imports and App Store configuration at that point only.
+3. Implement the `platform == "apple"` branch of `verify-purchase` using the
+   App Store Server API (`GET /inApps/v1/subscriptions/{transactionId}` and
+   `/inApps/v2/history`) with an App Store Server API key.
+4. Wire App Store Server Notifications v2 to a new
+   `supabase/functions/apple-app-store-webhook` function to reconcile refunds,
+   cancellations and expirations.
+5. Test with StoreKit sandbox accounts before submission.
