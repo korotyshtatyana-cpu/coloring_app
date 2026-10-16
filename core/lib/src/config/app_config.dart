@@ -13,6 +13,8 @@ class AppConfig {
   final String googleWebClientId;
   final String appsFlyerDevKey;
   final String appleAppId;
+  final String yandexAdsRewardedUnitId;
+  final String yandexAdsBannerUnitId;
 
   const AppConfig({
     required this.flavor,
@@ -21,6 +23,8 @@ class AppConfig {
     required this.googleWebClientId,
     required this.appsFlyerDevKey,
     required this.appleAppId,
+    required this.yandexAdsRewardedUnitId,
+    required this.yandexAdsBannerUnitId,
   });
 
   factory AppConfig.fromFlavor(Flavor flavor) {
@@ -34,6 +38,8 @@ class AppConfig {
               ? dotenv.env['APPSFLYER_IOS_APP_ID']
               : dotenv.env['APPSFLYER_ANDROID_APP_ID']) ??
           '',
+      yandexAdsRewardedUnitId: dotenv.env['YANDEX_ADS_REWARDED_UNIT_ID'] ?? '',
+      yandexAdsBannerUnitId: dotenv.env['YANDEX_ADS_BANNER_UNIT_ID'] ?? '',
     );
   }
 }

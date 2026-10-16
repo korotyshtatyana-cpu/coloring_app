@@ -144,7 +144,26 @@
 - [x] `prebuild_script_settings.sh` (flutter pub get + build_runner)
 - [x] `fast_prebuild_script.sh`
 
+## ✅ Монетизация
+- [x] Доменные сущности: `ContourAccessType`, `SubscriptionPlanType`, `EntitlementType`, `SubscriptionEntity`, `UserEntitlementEntity`, `ProjectAccess`
+- [x] `ProjectAccessCalculator` — чистая логика доступа (`domain/lib/src/logic/`)
+- [x] UseCases монетизации (`get_active_subscription`, `is_no_ads_purchased`, `get_entitlement`, `grant_rewarded_unlock`, `buy_subscription`, `buy_project`, `restore_purchases`, `record_purchase`, `get_pending_purchases`, `watch_purchase_updates` и др.)
+- [x] `MonetizationRepository` + `MonetizationRepositoryImpl`
+- [x] Google Play Billing (`BillingPlatform`, `in_app_purchase`) — Stage 6
+- [x] Подписки (No Ads / Premium) и индивидуальные покупки проектов
+- [x] Восстановление покупок (restore) с таймаутом `restoreResultTimeout`
+- [x] Очередь `pending_purchases` и её разрешение
+- [x] Экран подписки (`SubscriptionBloc`, `SubscriptionScreen`, `PurchaseDialog`)
+- [x] Rewarded-видео (Yandex Mobile Ads) и баннер в галерее — Stage 7
+- [x] Supabase Edge Functions (`verify-purchase`, `google-play-webhook`) + миграция
+- [x] Настройка `.env.sample` (ключи рекламы) и `AppConfig`
+- [x] Кэш состояния подписки (`SubscriptionCache`, in-memory + SharedPreferences, TTL)
+- [x] Аналитические события монетизации (`AnalyticsEvents`, `AnalyticsService`)
+- [x] Локализованные сообщения об ошибках монетизации
+- [x] `docs/MONETIZATION.md` с разделами настройки и testing checklist
+
 ## ✅ Тестирование (опционально)
+- [x] Unit тесты для `ProjectAccessCalculator` (все сценарии из `MONETIZATION.md` §3)
 - [ ] Unit тесты для UseCases
 - [ ] Unit тесты для BLoC
 

@@ -84,6 +84,9 @@ abstract class  LocaleKeys {
   static const rewarded_ad_not_completed_text = 'rewarded_ad_not_completed_text';
   static const rewarded_ad_retry = 'rewarded_ad_retry';
   static const rewarded_ad_cancel = 'rewarded_ad_cancel';
+  static const rewarded_ad_loading = 'rewarded_ad_loading';
+  static const rewarded_ad_unavailable = 'rewarded_ad_unavailable';
+  static const banner_ad_label = 'banner_ad_label';
   static const purchase_dialog_title = 'purchase_dialog_title';
   static const purchase_dialog_project_price = 'purchase_dialog_project_price';
   static const purchase_dialog_buy_project = 'purchase_dialog_buy_project';

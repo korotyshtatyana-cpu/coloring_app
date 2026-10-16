@@ -67,6 +67,24 @@ class LoadMonetizationStatus extends GalleryEvent {
   const LoadMonetizationStatus();
 }
 
+/// Requests opening a contour, gating rewarded access behind a video ad.
+class OpenContour extends GalleryEvent {
+  /// Contour identifier to open.
+  final String contourId;
+
+  /// Creates an [OpenContour] event.
+  const OpenContour(this.contourId);
+
+  @override
+  List<Object?> get props => <Object?>[contourId];
+}
+
+/// Acknowledges that the UI handled the pending access request.
+class AccessRequestHandled extends GalleryEvent {
+  /// Creates an [AccessRequestHandled] event.
+  const AccessRequestHandled();
+}
+
 /// Filter types for the gallery.
 enum FilterType {
   /// All available contours.

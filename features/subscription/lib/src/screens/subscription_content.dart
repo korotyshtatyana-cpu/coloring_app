@@ -54,9 +54,11 @@ class SubscriptionContent extends StatelessWidget {
             prev.purchaseUpdateId != curr.purchaseUpdateId,
         listener: (context, state) {
           if (state.status == SubscriptionStatus.failure) {
+            // The raw exception is logged by the bloc; the user only sees a
+            // clear, localized message.
             ErrorDialog.show(
               context,
-              message: state.error ?? LocaleKeys.something_went_wrong.tr(),
+              message: LocaleKeys.something_went_wrong.tr(),
               onRetry: () =>
                   context.read<SubscriptionBloc>().add(const LoadSubscription()),
             );

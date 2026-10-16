@@ -15,6 +15,35 @@ enum GalleryStatus {
   failure,
 }
 
+/// One-shot request produced after the user tries to open a contour.
+///
+/// The UI reacts to a new [id] by navigating to the canvas when [granted] is
+/// `true`, or by showing an error when a rewarded ad was not completed.
+class AccessRequest extends Equatable {
+  /// Monotonic identifier so repeated outcomes still reach the listener.
+  final int id;
+
+  /// Contour the user tried to open.
+  final String contourId;
+
+  /// Whether access was granted and the canvas should open.
+  final bool granted;
+
+  /// How the rewarded ad ended, or `null` when no ad was required.
+  final RewardedAdOutcome? outcome;
+
+  /// Creates an [AccessRequest].
+  const AccessRequest({
+    required this.id,
+    required this.contourId,
+    required this.granted,
+    this.outcome,
+  });
+
+  @override
+  List<Object?> get props => <Object?>[id, contourId, granted, outcome];
+}
+
 /// State of the gallery feature.
 class GalleryState extends Equatable {
   /// Current loading status.
@@ -56,6 +85,18 @@ class GalleryState extends Equatable {
   /// without access icons while the request is in flight.
   final Map<String, ProjectAccess> projectAccessById;
 
+  /// Whether the gallery should display the bottom banner ad.
+  ///
+  /// `false` while the monetization status is unknown and for users with an
+  /// active subscription or a lifetime No Ads purchase.
+  final bool showAds;
+
+  /// Pending one-shot access request, if any.
+  final AccessRequest? accessRequest;
+
+  /// Whether a rewarded ad is currently loading.
+  final bool isLoadingAd;
+
   /// Creates a [GalleryState].
   const GalleryState({
     this.status = GalleryStatus.initial,
@@ -70,6 +111,9 @@ class GalleryState extends Equatable {
     this.workInProgressIds = const <String>[],
     this.workInProgressThumbnails = const <String, String?>{},
     this.projectAccessById = const <String, ProjectAccess>{},
+    this.showAds = false,
+    this.accessRequest,
+    this.isLoadingAd = false,
   });
 
   @override
@@ -86,6 +130,9 @@ class GalleryState extends Equatable {
     workInProgressIds,
     workInProgressThumbnails,
     projectAccessById,
+    showAds,
+    accessRequest,
+    isLoadingAd,
   ];
 
   /// Creates a copy with optional new values.
@@ -103,6 +150,10 @@ class GalleryState extends Equatable {
     List<String>? workInProgressIds,
     Map<String, String?>? workInProgressThumbnails,
     Map<String, ProjectAccess>? projectAccessById,
+    bool? showAds,
+    AccessRequest? accessRequest,
+    bool clearAccessRequest = false,
+    bool? isLoadingAd,
   }) {
     return GalleryState(
       status: status ?? this.status,
@@ -117,6 +168,9 @@ class GalleryState extends Equatable {
       workInProgressIds: workInProgressIds ?? this.workInProgressIds,
       workInProgressThumbnails: workInProgressThumbnails ?? this.workInProgressThumbnails,
       projectAccessById: projectAccessById ?? this.projectAccessById,
+      showAds: showAds ?? this.showAds,
+      accessRequest: clearAccessRequest ? null : (accessRequest ?? this.accessRequest),
+      isLoadingAd: isLoadingAd ?? this.isLoadingAd,
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:core/core.dart';
+import 'package:data/data.dart';
 import 'package:domain/domain.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -83,6 +84,9 @@ class _GalleryScreenState extends State<GalleryScreen> with AutoRouteAware {
       getWorkInProgressUseCase: appLocator<GetWorkInProgressUseCase>(),
       getGalleryItemsUseCase: appLocator<GetGalleryItemsUseCase>(),
       getCurrentUserUseCase: appLocator<GetCurrentUserUseCase>(),
+      getActiveSubscriptionUseCase: appLocator<GetActiveSubscriptionUseCase>(),
+      isNoAdsPurchasedUseCase: appLocator<IsNoAdsPurchasedUseCase>(),
+      adService: appLocator<AdService>(),
     )..add(const LoadContours(reset: true));
   }
 }

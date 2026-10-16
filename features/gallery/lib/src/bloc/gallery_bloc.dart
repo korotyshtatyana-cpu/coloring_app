@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:core/core.dart';
+import 'package:data/data.dart';
 import 'package:domain/domain.dart';
 import 'package:equatable/equatable.dart';
 
@@ -17,6 +18,11 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
   final GetWorkInProgressUseCase _getWorkInProgressUseCase;
   final GetGalleryItemsUseCase _getGalleryItemsUseCase;
   final GetCurrentUserUseCase _getCurrentUserUseCase;
+  final GetActiveSubscriptionUseCase _getActiveSubscriptionUseCase;
+  final IsNoAdsPurchasedUseCase _isNoAdsPurchasedUseCase;
+  final AdService _adService;
+
+  int _accessRequestId = 0;
 
   /// Creates a [GalleryBloc] with the required use cases.
   GalleryBloc({
@@ -28,12 +34,17 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
     required this._getWorkInProgressUseCase,
     required this._getGalleryItemsUseCase,
     required this._getCurrentUserUseCase,
+    required this._getActiveSubscriptionUseCase,
+    required this._isNoAdsPurchasedUseCase,
+    required this._adService,
   }) : super(const GalleryState()) {
     on<LoadContours>(_onLoadContours, transformer: droppable());
     on<LoadMonetizationStatus>(_onLoadMonetizationStatus, transformer: restartable());
     on<ChangeFilter>(_onChangeFilter);
     on<SelectCategory>(_onSelectCategory);
     on<ToggleFavorite>(_onToggleFavorite);
+    on<OpenContour>(_onOpenContour, transformer: droppable());
+    on<AccessRequestHandled>(_onAccessRequestHandled);
   }
 
   Future<void> _onLoadContours(LoadContours event, Emitter<GalleryState> emit) async {
@@ -153,13 +164,23 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
   ) async {
     try {
       if (state.contours.isEmpty) {
-        emit(state.copyWith(projectAccessById: const <String, ProjectAccess>{}));
+        emit(
+          state.copyWith(
+            projectAccessById: const <String, ProjectAccess>{},
+            showAds: false,
+          ),
+        );
         return;
       }
 
       final UserEntity? user = await _getCurrentUserUseCase.execute();
       if (user == null) {
-        emit(state.copyWith(projectAccessById: const <String, ProjectAccess>{}));
+        emit(
+          state.copyWith(
+            projectAccessById: const <String, ProjectAccess>{},
+            showAds: false,
+          ),
+        );
         return;
       }
 
@@ -171,11 +192,18 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
         ),
       );
 
+      final SubscriptionEntity? activeSubscription = await _getActiveSubscriptionUseCase.execute(
+        user.id,
+      );
+      final bool noAdsPurchased = await _isNoAdsPurchasedUseCase.execute(user.id);
+      final bool showAds = activeSubscription?.isActiveNow() != true && !noAdsPurchased;
+
       emit(
         state.copyWith(
           projectAccessById: <String, ProjectAccess>{
             for (final GalleryItemEntity item in items) item.contour.id: item.access,
           },
+          showAds: showAds,
         ),
       );
     } catch (e, stackTrace) {
@@ -224,5 +252,62 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
         // If re-sync also fails, we at least showed the error dialog
       }
     }
+  }
+
+  Future<void> _onOpenContour(OpenContour event, Emitter<GalleryState> emit) async {
+    final ContourEntity? contour = _findContour(event.contourId);
+    final ProjectAccess? access = state.projectAccessById[event.contourId];
+    if (contour == null || access == null) {
+      return;
+    }
+
+    // Paid projects must go through the purchase flow, never a rewarded ad.
+    if (access == ProjectAccess.locked &&
+        contour.accessType == ContourAccessType.paid) {
+      return;
+    }
+
+    final bool needsRewardedAd = access == ProjectAccess.locked &&
+        contour.accessType == ContourAccessType.rewarded;
+
+    if (!needsRewardedAd) {
+      emit(
+        state.copyWith(
+          accessRequest: AccessRequest(
+            id: ++_accessRequestId,
+            contourId: event.contourId,
+            granted: true,
+          ),
+        ),
+      );
+      return;
+    }
+
+    emit(state.copyWith(isLoadingAd: true));
+    final RewardedAdOutcome outcome = await _adService.showRewardedAd();
+    emit(
+      state.copyWith(
+        isLoadingAd: false,
+        accessRequest: AccessRequest(
+          id: ++_accessRequestId,
+          contourId: event.contourId,
+          granted: outcome == RewardedAdOutcome.completed,
+          outcome: outcome,
+        ),
+      ),
+    );
+  }
+
+  void _onAccessRequestHandled(AccessRequestHandled event, Emitter<GalleryState> emit) {
+    emit(state.copyWith(clearAccessRequest: true, isLoadingAd: false));
+  }
+
+  ContourEntity? _findContour(String contourId) {
+    for (final ContourEntity contour in state.contours) {
+      if (contour.id == contourId) {
+        return contour;
+      }
+    }
+    return null;
   }
 }

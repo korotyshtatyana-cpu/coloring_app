@@ -475,3 +475,120 @@ Checklist for the iOS release:
    `supabase/functions/apple-app-store-webhook` function to reconcile refunds,
    cancellations and expirations.
 5. Test with StoreKit sandbox accounts before submission.
+---
+
+## 16. Future: iOS Ads
+
+Advertising is Yandex-only on Android for the current release. The data layer
+exposes a platform-agnostic `AdService` abstraction; every ad provider must
+satisfy the same contract (`initialize`, `isInitialized`, `showRewardedAd`,
+`buildBanner`). `AdServiceFactory` returns `YandexAdService` on Android and
+`StubAdService` (ads disabled) everywhere else.
+
+Checklist for iOS ads:
+
+1. Add an iOS ad SDK dependency (for example the Yandex Mobile Ads iOS pod) to
+   `data/pubspec.yaml` and the iOS project.
+2. Implement an `AppleAdService` in `data/lib/src/services/` that fulfils the
+   `AdService` contract using the iOS SDK. Keep the SDK imports inside that
+   file only, mirroring the current `YandexAdService`.
+3. Extend `AdServiceFactory` to return the new implementation for
+   `Platform.isIOS`, passing the same `AppConfig` ad unit identifiers (add
+   iOS-specific keys to `env.sample` if the placements differ).
+4. Review consent handling (ATT / GDPR) and call the SDK's consent APIs before
+   the first ad request where required.
+5. Create the rewarded and banner placements in the provider's dashboard and
+   test with the provider's test ad units before release.
+
+---
+
+## 17. Testing checklist
+
+Manual QA matrix for the monetization flows. Access decisions are always
+re-derived from server state, so every scenario below must be verified against
+a real or sandbox Google Play account and the deployed Edge Functions.
+
+### Purchases
+
+- [ ] **No Ads purchase** — buying No Ads removes the gallery banner and opens
+      every `rewarded` project without an ad.
+- [ ] **Premium purchase** — buying Premium unlocks all `paid` projects and
+      removes the banner.
+- [ ] **Individual project purchase** — buying a `paid` project unlocks that
+      project permanently, and stays unlocked after restart and reinstall.
+- [ ] **Cancel** — dismissing the store sheet leaves the app unchanged and
+      emits `monetization_purchase_canceled`; the dialog closes cleanly.
+- [ ] **Pending** — a deferred payment shows the "processing" state, is stored
+      in `pending_purchases`, and resolves on a later check.
+- [ ] **Failed verification** — a server error shows a localized error, queues
+      the purchase, and retries later without granting access.
+
+### Restore
+
+- [ ] Restoring on a device with existing purchases unlocks access within the
+      restore timeout.
+- [ ] Restoring with no purchases shows the "nothing to restore" result and
+      changes nothing.
+- [ ] Repeated restores do not duplicate entitlements.
+
+### Expiry and renewal
+
+- [ ] An active subscription that passes its `expires_at` stops granting
+      access on the next gallery open and emits
+      `monetization_subscription_expired` exactly once.
+- [ ] A renewal extends `expires_at` and keeps access without any user action.
+- [ ] Expired Premium keeps `viewOnly` access to paid projects the user had
+      already started, and blocks the rest.
+- [ ] A server `is_active = false` subscription does not grant access even if
+      its `expires_at` is still in the future.
+
+### Refunds and revocation
+
+- [ ] A refunded subscription (webhook) revokes access; the next gallery open
+      shows the correct lock state.
+- [ ] A refunded individual purchase revokes that project's access.
+- [ ] A charged-back / canceled subscription behaves like an expiry.
+
+### Rewarded video
+
+- [ ] Watching a rewarded video to the end opens the project and unlocks it.
+- [ ] Closing the rewarded video early keeps the project locked and shows the
+      "Ad not completed" dialog; retry works.
+- [ ] When no ad can be loaded (offline, no fill, timeout) the project stays
+      locked and a localized message is shown.
+- [ ] An active subscription or No Ads skips the ad entirely for `rewarded`
+      projects.
+- [ ] `paid` projects are never opened through a rewarded video; they show the
+      purchase dialog instead.
+
+### Banner
+
+- [ ] The gallery banner is visible for users without an active plan.
+- [ ] The banner disappears immediately after a successful purchase or restore.
+- [ ] No banner is shown on unsupported platforms (`StubAdService`).
+
+### Offline and errors
+
+- [ ] Opening the gallery offline shows a localized error with a retry action;
+      no technical exception text is shown to the user.
+- [ ] The subscription screen offline shows a localized error and a retry.
+- [ ] Previously cached state is never used to grant access to an expired
+      subscription while offline.
+
+### Cache
+
+- [ ] Re-opening the gallery within the cache TTL does not re-query Supabase.
+- [ ] A successful purchase invalidates the cache and the new access is visible
+      immediately.
+- [ ] Cache entries expire after the TTL and are refreshed from the server.
+
+### Analytics
+
+- [ ] `monetization_purchase_started`, `monetization_purchase_completed`,
+      `monetization_purchase_pending`, `monetization_purchase_canceled` and
+      `monetization_purchase_failed` are emitted on the matching purchase
+      transitions.
+- [ ] `monetization_rewarded_ad_shown`, `monetization_rewarded_ad_completed`,
+      `monetization_rewarded_ad_skipped` and
+      `monetization_rewarded_ad_unavailable` are emitted for the ad flows.
+- [ ] `monetization_subscription_expired` is emitted once per expiry.

@@ -1,5 +1,3 @@
-import 'package:auto_route/auto_route.dart';
-import 'package:canvas/canvas.dart';
 import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -59,9 +57,9 @@ class GalleryContourCard extends StatelessWidget {
       PurchaseDialog.show(context, contour: contour);
       return;
     }
-    // No reload here: GalleryScreen.didPopNext reloads the gallery with a
-    // delay after returning from the canvas, once the final save finished.
-    context.router.push(CanvasRoute(contourId: contour.id));
+    // The bloc resolves access (rewarded video ad when needed) and navigates
+    // to the canvas; GalleryScreen.didPopNext reloads on return.
+    context.read<GalleryBloc>().add(OpenContour(contour.id));
   }
 
   void _onFavoriteTap(BuildContext context) {

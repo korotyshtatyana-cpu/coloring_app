@@ -9,5 +9,9 @@ abstract class CoreDi {
     );
 
     appLocator.registerLazySingleton<AppLogger>(AppLogger.new);
+
+    appLocator.registerLazySingleton<AnalyticsService>(
+      () => AnalyticsService(logger: appLocator<AppLogger>()),
+    );
   }
 }

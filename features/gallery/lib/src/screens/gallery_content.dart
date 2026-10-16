@@ -1,10 +1,13 @@
 import 'package:auto_route/auto_route.dart';
+import 'package:canvas/canvas.dart';
 import 'package:core/core.dart';
 import 'package:core_ui/core_ui.dart';
+import 'package:data/data.dart';
 import 'package:flutter/material.dart';
 import 'package:settings/settings.dart';
 
 import '../bloc/gallery_bloc.dart';
+import '../widgets/ad_loading_overlay.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/filter_chips.dart';
 import '../widgets/gallery_title.dart';
@@ -32,49 +35,119 @@ class GalleryContent extends StatelessWidget {
           const SizedBox(width: 16),
         ],
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          const SizedBox(height: 8),
-          const FilterChips(),
-          const SizedBox(height: 8),
-          Expanded(
-            child: BlocListener<GalleryBloc, GalleryState>(
-              listenWhen: _shouldListenToFailure,
-              listener: _onFailure,
-              child: BlocBuilder<GalleryBloc, GalleryState>(
-                builder: (BuildContext context, GalleryState state) {
-                  if (state.status == GalleryStatus.loading &&
-                      state.contours.isEmpty) {
-                    return Center(
-                      child: CircularProgressIndicator(
-                        color: colors.accentDark,
+      body: BlocListener<GalleryBloc, GalleryState>(
+        listenWhen: _shouldListenToAccessRequest,
+        listener: _onAccessRequest,
+        child: BlocBuilder<GalleryBloc, GalleryState>(
+          buildWhen: (GalleryState previous, GalleryState current) =>
+              previous.isLoadingAd != current.isLoadingAd,
+          builder: (BuildContext context, GalleryState state) => Stack(
+            children: <Widget>[
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  const SizedBox(height: 8),
+                  const FilterChips(),
+                  const SizedBox(height: 8),
+                  Expanded(
+                    child: BlocListener<GalleryBloc, GalleryState>(
+                      listenWhen: _shouldListenToFailure,
+                      listener: _onFailure,
+                      child: BlocBuilder<GalleryBloc, GalleryState>(
+                        builder: (BuildContext context, GalleryState state) {
+                          if (state.status == GalleryStatus.loading &&
+                              state.contours.isEmpty) {
+                            return Center(
+                              child: CircularProgressIndicator(
+                                color: colors.accentDark,
+                              ),
+                            );
+                          }
+
+                          if (state.contours.isEmpty) {
+                            return const EmptyState();
+                          }
+
+                          return NotificationListener<ScrollNotification>(
+                            onNotification: (ScrollNotification notification) {
+                              return _handleScroll(context, notification, state);
+                            },
+                            child: RefreshIndicator(
+                              color: colors.accentDark,
+                              backgroundColor: colors.secondaryBg,
+                              onRefresh: () async => _onRefresh(context),
+                              child: GalleryGrid(state: state),
+                            ),
+                          );
+                        },
                       ),
-                    );
-                  }
-
-                  if (state.contours.isEmpty) {
-                    return const EmptyState();
-                  }
-
-                  return NotificationListener<ScrollNotification>(
-                    onNotification: (ScrollNotification notification) {
-                      return _handleScroll(context, notification, state);
-                    },
-                    child: RefreshIndicator(
-                      color: colors.accentDark,
-                      backgroundColor: colors.secondaryBg,
-                      onRefresh: () async => _onRefresh(context),
-                      child: GalleryGrid(state: state),
                     ),
-                  );
-                },
+                  ),
+                  BlocBuilder<GalleryBloc, GalleryState>(
+                    buildWhen: (GalleryState previous, GalleryState current) =>
+                        previous.showAds != current.showAds,
+                    builder: _buildBanner,
+                  ),
+                ],
               ),
-            ),
+              if (state.isLoadingAd)
+                const Positioned.fill(child: AdLoadingOverlay()),
+            ],
           ),
-        ],
+        ),
       ),
     );
+  }
+
+  Widget _buildBanner(BuildContext context, GalleryState state) {
+    if (!state.showAds) {
+      return const SizedBox.shrink();
+    }
+    final Widget? banner = appLocator<AdService>().buildBanner();
+    if (banner == null) {
+      return const SizedBox.shrink();
+    }
+    return SafeArea(
+      top: false,
+      child: Semantics(
+        label: context.tr(LocaleKeys.banner_ad_label),
+        child: Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: banner,
+        ),
+      ),
+    );
+  }
+
+  bool _shouldListenToAccessRequest(GalleryState previous, GalleryState current) {
+    return current.accessRequest != null &&
+        current.accessRequest?.id != previous.accessRequest?.id;
+  }
+
+  Future<void> _onAccessRequest(BuildContext context, GalleryState state) async {
+    final AccessRequest request = state.accessRequest!;
+    final GalleryBloc bloc = context.read<GalleryBloc>();
+    bloc.add(const AccessRequestHandled());
+
+    if (request.granted) {
+      await context.router.push(CanvasRoute(contourId: request.contourId));
+      return;
+    }
+
+    if (request.outcome == RewardedAdOutcome.unavailable) {
+      ErrorDialog.show(
+        context,
+        message: context.tr(LocaleKeys.rewarded_ad_unavailable),
+        retryLabel: context.tr(LocaleKeys.retry),
+        onRetry: () => bloc.add(OpenContour(request.contourId)),
+      );
+      return;
+    }
+
+    final bool retry = await RewardedAdErrorDialog.show(context);
+    if (retry) {
+      bloc.add(OpenContour(request.contourId));
+    }
   }
 
   void _onProfilePressed(BuildContext context) {
@@ -87,9 +160,11 @@ class GalleryContent extends StatelessWidget {
   }
 
   void _onFailure(BuildContext context, GalleryState state) {
+    // The raw exception is logged by the bloc; the user only sees a clear,
+    // localized message.
     ErrorDialog.show(
       context,
-      message: state.error ?? context.tr(LocaleKeys.something_went_wrong),
+      message: context.tr(LocaleKeys.something_went_wrong),
       retryLabel: context.tr(LocaleKeys.retry),
       onRetry: () => _onRefresh(context),
     );

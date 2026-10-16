@@ -114,6 +114,13 @@ abstract final class RequestConstants {
   // Billing recovery timings
   static const Duration restoreResultTimeout = Duration(seconds: 4);
 
+  /// How long a cached subscription or No Ads flag stays usable.
+  ///
+  /// The cache only avoids repeat queries when the gallery re-opens; access
+  /// decisions still evaluate the subscription's own expiry time, so a stale
+  /// entry can never grant access to an expired plan.
+  static const Duration monetizationCacheTtl = Duration(minutes: 5);
+
   /// Returns the store product identifier for a [plan] and [interval].
   static String subscriptionProductId(
     SubscriptionPlanType plan,

@@ -15,6 +15,7 @@ abstract class DataDI {
     await _initServices(config);
     _initRepositories(config);
     await _initBilling();
+    await _initAds();
   }
 
   static Future<void> _initApi(AppConfig config) async {
@@ -35,7 +36,19 @@ abstract class DataDI {
   static void _initRepositories(AppConfig config) {
     appLocator.registerLazySingleton<ShareRepository>(() => const ShareRepositoryImpl());
 
+    appLocator.registerLazySingleton<SubscriptionCache>(
+      () => SubscriptionCache(preferences: appLocator<SharedPreferences>()),
+    );
+
     appLocator.registerSingleton<BillingPlatform>(BillingPlatformFactory.create());
+
+    appLocator.registerSingleton<AdService>(
+      AdServiceFactory.create(
+        rewardedUnitId: config.yandexAdsRewardedUnitId,
+        bannerUnitId: config.yandexAdsBannerUnitId,
+        analytics: appLocator<AnalyticsService>(),
+      ),
+    );
 
     appLocator.registerLazySingleton<AuthRemoteProvider>(
       () => AuthRemoteProvider(
@@ -86,6 +99,8 @@ abstract class DataDI {
       () => MonetizationRepositoryImpl(
         remoteProvider: appLocator<MonetizationRemoteProvider>(),
         billingPlatform: appLocator<BillingPlatform>(),
+        subscriptionCache: appLocator<SubscriptionCache>(),
+        analytics: appLocator<AnalyticsService>(),
       ),
     );
 
@@ -116,6 +131,15 @@ abstract class DataDI {
       appLocator<AppLogger>().warning('Billing platform is not implemented yet');
     } on UnsupportedError catch (_) {
       appLocator<AppLogger>().warning('Billing is not supported on this platform');
+    }
+  }
+
+  static Future<void> _initAds() async {
+    try {
+      await appLocator<AdService>().initialize();
+    } catch (error, stackTrace) {
+      ErrorHandler.report(error, stackTrace);
+      appLocator<AppLogger>().warning('Ad SDK initialization failed');
     }
   }
 }

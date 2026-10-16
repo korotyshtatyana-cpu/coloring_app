@@ -10,9 +10,11 @@ import '../../data.dart';
 /// Implementation of [MonetizationRepository] using
 /// [MonetizationRemoteProvider] and [BillingPlatform].
 ///
-/// Every value is resolved from the server on each call: the app has no
-/// offline mode, so nothing here caches access decisions or falls back to a
-/// previous subscription state.
+/// Access is always resolved from server-provided state: subscription and No
+/// Ads reads are served through [SubscriptionCache], which only shortens
+/// repeated gallery reads and never grants access past a subscription's own
+/// expiry. The cache is invalidated after every confirmed purchase or restore,
+/// so a completed purchase is never hidden by a stale entry.
 ///
 /// Confirmed store transactions are verified on the server before the
 /// entitlement is granted. Failures are queued in `pending_purchases` and
@@ -20,6 +22,8 @@ import '../../data.dart';
 class MonetizationRepositoryImpl implements MonetizationRepository {
   final MonetizationRemoteProvider _remoteProvider;
   final BillingPlatform _billingPlatform;
+  final SubscriptionCache _subscriptionCache;
+  final AnalyticsService _analytics;
   final StreamController<PurchaseUpdateEntity> _updates =
       StreamController<PurchaseUpdateEntity>.broadcast();
 
@@ -27,11 +31,13 @@ class MonetizationRepositoryImpl implements MonetizationRepository {
   Timer? _restoreTimer;
   int _restoredCount = 0;
 
-  /// Creates a repository with the given [_remoteProvider] and
-  /// [_billingPlatform].
+  /// Creates a repository with the given [_remoteProvider], [_billingPlatform],
+  /// [_subscriptionCache] and [_analytics].
   MonetizationRepositoryImpl({
     required this._remoteProvider,
     required this._billingPlatform,
+    required this._subscriptionCache,
+    required this._analytics,
   }) {
     _purchaseSubscription = _billingPlatform.purchaseStream.listen(
       _onPurchaseUpdates,
@@ -43,13 +49,40 @@ class MonetizationRepositoryImpl implements MonetizationRepository {
 
   @override
   Future<SubscriptionEntity?> getActiveSubscription(String userId) async {
+    final SubscriptionModel? cached = _subscriptionCache.readSubscription(userId);
+    if (cached != null) {
+      return SubscriptionMapper.toEntity(cached);
+    }
+
+    final SubscriptionModel? previous = _subscriptionCache.readLastSubscription(userId);
     final SubscriptionModel? model = await _remoteProvider.getActiveSubscription(userId);
+
+    // An active-to-none transition means the plan expired (or was revoked);
+    // report it once, right when it is observed.
+    if (model == null && previous != null && previous.isActive) {
+      _analytics.logEvent(
+        AnalyticsEvents.subscriptionExpired,
+        parameters: <String, Object?>{
+          'plan_type': previous.planType,
+          'product_id': previous.productId,
+        },
+      );
+    }
+
+    _subscriptionCache.writeSubscription(userId, model);
     return model == null ? null : SubscriptionMapper.toEntity(model);
   }
 
   @override
-  Future<bool> isNoAdsPurchased(String userId) {
-    return _remoteProvider.getNoAdsFlag(userId);
+  Future<bool> isNoAdsPurchased(String userId) async {
+    final bool? cached = _subscriptionCache.readNoAds(userId);
+    if (cached != null) {
+      return cached;
+    }
+
+    final bool purchased = await _remoteProvider.getNoAdsFlag(userId);
+    _subscriptionCache.writeNoAds(userId, purchased);
+    return purchased;
   }
 
   @override
@@ -140,16 +173,32 @@ class MonetizationRepositoryImpl implements MonetizationRepository {
     required SubscriptionPlanType plan,
     required SubscriptionInterval interval,
   }) {
-    return _billingPlatform.purchase(
-      RequestConstants.subscriptionProductId(plan, interval),
+    final String productId = RequestConstants.subscriptionProductId(plan, interval);
+    _analytics.logEvent(
+      AnalyticsEvents.purchaseStarted,
+      parameters: <String, Object?>{
+        'type': RequestConstants.purchaseTypeSubscription,
+        'product_id': productId,
+        'plan_type': plan.dbValue,
+        'interval': interval.dbValue,
+      },
     );
+    return _billingPlatform.purchase(productId);
   }
 
   @override
   Future<void> buyProject({required String contourId, String? productId}) {
-    return _billingPlatform.purchase(
-      productId ?? '${RequestConstants.contourProductIdPrefix}$contourId',
+    final String resolvedProductId =
+        productId ?? '${RequestConstants.contourProductIdPrefix}$contourId';
+    _analytics.logEvent(
+      AnalyticsEvents.purchaseStarted,
+      parameters: <String, Object?>{
+        'type': RequestConstants.purchaseTypeProduct,
+        'product_id': resolvedProductId,
+        'contour_id': contourId,
+      },
     );
+    return _billingPlatform.purchase(resolvedProductId);
   }
 
   @override
@@ -194,6 +243,13 @@ class MonetizationRepositoryImpl implements MonetizationRepository {
       case PurchaseStatus.restored:
         await _handleConfirmed(purchase);
       case PurchaseStatus.error:
+        _analytics.logEvent(
+          AnalyticsEvents.purchaseFailed,
+          parameters: <String, Object?>{
+            'product_id': purchase.productID,
+            'reason': purchase.error?.message,
+          },
+        );
         _emit(
           PurchaseUpdateEntity(
             status: PurchaseUpdateStatus.failed,
@@ -203,6 +259,10 @@ class MonetizationRepositoryImpl implements MonetizationRepository {
         );
         await _billingPlatform.completePurchase(purchase);
       case PurchaseStatus.canceled:
+        _analytics.logEvent(
+          AnalyticsEvents.purchaseCanceled,
+          parameters: <String, Object?>{'product_id': purchase.productID},
+        );
         _emit(
           PurchaseUpdateEntity(
             status: PurchaseUpdateStatus.canceled,
@@ -214,6 +274,10 @@ class MonetizationRepositoryImpl implements MonetizationRepository {
 
   Future<void> _handlePending(PurchaseDetails purchase) async {
     await _enqueuePending(purchase);
+    _analytics.logEvent(
+      AnalyticsEvents.purchasePending,
+      parameters: <String, Object?>{'product_id': purchase.productID},
+    );
     _emit(
       PurchaseUpdateEntity(
         status: PurchaseUpdateStatus.pending,
@@ -235,19 +299,40 @@ class MonetizationRepositoryImpl implements MonetizationRepository {
     }
 
     final String? contourId = _resolveContourId(purchase.productID);
+    final bool isRestore = purchase.status == PurchaseStatus.restored;
     try {
       await _verifyOnServer(purchase: purchase, contourId: contourId);
       await _billingPlatform.completePurchase(purchase);
+
+      // A purchase just changed the server state; drop the cache so the next
+      // gallery read reflects the new access immediately.
+      _subscriptionCache.invalidate();
+      _analytics.logEvent(
+        AnalyticsEvents.purchaseCompleted,
+        parameters: <String, Object?>{
+          'product_id': purchase.productID,
+          'contour_id': contourId,
+          'is_restore': isRestore,
+        },
+      );
       _emit(
         PurchaseUpdateEntity(
           status: PurchaseUpdateStatus.success,
           productId: purchase.productID,
           contourId: contourId,
-          isRestore: purchase.status == PurchaseStatus.restored,
+          isRestore: isRestore,
         ),
       );
     } catch (error, stackTrace) {
       ErrorHandler.report(error, stackTrace);
+      _analytics.logEvent(
+        AnalyticsEvents.purchaseFailed,
+        parameters: <String, Object?>{
+          'product_id': purchase.productID,
+          'contour_id': contourId,
+          'reason': error.toString(),
+        },
+      );
       await _enqueuePending(purchase);
       _emit(
         PurchaseUpdateEntity(
