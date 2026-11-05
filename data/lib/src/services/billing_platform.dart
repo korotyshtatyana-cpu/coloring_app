@@ -19,6 +19,9 @@ abstract class BillingPlatform {
   /// Starts the store purchase flow for [productId].
   Future<void> purchase(String productId);
 
+  /// Starts the store purchase flow for a consumable [productId].
+  Future<void> purchaseConsumable(String productId);
+
   /// Restores previously purchased non-consumable products.
   Future<void> restorePurchases();
 

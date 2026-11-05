@@ -34,4 +34,11 @@ abstract final class Constants {
   /// Time after which an unresolved pending purchase is reported as stale and
   /// the user is asked to contact support.
   static const Duration stalePendingPurchaseThreshold = Duration(hours: 24);
+
+  /// Delay before the refund realtime channel is re-established after a drop.
+  static const Duration refundChannelReconnectDelay = Duration(seconds: 2);
+
+  /// Window during which consecutively arriving refunds are merged into a
+  /// single dialog.
+  static const Duration refundDialogMergeWindow = Duration(milliseconds: 400);
 }

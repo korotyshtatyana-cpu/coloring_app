@@ -135,8 +135,22 @@ class AppFonts {
     package: _packageName,
   );
 
+  static TextStyle price = const TextStyle(
+    fontWeight: FontWeight.w600,
+    fontSize: 16,
+    fontFamily: _montserratFamily,
+    package: _packageName,
+  );
+
   static TextStyle normal12 = const TextStyle(
     fontWeight: FontWeight.w400,
+    fontSize: 12,
+    fontFamily: _montserratFamily,
+    package: _packageName,
+  );
+
+  static TextStyle tooltip = const TextStyle(
+    fontWeight: FontWeight.w600,
     fontSize: 12,
     fontFamily: _montserratFamily,
     package: _packageName,

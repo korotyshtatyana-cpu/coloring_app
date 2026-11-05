@@ -20,3 +20,7 @@
 # Keep Google Play Services
 -keep class com.google.android.gms.** { *; }
 -dontwarn com.google.android.gms.**
+
+# Yandex Mobile Ads SDK
+-keep class com.yandex.mobile.ads.** { *; }
+-dontwarn com.yandex.mobile.ads.**

@@ -16,6 +16,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
   final BuySubscriptionUseCase _buySubscriptionUseCase;
   final RestorePurchasesUseCase _restorePurchasesUseCase;
   final WatchPurchaseUpdatesUseCase _watchPurchaseUpdatesUseCase;
+  final AppLogger _logger;
 
   StreamSubscription<PurchaseUpdateEntity>? _updatesSubscription;
 
@@ -28,6 +29,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     required this._buySubscriptionUseCase,
     required this._restorePurchasesUseCase,
     required this._watchPurchaseUpdatesUseCase,
+    required this._logger,
   }) : super(const SubscriptionState()) {
     on<LoadSubscription>(_onLoadSubscription);
     on<ChangePlanPeriod>(_onChangePlanPeriod);
@@ -121,6 +123,10 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
   ) async {
     try {
       emit(state.copyWith(isPurchasing: true, error: null));
+      _logger.debug(
+        '[Monetization] Purchase initiated: '
+        'product=${plan.dbValue}_${interval.dbValue}, type=subscription',
+      );
       // The store flow only starts here; the outcome arrives through
       // [WatchPurchaseUpdatesUseCase].
       await _buySubscriptionUseCase.execute(

@@ -23,6 +23,7 @@ class SubscriptionScreen extends StatelessWidget {
         buySubscriptionUseCase: appLocator<BuySubscriptionUseCase>(),
         restorePurchasesUseCase: appLocator<RestorePurchasesUseCase>(),
         watchPurchaseUpdatesUseCase: appLocator<WatchPurchaseUpdatesUseCase>(),
+        logger: appLocator<AppLogger>(),
       )..add(const LoadSubscription()),
       child: const SubscriptionContent(),
     );

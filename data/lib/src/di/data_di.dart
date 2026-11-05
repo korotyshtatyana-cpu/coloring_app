@@ -81,6 +81,13 @@ abstract class DataDI {
       () => MonetizationRemoteProvider(client: appLocator<SupabaseProvider>().client),
     );
 
+    appLocator.registerLazySingleton<RefundMonitor>(
+      () => SupabaseRefundMonitor(
+        client: appLocator<SupabaseProvider>().client,
+        logger: appLocator<AppLogger>(),
+      ),
+    );
+
     appLocator.registerLazySingleton<AuthRepository>(
       () => AuthRepositoryImpl(
         remoteProvider: appLocator<AuthRemoteProvider>(),
@@ -99,8 +106,10 @@ abstract class DataDI {
       () => MonetizationRepositoryImpl(
         remoteProvider: appLocator<MonetizationRemoteProvider>(),
         billingPlatform: appLocator<BillingPlatform>(),
+        refundMonitor: appLocator<RefundMonitor>(),
         subscriptionCache: appLocator<SubscriptionCache>(),
         analytics: appLocator<AnalyticsService>(),
+        logger: appLocator<AppLogger>(),
       ),
     );
 

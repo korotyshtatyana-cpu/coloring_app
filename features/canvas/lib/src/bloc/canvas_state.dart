@@ -98,6 +98,17 @@ class CanvasState extends Equatable {
   /// ID of the currently selected eraser tool.
   final String? activeEraserId;
 
+  /// Whether the project is opened without editing capabilities.
+  ///
+  /// In this mode the canvas still renders the saved artwork and supports
+  /// pan/zoom, but drawing, tool changes and persisting are disabled.
+  final bool isViewOnly;
+
+  /// Why the canvas switched to view-only while it was open, if it did.
+  ///
+  /// `null` when the project was opened read-only from the start.
+  final ViewOnlyReason? viewOnlyReason;
+
   /// Creates a [CanvasState].
   CanvasState({
     this.status = CanvasStatus.initial,
@@ -124,6 +135,8 @@ class CanvasState extends Equatable {
     this.availableTools = const <ToolEntity>[],
     this.activeBrushId,
     this.activeEraserId,
+    this.isViewOnly = false,
+    this.viewOnlyReason,
   }) : transform = transform ?? Matrix4.identity();
 
   @override
@@ -152,6 +165,8 @@ class CanvasState extends Equatable {
         availableTools,
         activeBrushId,
         activeEraserId,
+        isViewOnly,
+        viewOnlyReason,
       ];
 
   /// Creates a copy with optional new values.
@@ -181,6 +196,9 @@ class CanvasState extends Equatable {
     List<ToolEntity>? availableTools,
     String? activeBrushId,
     String? activeEraserId,
+    bool? isViewOnly,
+    ViewOnlyReason? viewOnlyReason,
+    bool clearViewOnlyReason = false,
   }) {
     return CanvasState(
       status: status ?? this.status,
@@ -207,6 +225,8 @@ class CanvasState extends Equatable {
       availableTools: availableTools ?? this.availableTools,
       activeBrushId: activeBrushId ?? this.activeBrushId,
       activeEraserId: activeEraserId ?? this.activeEraserId,
+      isViewOnly: isViewOnly ?? this.isViewOnly,
+      viewOnlyReason: clearViewOnlyReason ? null : viewOnlyReason ?? this.viewOnlyReason,
     );
   }
 }

@@ -5,7 +5,12 @@
     <uses-permission
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28"
-        tools:ignore="ScopedStorage" />
+        tools:ignore="ScopedStorage"
+        tools:targetApi="4" />
+    <uses-permission android:name="com.android.vending.BILLING" />
+    <!-- Advertising ID: used by the Yandex SDK for more relevant ads. -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
+
     <application
         android:label="ColoringPRO"
         android:name="${applicationName}"

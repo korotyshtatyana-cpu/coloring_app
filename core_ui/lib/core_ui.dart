@@ -11,6 +11,7 @@ export 'src/widgets/buttons/primary_button.dart';
 export 'src/widgets/containers/toolbar_container.dart';
 export 'src/widgets/dialogs/error_dialog.dart';
 export 'src/widgets/dialogs/loading_dialog.dart';
+export 'src/widgets/dialogs/refund_dialog.dart';
 export 'src/widgets/inputs/app_dropdown.dart';
 export 'src/widgets/inputs/gradient_slider.dart';
 export 'src/widgets/inputs/search_field.dart';

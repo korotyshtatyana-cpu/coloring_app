@@ -5,6 +5,7 @@ import 'dart:ui' as ui;
 import 'package:core/core.dart';
 import 'package:core_ui/core_ui.dart';
 import 'package:domain/domain.dart';
+import 'package:subscription/subscription.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -23,6 +24,7 @@ import '../widgets/export_menu.dart';
 import '../widgets/toolbars/bottom_toolbar.dart';
 import '../widgets/toolbars/left_controls.dart';
 import '../widgets/toolbars/top_toolbar.dart';
+import '../widgets/view_only_banner.dart';
 
 /// Canvas screen for drawing and coloring a contour.
 @RoutePage()
@@ -30,11 +32,14 @@ class CanvasScreen extends StatelessWidget {
   /// Identifier of the contour being colored.
   final String contourId;
 
+  /// Whether the project is opened without editing capabilities.
+  final bool isViewOnly;
+
   final GlobalKey<_CanvasContentState> _canvasKey =
       GlobalKey<_CanvasContentState>();
 
   /// Creates a [CanvasScreen].
-  CanvasScreen({super.key, required this.contourId});
+  CanvasScreen({super.key, required this.contourId, this.isViewOnly = false});
 
   @override
   Widget build(BuildContext context) {
@@ -51,6 +56,12 @@ class CanvasScreen extends StatelessWidget {
         renderProjectThumbnailUseCase:
             appLocator<RenderProjectThumbnailUseCase>(),
         getAvailableToolsUseCase: appLocator<GetAvailableToolsUseCase>(),
+        getCurrentUserUseCase: appLocator<GetCurrentUserUseCase>(),
+        watchRefundsUseCase: appLocator<WatchRefundsUseCase>(),
+        watchPurchaseUpdatesUseCase: appLocator<WatchPurchaseUpdatesUseCase>(),
+        getGalleryItemsUseCase: appLocator<GetGalleryItemsUseCase>(),
+        logger: appLocator<AppLogger>(),
+        isViewOnly: isViewOnly,
       )..add(const LoadProject()),
       child: CanvasContent(
         key: _canvasKey,
@@ -271,9 +282,17 @@ class _CanvasContentState extends State<CanvasContent>
   /// the latest strokes were already persisted by autosave.
   Future<void> _saveAndPop() async {
     if (_isSavingBeforeClose || _popped) return;
-    setState(() => _isSavingBeforeClose = true);
 
     final CanvasBloc bloc = context.read<CanvasBloc>();
+    if (bloc.state.isViewOnly) {
+      // Nothing was edited, so there is nothing to persist.
+      _popped = true;
+      context.router.pop();
+      return;
+    }
+
+    setState(() => _isSavingBeforeClose = true);
+
     try {
       await bloc.saveProject(withThumbnail: true);
     } finally {
@@ -293,6 +312,7 @@ class _CanvasContentState extends State<CanvasContent>
     final Size viewportSize = MediaQuery.sizeOf(context);
     final state = context.watch<CanvasBloc>().state;
     final status = state.status;
+    final bool isViewOnly = state.isViewOnly;
 
     final bool isInitial = status == CanvasStatus.initial;
     final bool isLoading =
@@ -346,6 +366,16 @@ class _CanvasContentState extends State<CanvasContent>
                     duration: const Duration(seconds: 1),
                   ),
                 );
+              },
+            ),
+            BlocListener<CanvasBloc, CanvasState>(
+              listenWhen: (CanvasState previous, CanvasState current) =>
+                  !previous.isViewOnly && current.isViewOnly,
+              listener: (context, state) {
+                // Editing was just revoked mid-gesture: drop the stroke that
+                // is still being drawn so it cannot leak into the artwork.
+                _activeStroke.clear();
+                _activeDrawPointer = null;
               },
             ),
             BlocListener<CanvasBloc, CanvasState>(
@@ -434,12 +464,47 @@ class _CanvasContentState extends State<CanvasContent>
                   onHelp: () => showCanvasOnboarding(context, forceShow: true),
                 ),
               ),
-              const Positioned(left: 8, top: 120, child: LeftControls()),
+              Positioned(
+                left: 8,
+                top: 120,
+                child: AbsorbPointer(
+                  absorbing: isViewOnly,
+                  child: Opacity(
+                    opacity: isViewOnly ? 0.5 : 1.0,
+                    child: const LeftControls(),
+                  ),
+                ),
+              ),
               Positioned(
                 right: 8,
                 bottom: 8,
-                child: BottomToolbar(onEyedropper: widget.onEyedropper),
+                child: AbsorbPointer(
+                  absorbing: isViewOnly,
+                  child: Opacity(
+                    opacity: isViewOnly ? 0.5 : 1.0,
+                    child: BottomToolbar(onEyedropper: widget.onEyedropper),
+                  ),
+                ),
               ),
+              if (isViewOnly)
+                Positioned(
+                  bottom: 16,
+                  left: 16,
+                  right: 16,
+                  child: SafeArea(
+                    bottom: false,
+                    // Below the top toolbar row (padding 8 + 32px buttons).
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 56),
+                      child: ViewOnlyBanner(
+                        reason: state.viewOnlyReason,
+                        onUnlockPressed: state.contour != null
+                            ? () => _onUnlockAccess(context, state)
+                            : null,
+                      ),
+                    ),
+                  ),
+                ),
               if (_eyedropperPosition != null && _previewColor != null)
                 BlocBuilder<CanvasBloc, CanvasState>(
                   buildWhen: (CanvasState previous, CanvasState current) =>
@@ -469,6 +534,22 @@ class _CanvasContentState extends State<CanvasContent>
     );
   }
 
+  void _onUnlockAccess(BuildContext context, CanvasState state) {
+    final ContourEntity? contour = state.contour;
+    if (contour == null) {
+      return;
+    }
+
+    final CanvasBloc canvasBloc = context.read<CanvasBloc>();
+    PurchaseDialog.show(
+      context,
+      contour: contour,
+      onPurchased: () {
+        canvasBloc.add(const UnlockCanvas());
+      },
+    );
+  }
+
   void _onPointerDown(PointerDownEvent event) {
     _pointerPositions[event.pointer] = event.localPosition;
 
@@ -492,7 +573,9 @@ class _CanvasContentState extends State<CanvasContent>
       return;
     }
 
-    if (_canDrawWithPointer(event) && !_drawingLocked) {
+    if (_canDrawWithPointer(event) &&
+        !_drawingLocked &&
+        !context.read<CanvasBloc>().state.isViewOnly) {
       if (_isEyedropperActive) {
         _startEyedropperDrag(event.pointer, event.localPosition);
         return;
@@ -1032,6 +1115,7 @@ class _CanvasContentState extends State<CanvasContent>
           child: Padding(
             padding: const EdgeInsets.only(top: 120, left: 16, right: 16),
             child: ExportMenu(
+              showSaveToGallery: !bloc.state.isViewOnly,
               onShare: () {
                 Navigator.of(dialogContext).pop();
                 _onExportSelected(bloc, ExportType.share);

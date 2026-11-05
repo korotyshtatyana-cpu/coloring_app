@@ -20,9 +20,12 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
   final GetCurrentUserUseCase _getCurrentUserUseCase;
   final GetActiveSubscriptionUseCase _getActiveSubscriptionUseCase;
   final IsNoAdsPurchasedUseCase _isNoAdsPurchasedUseCase;
+  final GetPurchaseRefundsUseCase _getPurchaseRefundsUseCase;
+  final WatchRefundsUseCase _watchRefundsUseCase;
   final AdService _adService;
 
   int _accessRequestId = 0;
+  StreamSubscription<PurchaseRefundEntity>? _refundsSubscription;
 
   /// Creates a [GalleryBloc] with the required use cases.
   GalleryBloc({
@@ -36,6 +39,8 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
     required this._getCurrentUserUseCase,
     required this._getActiveSubscriptionUseCase,
     required this._isNoAdsPurchasedUseCase,
+    required this._getPurchaseRefundsUseCase,
+    required this._watchRefundsUseCase,
     required this._adService,
   }) : super(const GalleryState()) {
     on<LoadContours>(_onLoadContours, transformer: droppable());
@@ -45,6 +50,7 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
     on<ToggleFavorite>(_onToggleFavorite);
     on<OpenContour>(_onOpenContour, transformer: droppable());
     on<AccessRequestHandled>(_onAccessRequestHandled);
+    _initRefundWatch();
   }
 
   Future<void> _onLoadContours(LoadContours event, Emitter<GalleryState> emit) async {
@@ -163,7 +169,8 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
     Emitter<GalleryState> emit,
   ) async {
     try {
-      if (state.contours.isEmpty) {
+      final UserEntity? user = await _getCurrentUserUseCase.execute();
+      if (user == null) {
         emit(
           state.copyWith(
             projectAccessById: const <String, ProjectAccess>{},
@@ -173,8 +180,13 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
         return;
       }
 
-      final UserEntity? user = await _getCurrentUserUseCase.execute();
-      if (user == null) {
+      // Fallback for a missed realtime event: this fetch feeds unacknowledged
+      // refunds into the shared refund stream shown by the app-level
+      // observer, and drops the subscription cache when a refund exists, so
+      // the access resolution below always sees the revoked state.
+      await _loadRefunds(user.id);
+
+      if (state.contours.isEmpty) {
         emit(
           state.copyWith(
             projectAccessById: const <String, ProjectAccess>{},
@@ -210,6 +222,43 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
       ErrorHandler.report(e, stackTrace);
       emit(state.copyWith(status: GalleryStatus.failure, error: e.toString()));
     }
+  }
+
+  /// Triggers the refund fallback check without blocking the gallery.
+  ///
+  /// Access resolution must not fail just because the refund query does: on
+  /// an environment where the `purchase_refunds` table is not deployed yet,
+  /// the user should still see the gallery and the paywall behaviour.
+  Future<void> _loadRefunds(String userId) async {
+    try {
+      await _getPurchaseRefundsUseCase.execute(userId);
+    } catch (e, stackTrace) {
+      ErrorHandler.report(e, stackTrace);
+    }
+  }
+
+  /// Re-resolves access as soon as a refund is recorded, so the affected
+  /// card flips to its new state without waiting for a manual refresh.
+  Future<void> _initRefundWatch() async {
+    try {
+      final UserEntity? user = await _getCurrentUserUseCase.execute();
+      if (isClosed || user == null) {
+        return;
+      }
+      _refundsSubscription = _watchRefundsUseCase.execute(user.id).listen((_) {
+        if (!isClosed) {
+          add(const LoadMonetizationStatus());
+        }
+      });
+    } catch (e, stackTrace) {
+      ErrorHandler.report(e, stackTrace);
+    }
+  }
+
+  @override
+  Future<void> close() async {
+    await _refundsSubscription?.cancel();
+    return super.close();
   }
 
   Future<void> _onChangeFilter(ChangeFilter event, Emitter<GalleryState> emit) async {
@@ -261,6 +310,11 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
       return;
     }
 
+    appLocator<AppLogger>().debug(
+      '[Monetization] Access check: contour=${contour.id}, '
+      'type=${contour.accessType.name}, result=${access.name}',
+    );
+
     // Paid projects must go through the purchase flow, never a rewarded ad.
     if (access == ProjectAccess.locked &&
         contour.accessType == ContourAccessType.paid) {
@@ -277,6 +331,7 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
             id: ++_accessRequestId,
             contourId: event.contourId,
             granted: true,
+            viewOnly: access == ProjectAccess.viewOnly,
           ),
         ),
       );
@@ -284,7 +339,9 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
     }
 
     emit(state.copyWith(isLoadingAd: true));
-    final RewardedAdOutcome outcome = await _adService.showRewardedAd();
+    final RewardedAdOutcome outcome = await _adService.showRewardedAd(
+      contourId: event.contourId,
+    );
     emit(
       state.copyWith(
         isLoadingAd: false,

@@ -35,9 +35,13 @@ class GalleryContent extends StatelessWidget {
           const SizedBox(width: 16),
         ],
       ),
-      body: BlocListener<GalleryBloc, GalleryState>(
-        listenWhen: _shouldListenToAccessRequest,
-        listener: _onAccessRequest,
+      body: MultiBlocListener(
+        listeners: <BlocListener<GalleryBloc, GalleryState>>[
+          BlocListener<GalleryBloc, GalleryState>(
+            listenWhen: _shouldListenToAccessRequest,
+            listener: _onAccessRequest,
+          ),
+        ],
         child: BlocBuilder<GalleryBloc, GalleryState>(
           buildWhen: (GalleryState previous, GalleryState current) =>
               previous.isLoadingAd != current.isLoadingAd,
@@ -55,12 +59,9 @@ class GalleryContent extends StatelessWidget {
                       listener: _onFailure,
                       child: BlocBuilder<GalleryBloc, GalleryState>(
                         builder: (BuildContext context, GalleryState state) {
-                          if (state.status == GalleryStatus.loading &&
-                              state.contours.isEmpty) {
+                          if (state.status == GalleryStatus.loading && state.contours.isEmpty) {
                             return Center(
-                              child: CircularProgressIndicator(
-                                color: colors.accentDark,
-                              ),
+                              child: CircularProgressIndicator(color: colors.accentDark),
                             );
                           }
 
@@ -90,8 +91,7 @@ class GalleryContent extends StatelessWidget {
                   ),
                 ],
               ),
-              if (state.isLoadingAd)
-                const Positioned.fill(child: AdLoadingOverlay()),
+              if (state.isLoadingAd) const Positioned.fill(child: AdLoadingOverlay()),
             ],
           ),
         ),
@@ -111,17 +111,13 @@ class GalleryContent extends StatelessWidget {
       top: false,
       child: Semantics(
         label: context.tr(LocaleKeys.banner_ad_label),
-        child: Padding(
-          padding: const EdgeInsets.only(top: 4),
-          child: banner,
-        ),
+        child: Padding(padding: const EdgeInsets.only(top: 4), child: banner),
       ),
     );
   }
 
   bool _shouldListenToAccessRequest(GalleryState previous, GalleryState current) {
-    return current.accessRequest != null &&
-        current.accessRequest?.id != previous.accessRequest?.id;
+    return current.accessRequest != null && current.accessRequest?.id != previous.accessRequest?.id;
   }
 
   Future<void> _onAccessRequest(BuildContext context, GalleryState state) async {
@@ -130,7 +126,12 @@ class GalleryContent extends StatelessWidget {
     bloc.add(const AccessRequestHandled());
 
     if (request.granted) {
-      await context.router.push(CanvasRoute(contourId: request.contourId));
+      await context.router.push(
+        CanvasRoute(
+          contourId: request.contourId,
+          isViewOnly: request.viewOnly,
+        ),
+      );
       return;
     }
 
@@ -141,12 +142,6 @@ class GalleryContent extends StatelessWidget {
         retryLabel: context.tr(LocaleKeys.retry),
         onRetry: () => bloc.add(OpenContour(request.contourId)),
       );
-      return;
-    }
-
-    final bool retry = await RewardedAdErrorDialog.show(context);
-    if (retry) {
-      bloc.add(OpenContour(request.contourId));
     }
   }
 
@@ -155,8 +150,7 @@ class GalleryContent extends StatelessWidget {
   }
 
   bool _shouldListenToFailure(GalleryState previous, GalleryState current) {
-    return current.status == GalleryStatus.failure &&
-        previous.status != GalleryStatus.failure;
+    return current.status == GalleryStatus.failure && previous.status != GalleryStatus.failure;
   }
 
   void _onFailure(BuildContext context, GalleryState state) {
@@ -178,15 +172,10 @@ class GalleryContent extends StatelessWidget {
     context.read<GalleryBloc>().add(const LoadContours());
   }
 
-  bool _handleScroll(BuildContext context,
-      ScrollNotification notification,
-      GalleryState state,) {
+  bool _handleScroll(BuildContext context, ScrollNotification notification, GalleryState state) {
     final bool isNearBottom =
-        notification.metrics.pixels >=
-            notification.metrics.maxScrollExtent * 0.9;
-    if (isNearBottom &&
-        !state.hasReachedMax &&
-        state.status != GalleryStatus.loading) {
+        notification.metrics.pixels >= notification.metrics.maxScrollExtent * 0.9;
+    if (isNearBottom && !state.hasReachedMax && state.status != GalleryStatus.loading) {
       _onLoadMore(context);
     }
     return false;

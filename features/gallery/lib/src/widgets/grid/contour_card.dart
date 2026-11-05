@@ -26,7 +26,7 @@ class ContourCard extends StatelessWidget {
   /// Called when the favorite icon is tapped.
   final VoidCallback? onFavoriteTap;
 
-  /// Badge rendered in the bottom-right corner, typically the access-type icon.
+  /// Badge rendered in the top-right corner, typically the access-type icon.
   final Widget? accessBadge;
 
   /// Creates a [ContourCard].
@@ -52,31 +52,52 @@ class ContourCard extends StatelessWidget {
         elevation: 4,
         shadowColor: colors.accentDark.withValues(alpha: 0.2),
         color: colors.secondaryBg,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.defaultBorder)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppDimens.defaultBorder),
+        ),
         clipBehavior: Clip.antiAlias,
         child: Stack(
           fit: StackFit.expand,
           children: <Widget>[
             ContourPreview(previewUrl: previewUrl, svgUrl: svgUrl),
-            if (isInProgress)
-              Positioned(
-                top: 8,
-                left: 8,
-                child: Icon(Icons.folder, color: colors.accentDark, size: 20),
-              ),
+            // if (isInProgress)
+            //   Positioned(
+            //     top: 8,
+            //     left: 8,
+            //     child: Icon(Icons.folder, color: colors.accentDark, size: 20),
+            //   ),
+            if (accessBadge != null)
+              Positioned(top: 0, right: 0, child: accessBadge!),
             Positioned(
-              top: 8,
-              right: 8,
+              bottom: 0,
+              right: 0,
               child: GestureDetector(
                 onTap: onFavoriteTap,
-                child: Icon(
-                  isFavorite ? Icons.star : Icons.star_border,
-                  color: isFavorite ? colors.accentDark : colors.secondaryText,
-                  size: 24,
+                child: Container(
+                  key: const ValueKey<String>('access-badge'),
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: colors.white,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(8),
+                    ),
+                    boxShadow: <BoxShadow>[
+                      BoxShadow(
+                        color: colors.accentDark.withValues(alpha: 0.3),
+                        blurRadius: 4,
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    isFavorite ? Icons.star : Icons.star_border,
+                    color: isFavorite
+                        ? colors.accentDark
+                        : colors.secondaryText,
+                    size: 20,
+                  ),
                 ),
               ),
             ),
-            if (accessBadge != null) Positioned(bottom: 8, right: 8, child: accessBadge!),
           ],
         ),
       ),

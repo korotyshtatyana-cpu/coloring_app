@@ -14,6 +14,9 @@ class PendingPurchaseModel {
   /// Platform purchase token, when the store returned one.
   final String? purchaseToken;
 
+  /// Contour the purchase unlocks, when it is a project purchase.
+  final String? contourId;
+
   /// Raw status value, for example `pending`.
   final String status;
 
@@ -32,6 +35,7 @@ class PendingPurchaseModel {
     required this.userId,
     required this.productId,
     required this.purchaseToken,
+    required this.contourId,
     required this.status,
     required this.errorMessage,
     required this.createdAt,
@@ -45,6 +49,7 @@ class PendingPurchaseModel {
       userId: json[RequestConstants.userIdColumn] as String,
       productId: json[RequestConstants.productIdColumn] as String,
       purchaseToken: json[RequestConstants.purchaseTokenColumn] as String?,
+      contourId: json[RequestConstants.contourIdColumn] as String?,
       status: json[RequestConstants.statusColumn] as String,
       errorMessage: json[RequestConstants.errorMessageColumn] as String?,
       createdAt: DateTime.parse(json[RequestConstants.createdAtColumn] as String),
@@ -61,6 +66,7 @@ class PendingPurchaseModel {
       RequestConstants.userIdColumn: userId,
       RequestConstants.productIdColumn: productId,
       RequestConstants.purchaseTokenColumn: purchaseToken,
+      RequestConstants.contourIdColumn: contourId,
       RequestConstants.statusColumn: status,
       RequestConstants.errorMessageColumn: errorMessage,
       RequestConstants.createdAtColumn: createdAt.toIso8601String(),

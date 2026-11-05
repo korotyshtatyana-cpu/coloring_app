@@ -80,16 +80,13 @@ abstract class  LocaleKeys {
   static const subscription_terms_of_service = 'subscription_terms_of_service';
   static const subscription_privacy_policy = 'subscription_privacy_policy';
   static const purchase_placeholder_message = 'purchase_placeholder_message';
-  static const rewarded_ad_not_completed_title = 'rewarded_ad_not_completed_title';
-  static const rewarded_ad_not_completed_text = 'rewarded_ad_not_completed_text';
-  static const rewarded_ad_retry = 'rewarded_ad_retry';
-  static const rewarded_ad_cancel = 'rewarded_ad_cancel';
   static const rewarded_ad_loading = 'rewarded_ad_loading';
   static const rewarded_ad_unavailable = 'rewarded_ad_unavailable';
   static const banner_ad_label = 'banner_ad_label';
   static const purchase_dialog_title = 'purchase_dialog_title';
   static const purchase_dialog_project_price = 'purchase_dialog_project_price';
   static const purchase_dialog_buy_project = 'purchase_dialog_buy_project';
+  static const purchase_dialog_buy_project_description = 'purchase_dialog_buy_project_description';
   static const purchase_dialog_subscribe = 'purchase_dialog_subscribe';
   static const purchase_dialog_subscribe_badge = 'purchase_dialog_subscribe_badge';
   static const purchase_dialog_cancel = 'purchase_dialog_cancel';
@@ -100,6 +97,9 @@ abstract class  LocaleKeys {
   static const error_contact_support = 'error_contact_support';
   static const purchase_processing_title = 'purchase_processing_title';
   static const purchase_processing_text = 'purchase_processing_text';
+  static const purchase_checking_text = 'purchase_checking_text';
+  static const purchase_pending_retry_text = 'purchase_pending_retry_text';
+  static const purchase_canceled_text = 'purchase_canceled_text';
   static const purchase_failed_title = 'purchase_failed_title';
   static const purchase_failed_text = 'purchase_failed_text';
   static const purchase_success_title = 'purchase_success_title';
@@ -145,5 +145,13 @@ abstract class  LocaleKeys {
   static const onboarding_slide9_text = 'onboarding_slide9_text';
   static const onboarding_slide10_title = 'onboarding_slide10_title';
   static const onboarding_slide10_text = 'onboarding_slide10_text';
+  static const view_only_message = 'view_only_message';
+  static const refund_dialog_title = 'refund_dialog_title';
+  static const refund_dialog_body_credit = 'refund_dialog_body_credit';
+  static const refund_dialog_body_subscription = 'refund_dialog_body_subscription';
+  static const refund_dialog_ok = 'refund_dialog_ok';
+  static const canvas_refund_banner = 'canvas_refund_banner';
+  static const canvas_subscription_expired_banner = 'canvas_subscription_expired_banner';
+  static const view_only_unlock_access = 'view_only_unlock_access';
 
 }

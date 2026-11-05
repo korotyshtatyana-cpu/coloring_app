@@ -9,6 +9,7 @@ import 'package:domain/domain.dart';
 import 'package:navigation/navigation.dart';
 
 import 'error_handler/error_handler.dart';
+import 'refunds/refund_observer.dart';
 
 Future<void> mainCommon(Flavor flavor) async {
   final WidgetsBinding widgetsBinding =
@@ -102,13 +103,15 @@ class _AppState extends State<App> {
         child: Builder(
           builder: (BuildContext context) {
             return AppErrorHandlerProvider(
-              child: MaterialApp.router(
-                debugShowCheckedModeBanner: false,
-                routerConfig: _routerConfig,
-                localizationsDelegates: context.localizationDelegates,
-                supportedLocales: context.supportedLocales,
-                locale: context.locale,
-                theme: lightTheme,
+              child: RefundObserver(
+                child: MaterialApp.router(
+                  debugShowCheckedModeBanner: false,
+                  routerConfig: _routerConfig,
+                  localizationsDelegates: context.localizationDelegates,
+                  supportedLocales: context.supportedLocales,
+                  locale: context.locale,
+                  theme: lightTheme,
+                ),
               ),
             );
           },

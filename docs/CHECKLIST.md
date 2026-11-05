@@ -160,6 +160,11 @@
 - [x] Кэш состояния подписки (`SubscriptionCache`, in-memory + SharedPreferences, TTL)
 - [x] Аналитические события монетизации (`AnalyticsEvents`, `AnalyticsService`)
 - [x] Локализованные сообщения об ошибках монетизации
+- [x] Realtime-уведомления о возвратах (`RefundMonitor` на Supabase Realtime, `MonetizationRepository.watchRefunds`)
+- [x] `RefundObserver` — единый модальный диалог возврата над любым экраном, merge, acknowledge
+- [x] Перевод открытого холста в view-only при возврате (`MarkCurrentContourAsViewOnly`, `ViewOnlyReason`, баннер с причиной)
+- [x] Реакция галереи на возврат в реальном времени (перезагрузка доступа по событию) + fallback на resume/pull-to-refresh
+- [x] Фикс JWT clock skew в Edge Functions (`iat` со сдвигом −60с)
 - [x] `docs/MONETIZATION.md` с разделами настройки и testing checklist
 
 ## ✅ Тестирование (опционально)

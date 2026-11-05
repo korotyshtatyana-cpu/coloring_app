@@ -37,6 +37,7 @@ class GalleryContourCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ContourCard(
+      key: ValueKey<String>(contour.id),
       title: contour.title,
       // Started project → its thumbnail (local file or Supabase URL);
       // otherwise → the contour's default preview image from Supabase.
@@ -54,7 +55,12 @@ class GalleryContourCard extends StatelessWidget {
     // Locked paid project — offer to buy it or subscribe to Premium.
     if (access == ProjectAccess.locked &&
         contour.accessType == ContourAccessType.paid) {
-      PurchaseDialog.show(context, contour: contour);
+      final GalleryBloc galleryBloc = context.read<GalleryBloc>();
+      PurchaseDialog.show(
+        context,
+        contour: contour,
+        onPurchased: () => galleryBloc.add(const LoadMonetizationStatus()),
+      );
       return;
     }
     // The bloc resolves access (rewarded video ad when needed) and navigates

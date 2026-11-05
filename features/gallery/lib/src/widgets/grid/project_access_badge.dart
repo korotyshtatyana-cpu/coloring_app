@@ -1,8 +1,9 @@
 import 'package:core_ui/core_ui.dart';
 import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
-/// Small badge shown in the bottom-right corner of a gallery card.
+/// Small badge shown in the top-right corner of a gallery card.
 ///
 /// Renders nothing while [access] is `null` (the monetization status has not
 /// resolved yet) and for [ProjectAccess.unlocked] projects, so the badge fades
@@ -16,7 +17,11 @@ class ProjectAccessBadge extends StatelessWidget {
   final ContourAccessType accessType;
 
   /// Creates a [ProjectAccessBadge].
-  const ProjectAccessBadge({required this.access, required this.accessType, super.key});
+  const ProjectAccessBadge({
+    required this.access,
+    required this.accessType,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -34,40 +39,58 @@ class ProjectAccessBadge extends StatelessWidget {
   }
 
   Widget _buildIcon(BuildContext context, AppColors colors) {
-    final IconData? iconData = _resolveIcon();
-    if (iconData == null) {
+    final bool isLocked = access == ProjectAccess.locked;
+
+    final Color backgroundColor = switch (accessType) {
+      ContourAccessType.rewarded when isLocked => colors.averagePurple,
+      ContourAccessType.paid when isLocked => colors.premiumGold,
+      _ => colors.secondaryBg,
+    };
+
+    final Widget? icon = _resolveIcon(colors, isLocked);
+    if (icon == null) {
       return const SizedBox.shrink(key: ValueKey<String>('access-badge-empty'));
     }
 
     return Container(
       key: const ValueKey<String>('access-badge'),
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
-        color: colors.secondaryBg.withValues(alpha: 0.92),
-        shape: BoxShape.circle,
+        color: backgroundColor,
+        borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(8)),
         boxShadow: <BoxShadow>[
-          BoxShadow(color: colors.accentDark.withValues(alpha: 0.3), blurRadius: 4),
+          BoxShadow(
+            color: colors.accentDark.withValues(alpha: 0.3),
+            blurRadius: 4,
+          ),
         ],
       ),
-      child: Icon(iconData, size: 16, color: colors.iconPrimary),
+      child: icon,
     );
   }
 
-  IconData? _resolveIcon() {
+  Widget? _resolveIcon(AppColors colors, bool isLocked) {
     if (access == ProjectAccess.viewOnly) {
-      return Icons.visibility_outlined;
+      return _svgIcon(AppImages.readOnly, colors.iconPrimary);
     }
-    if (access != ProjectAccess.locked) {
+    if (!isLocked) {
       return null;
     }
 
-    switch (accessType) {
-      case ContourAccessType.free:
-        return null;
-      case ContourAccessType.rewarded:
-        return Icons.play_circle_outline;
-      case ContourAccessType.paid:
-        return Icons.lock_outline;
-    }
+    return switch (accessType) {
+      ContourAccessType.free => null,
+      ContourAccessType.rewarded => _svgIcon(AppImages.rewarded, colors.white),
+      ContourAccessType.paid => _svgIcon(AppImages.paid, colors.black),
+    };
+  }
+
+  Widget _svgIcon(String asset, Color color) {
+    return SvgPicture.asset(
+      asset,
+      package: AppImages.packageName,
+      width: 16,
+      height: 16,
+      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+    );
   }
 }

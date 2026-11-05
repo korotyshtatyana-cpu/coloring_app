@@ -1,6 +1,11 @@
+import 'dart:io';
+
 import 'package:core/core.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:in_app_purchase_android/billing_client_wrappers.dart';
+import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 
+import '../constants/request_constants.dart';
 import 'billing_platform.dart';
 
 /// Google Play Billing implementation of [BillingPlatform].
@@ -16,7 +21,7 @@ class GooglePlayBillingPlatform implements BillingPlatform {
   /// The [store] is injectable for tests and defaults to the platform store
   /// singleton.
   GooglePlayBillingPlatform({InAppPurchase? store})
-      : _store = store ?? InAppPurchase.instance;
+    : _store = store ?? InAppPurchase.instance;
 
   @override
   Stream<List<PurchaseDetails>> get purchaseStream => _store.purchaseStream;
@@ -36,13 +41,17 @@ class GooglePlayBillingPlatform implements BillingPlatform {
     if (ids.isEmpty) {
       return const <ProductDetails>[];
     }
-    final ProductDetailsResponse response = await _store.queryProductDetails(ids.toSet());
+    final ProductDetailsResponse response = await _store.queryProductDetails(
+      ids.toSet(),
+    );
     return response.productDetails;
   }
 
   @override
   Future<void> purchase(String productId) async {
-    final List<ProductDetails> products = await queryProducts(<String>[productId]);
+    final List<ProductDetails> products = await queryProducts(<String>[
+      productId,
+    ]);
     if (products.isEmpty) {
       throw StateError('Product $productId is not available in the store');
     }
@@ -52,10 +61,39 @@ class GooglePlayBillingPlatform implements BillingPlatform {
   }
 
   @override
+  Future<void> purchaseConsumable(String productId) async {
+    final List<ProductDetails> products = await queryProducts(<String>[
+      productId,
+    ]);
+    if (products.isEmpty) {
+      throw StateError('Product $productId is not available in the store');
+    }
+    await _store.buyConsumable(
+      purchaseParam: PurchaseParam(productDetails: products.first),
+      autoConsume: false,
+    );
+  }
+
+  @override
   Future<void> restorePurchases() => _store.restorePurchases();
 
   @override
-  Future<void> completePurchase(PurchaseDetails purchase) {
+  Future<void> completePurchase(PurchaseDetails purchase) async {
+    if (purchase.productID == RequestConstants.creditProductId &&
+        purchase.status != PurchaseStatus.error &&
+        Platform.isAndroid) {
+      final InAppPurchaseAndroidPlatformAddition addition = _store
+          .getPlatformAddition<InAppPurchaseAndroidPlatformAddition>();
+      final BillingResultWrapper result = await addition.consumePurchase(
+        purchase,
+      );
+      if (result.responseCode != BillingResponse.ok) {
+        throw StateError(
+          'Failed to consume credit purchase: ${result.debugMessage}',
+        );
+      }
+      return;
+    }
     return _store.completePurchase(purchase);
   }
 }

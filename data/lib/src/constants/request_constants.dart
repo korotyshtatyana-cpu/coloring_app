@@ -2,6 +2,9 @@ import 'package:domain/domain.dart';
 
 /// Constants used for remote data requests and table names.
 abstract final class RequestConstants {
+  // Supabase schema
+  static const String publicSchema = 'public';
+
   // Supabase table names
   static const String usersTable = 'users';
   static const String contoursTable = 'contours';
@@ -11,6 +14,7 @@ abstract final class RequestConstants {
   static const String subscriptionsTable = 'subscriptions';
   static const String userEntitlementsTable = 'user_entitlements';
   static const String pendingPurchasesTable = 'pending_purchases';
+  static const String purchaseRefundsTable = 'purchase_refunds';
 
   // Supabase Edge Functions
   static const String verifyPurchaseFunction = 'verify-purchase';
@@ -28,7 +32,8 @@ abstract final class RequestConstants {
   static const String selectAll = '*';
   static const String selectContourId = 'contour_id';
   static const String selectProjectData = 'contour_id, data, last_opened';
-  static const String selectProjectThumbnails = 'contour_id, thumbnail_url, last_opened';
+  static const String selectProjectThumbnails =
+      'contour_id, thumbnail_url, last_opened';
 
   // Supabase columns
   static const String createdAtColumn = 'created_at';
@@ -49,6 +54,7 @@ abstract final class RequestConstants {
   static const String statusColumn = 'status';
   static const String errorMessageColumn = 'error_message';
   static const String resolvedAtColumn = 'resolved_at';
+  static const String acknowledgedAtColumn = 'acknowledged_at';
   static const String typeColumn = 'type';
   static const String idColumn = 'id';
   static const String noAdsPurchasedColumn = 'no_ads_purchased';
@@ -105,11 +111,21 @@ abstract final class RequestConstants {
   /// Prefix of the fallback product identifier of a paid project.
   static const String contourProductIdPrefix = 'contour_';
 
+  /// One-time product that adds a single contour-unlock credit.
+  static const String creditProductId = 'unlock_credit';
+
   // Billing verification payload values
   static const String purchaseTypeSubscription = 'subscription';
+  static const String purchaseTypeCredits = 'credits';
   static const String purchaseTypeProduct = 'product';
   static const String platformGoogle = 'google';
   static const String platformApple = 'apple';
+
+  // Billing verification response values
+  static const String verificationStatusParam = 'status';
+  static const String verificationStatusPending = 'pending';
+  static const String verificationStatusVerified = 'verified';
+  static const String verificationStatusFailed = 'failed';
 
   // Billing recovery timings
   static const Duration restoreResultTimeout = Duration(seconds: 4);
@@ -147,7 +163,8 @@ abstract final class RequestConstants {
   static const String appleIdTokenNull = 'Apple idToken is null';
   static const String appleSignInFailed = 'Failed to sign in with Apple';
   static const String platformNotSupported = 'Platform is not supported';
-  static const String silentSignInNotAvailable = 'Silent sign-in is not available';
+  static const String silentSignInNotAvailable =
+      'Silent sign-in is not available';
 
   // Postgres error codes
   static const String codeUniqueViolation = '23505';

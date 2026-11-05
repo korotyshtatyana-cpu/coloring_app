@@ -30,6 +30,18 @@ enum PendingPurchaseStatus {
   }
 }
 
+/// Result of re-checking a queued purchase with the store.
+enum PendingPurchaseRefreshStatus {
+  /// The store confirmed the purchase and the entitlement was granted.
+  verified,
+
+  /// The store still has not finalized the payment.
+  pending,
+
+  /// The store rejected or canceled the payment.
+  failed,
+}
+
 /// Domain entity representing a purchase awaiting store confirmation.
 class PendingPurchaseEntity extends Equatable {
   /// Unique pending purchase identifier.
@@ -43,6 +55,9 @@ class PendingPurchaseEntity extends Equatable {
 
   /// Platform purchase token, when the store already returned one.
   final String? purchaseToken;
+
+  /// Contour the purchase unlocks, when it is a project purchase.
+  final String? contourId;
 
   /// Current confirmation status.
   final PendingPurchaseStatus status;
@@ -62,6 +77,7 @@ class PendingPurchaseEntity extends Equatable {
     required this.userId,
     required this.productId,
     required this.purchaseToken,
+    required this.contourId,
     required this.status,
     required this.errorMessage,
     required this.createdAt,
@@ -74,6 +90,7 @@ class PendingPurchaseEntity extends Equatable {
     userId,
     productId,
     purchaseToken,
+    contourId,
     status,
     errorMessage,
     createdAt,

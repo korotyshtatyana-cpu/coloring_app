@@ -229,6 +229,40 @@ class ClearProject extends CanvasEvent {
   const ClearProject();
 }
 
+/// Why the canvas switched to view-only mode while it was open.
+enum ViewOnlyReason {
+  /// The purchase that unlocked the project was refunded.
+  refunded,
+
+  /// The subscription that unlocked the project ended or was refunded.
+  subscriptionExpired,
+}
+
+/// Switches the open project to view-only mode.
+///
+/// Dispatched when the server revokes access to the contour being edited,
+/// e.g. when its unlocking purchase is refunded. The current stroke is
+/// discarded and every editing action is disabled; pan/zoom stay available.
+class MarkCurrentContourAsViewOnly extends CanvasEvent {
+  /// Why the project lost editing access.
+  final ViewOnlyReason reason;
+
+  /// Creates a [MarkCurrentContourAsViewOnly] event.
+  const MarkCurrentContourAsViewOnly({required this.reason});
+
+  @override
+  List<Object?> get props => <Object?>[reason];
+}
+
+/// Unlocks the open project from view-only mode after access is purchased.
+///
+/// Dispatched when payment confirmation is received, restoring full editing
+/// controls, enabling stroke drawing, and hiding the view-only banner.
+class UnlockCanvas extends CanvasEvent {
+  /// Creates an [UnlockCanvas] event.
+  const UnlockCanvas();
+}
+
 /// Changes the active brush tool within the category.
 class SelectBrush extends CanvasEvent {
   /// Selected brush ID.

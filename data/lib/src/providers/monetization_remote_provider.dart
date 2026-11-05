@@ -2,6 +2,18 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../data.dart';
 
+/// Outcome of a server-side store verification.
+enum PurchaseVerificationResult {
+  /// The store confirmed the purchase and the entitlement was granted.
+  verified,
+
+  /// The store has not finalized the payment yet; verification must be retried.
+  pending,
+
+  /// The store rejected or canceled the payment.
+  failed,
+}
+
 /// Remote provider for monetization data stored in Supabase.
 ///
 /// The provider works with database records only: billing itself is driven by
@@ -21,8 +33,9 @@ class MonetizationRemoteProvider {
   ///
   /// The function derives the user from the JWT, validates the purchase with
   /// the platform store and grants the matching entitlement. Throws when the
-  /// function rejects the purchase.
-  Future<void> verifyPurchase({
+  /// function rejects the purchase. Returns [PurchaseVerificationResult.pending]
+  /// while the store is still finalizing the payment.
+  Future<PurchaseVerificationResult> verifyPurchase({
     required String productId,
     required String purchaseToken,
     required String type,
@@ -45,6 +58,18 @@ class MonetizationRemoteProvider {
         response.data?.toString() ?? 'Purchase verification failed',
       );
     }
+
+    final Object? data = response.data;
+    if (data is Map<String, dynamic>) {
+      final Object? status = data[RequestConstants.verificationStatusParam];
+      if (status == RequestConstants.verificationStatusPending) {
+        return PurchaseVerificationResult.pending;
+      }
+      if (status == RequestConstants.verificationStatusFailed) {
+        return PurchaseVerificationResult.failed;
+      }
+    }
+    return PurchaseVerificationResult.verified;
   }
 
   /// Returns the user's active, unexpired subscription, or `null`.
@@ -78,7 +103,8 @@ class MonetizationRemoteProvider {
     if (response.isEmpty) {
       return false;
     }
-    return response.first[RequestConstants.noAdsPurchasedColumn] as bool? ?? false;
+    return response.first[RequestConstants.noAdsPurchasedColumn] as bool? ??
+        false;
   }
 
   /// Returns the user's entitlement for a single contour, or `null`.
@@ -119,7 +145,10 @@ class MonetizationRemoteProvider {
   Future<void> insertEntitlement(Map<String, dynamic> payload) async {
     await _client
         .from(RequestConstants.userEntitlementsTable)
-        .upsert(payload, onConflict: RequestConstants.onConflictUserContourUpdate);
+        .upsert(
+          payload,
+          onConflict: RequestConstants.onConflictUserContourUpdate,
+        );
   }
 
   /// Inserts a queued purchase awaiting store confirmation.
@@ -133,7 +162,10 @@ class MonetizationRemoteProvider {
         .from(RequestConstants.pendingPurchasesTable)
         .select(RequestConstants.selectAll)
         .eq(RequestConstants.userIdColumn, userId)
-        .eq(RequestConstants.statusColumn, RequestConstants.pendingPurchaseStatusPending)
+        .eq(
+          RequestConstants.statusColumn,
+          RequestConstants.pendingPurchaseStatusPending,
+        )
         .order(RequestConstants.createdAtColumn, ascending: true);
 
     return response
@@ -147,11 +179,41 @@ class MonetizationRemoteProvider {
         .from(RequestConstants.pendingPurchasesTable)
         .select(RequestConstants.selectAll)
         .eq(RequestConstants.userIdColumn, userId)
-        .eq(RequestConstants.statusColumn, RequestConstants.pendingPurchaseStatusResolved)
+        .eq(
+          RequestConstants.statusColumn,
+          RequestConstants.pendingPurchaseStatusResolved,
+        )
         .order(RequestConstants.createdAtColumn, ascending: false);
 
     return response
         .map((Map<String, dynamic> json) => PendingPurchaseModel.fromJson(json))
         .toList();
+  }
+
+  /// Returns refunds the user has not seen yet, most recent first.
+  Future<List<PurchaseRefundModel>> getUnacknowledgedRefunds(
+    String userId,
+  ) async {
+    final List<Map<String, dynamic>> response = await _client
+        .from(RequestConstants.purchaseRefundsTable)
+        .select(RequestConstants.selectAll)
+        .eq(RequestConstants.userIdColumn, userId)
+        .isFilter(RequestConstants.acknowledgedAtColumn, null)
+        .order(RequestConstants.createdAtColumn, ascending: false);
+
+    return response
+        .map((Map<String, dynamic> json) => PurchaseRefundModel.fromJson(json))
+        .toList();
+  }
+
+  /// Marks a refund message as seen by the user.
+  Future<void> acknowledgeRefund(String refundId) async {
+    await _client
+        .from(RequestConstants.purchaseRefundsTable)
+        .update(<String, dynamic>{
+          RequestConstants.acknowledgedAtColumn:
+              DateTime.now().toIso8601String(),
+        })
+        .eq(RequestConstants.idColumn, refundId);
   }
 }

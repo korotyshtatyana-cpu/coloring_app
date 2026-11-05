@@ -27,8 +27,20 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
   final SaveImageToGalleryUseCase _saveImageToGalleryUseCase;
   final RenderProjectThumbnailUseCase _renderProjectThumbnailUseCase;
   final GetAvailableToolsUseCase _getAvailableToolsUseCase;
+  final GetCurrentUserUseCase _getCurrentUserUseCase;
+  final WatchRefundsUseCase _watchRefundsUseCase;
+  final WatchPurchaseUpdatesUseCase _watchPurchaseUpdatesUseCase;
+  final GetGalleryItemsUseCase _getGalleryItemsUseCase;
+  final AppLogger _logger;
 
   Timer? _autosaveTimer;
+  StreamSubscription<PurchaseRefundEntity>? _refundsSubscription;
+  StreamSubscription<PurchaseUpdateEntity>? _purchaseUpdatesSubscription;
+  String? _refundUserId;
+
+  /// Refund that arrived while the project was still loading; access is
+  /// re-checked as soon as the contour is known.
+  PurchaseRefundEntity? _refundPendingCheck;
 
   /// Creates a [CanvasBloc] with required dependencies.
   CanvasBloc({
@@ -42,7 +54,13 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     required this._saveImageToGalleryUseCase,
     required this._renderProjectThumbnailUseCase,
     required this._getAvailableToolsUseCase,
-  }) : super(CanvasState()) {
+    required this._getCurrentUserUseCase,
+    required this._watchRefundsUseCase,
+    required this._watchPurchaseUpdatesUseCase,
+    required this._getGalleryItemsUseCase,
+    required this._logger,
+    bool isViewOnly = false,
+  }) : super(CanvasState(isViewOnly: isViewOnly)) {
     on<LoadProject>(_onLoadProject);
     on<StartDrawing>(_onStartDrawing);
     on<EndDrawing>(_onEndDrawing);
@@ -65,6 +83,39 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     on<ExportImage>(_onExportImage);
     on<ExportImageFinished>(_onExportImageFinished);
     on<ContourCompiled>(_onContourCompiled);
+    on<MarkCurrentContourAsViewOnly>(_onMarkCurrentContourAsViewOnly);
+    on<UnlockCanvas>(_onUnlockCanvas);
+    _initRefundWatch();
+    _initPurchaseWatch();
+  }
+
+  void _initPurchaseWatch() {
+    _purchaseUpdatesSubscription = _watchPurchaseUpdatesUseCase
+        .execute()
+        .listen((PurchaseUpdateEntity update) {
+          if (isClosed ||
+              !state.isViewOnly ||
+              update.status != PurchaseUpdateStatus.success ||
+              !_unlocksCurrentContour(update)) {
+            return;
+          }
+          add(const UnlockCanvas());
+        });
+  }
+
+  bool _unlocksCurrentContour(PurchaseUpdateEntity update) {
+    if (update.contourId != null) {
+      return update.contourId == _contourId;
+    }
+
+    final String? productId = update.productId;
+    if (productId == null) {
+      return false;
+    }
+    if (productId.startsWith('${SubscriptionPlanType.premium.dbValue}_')) {
+      return true;
+    }
+    return state.contour?.productId == productId;
   }
 
   Future<void> _onLoadProject(
@@ -138,6 +189,14 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
 
       // Automatically update last_opened timestamp when project is opened
       unawaited(saveProject(withThumbnail: false));
+
+      // A refund that arrived during the load could not be evaluated without
+      // the contour; re-check access now that the project is known.
+      final PurchaseRefundEntity? pendingRefund = _refundPendingCheck;
+      if (pendingRefund != null) {
+        _refundPendingCheck = null;
+        unawaited(_recheckAccessAfterRefund(pendingRefund));
+      }
     } catch (e, stackTrace) {
       ErrorHandler.report(e, stackTrace);
       emit(state.copyWith(status: CanvasStatus.error, error: e.toString()));
@@ -148,7 +207,121 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     emit(state.copyWith(status: CanvasStatus.ready, isContourReady: true));
   }
 
+  /// Watches refunds for the current user so a revoked purchase switches the
+  /// canvas to view-only while it is open.
+  Future<void> _initRefundWatch() async {
+    try {
+      final UserEntity? user = await _getCurrentUserUseCase.execute();
+      if (isClosed || user == null) {
+        return;
+      }
+      _refundUserId = user.id;
+      _refundsSubscription = _watchRefundsUseCase
+          .execute(user.id)
+          .listen(
+            (PurchaseRefundEntity refund) => unawaited(_handleRefund(refund)),
+          );
+    } catch (e, stackTrace) {
+      ErrorHandler.report(e, stackTrace);
+    }
+  }
+
+  Future<void> _handleRefund(PurchaseRefundEntity refund) async {
+    if (state.isViewOnly) {
+      return;
+    }
+    if (state.contour == null) {
+      // The contour is not known yet; the load completion re-checks access.
+      _refundPendingCheck = refund;
+      return;
+    }
+    await _recheckAccessAfterRefund(refund);
+  }
+
+  /// Re-resolves access to the open contour after [refund] and switches to
+  /// view-only when the refund took the unlock away.
+  ///
+  /// The refund may target a different purchase (for example a subscription
+  /// while a credit-unlocked project is open), so the event itself does not
+  /// decide: the fresh server-side access resolution does.
+  Future<void> _recheckAccessAfterRefund(PurchaseRefundEntity refund) async {
+    final ContourEntity? contour = state.contour;
+    final String? userId = _refundUserId;
+    if (contour == null ||
+        contour.accessType != ContourAccessType.paid ||
+        userId == null) {
+      return;
+    }
+
+    try {
+      final List<GalleryItemEntity> items = await _getGalleryItemsUseCase
+          .execute(
+            GetGalleryItemsParams(
+              contours: <ContourEntity>[contour],
+              userId: userId,
+              inProgressContourIds: state.strokes.isEmpty
+                  ? const <String>{}
+                  : <String>{contour.id},
+            ),
+          );
+      if (isClosed || state.isViewOnly) {
+        return;
+      }
+      final ProjectAccess? access = items.isEmpty ? null : items.first.access;
+      if (access == null || access == ProjectAccess.unlocked) {
+        return;
+      }
+      add(
+        MarkCurrentContourAsViewOnly(
+          reason: refund.isSubscriptionRefund
+              ? ViewOnlyReason.subscriptionExpired
+              : ViewOnlyReason.refunded,
+        ),
+      );
+    } catch (e, stackTrace) {
+      ErrorHandler.report(e, stackTrace);
+    }
+  }
+
+  void _onMarkCurrentContourAsViewOnly(
+    MarkCurrentContourAsViewOnly event,
+    Emitter<CanvasState> emit,
+  ) {
+    if (state.isViewOnly) {
+      return;
+    }
+    // Stop persisting: the autosave must not write a project the user no
+    // longer owns.
+    _autosaveTimer?.cancel();
+    _logger.debug(
+      '[Monetization] canvas switched to view-only: '
+      'contour=$_contourId, reason=${event.reason.name}',
+    );
+    emit(
+      state.copyWith(
+        status: state.status == CanvasStatus.drawing
+            ? CanvasStatus.ready
+            : state.status,
+        clearCurrentStroke: true,
+        isViewOnly: true,
+        viewOnlyReason: event.reason,
+      ),
+    );
+  }
+
+  void _onUnlockCanvas(UnlockCanvas event, Emitter<CanvasState> emit) {
+    if (!state.isViewOnly) {
+      return;
+    }
+    _logger.debug(
+      '[Monetization] canvas unlocked from view-only mode: contour=$_contourId',
+    );
+    emit(state.copyWith(isViewOnly: false, clearViewOnlyReason: true));
+  }
+
   void _onStartDrawing(StartDrawing event, Emitter<CanvasState> emit) {
+    if (state.isViewOnly) return;
+
     final activeToolId = state.isEraser
         ? state.activeEraserId
         : state.activeBrushId;
@@ -196,6 +369,7 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     ClearProject event,
     Emitter<CanvasState> emit,
   ) async {
+    if (state.isViewOnly) return;
     try {
       emit(state.copyWith(status: CanvasStatus.saving));
 
@@ -226,6 +400,8 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     EndDrawing event,
     Emitter<CanvasState> emit,
   ) async {
+    if (state.isViewOnly) return;
+
     final strokeToSave = event.stroke;
     final strokes = <StrokeEntity>[...state.strokes, strokeToSave];
     final undoStack = <StrokeEntity>[...state.undoStack, strokeToSave];
@@ -262,7 +438,7 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
   }
 
   Future<void> _onUndo(Undo event, Emitter<CanvasState> emit) async {
-    if (state.undoStack.isEmpty) return;
+    if (state.isViewOnly || state.undoStack.isEmpty) return;
 
     final removed = state.undoStack.last;
     final isCurrentStroke =
@@ -285,7 +461,7 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
   }
 
   Future<void> _onRedo(Redo event, Emitter<CanvasState> emit) async {
-    if (state.redoStack.isEmpty) return;
+    if (state.isViewOnly || state.redoStack.isEmpty) return;
 
     final restored = state.redoStack.first;
     final redoStack = List<StrokeEntity>.from(state.redoStack)..removeAt(0);
@@ -322,6 +498,7 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     bool withThumbnail = true,
     Emitter<CanvasState>? emit,
   }) async {
+    if (state.isViewOnly) return;
     if (state.status == CanvasStatus.initial ||
         state.status == CanvasStatus.loading) {
       // Project not loaded yet: saving would clobber stored strokes.
@@ -394,6 +571,8 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     ChangeContourSettings event,
     Emitter<CanvasState> emit,
   ) {
+    if (state.isViewOnly) return;
+
     emit(
       state.copyWith(
         contourColor: event.color ?? state.contourColor,
@@ -440,6 +619,9 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     Emitter<CanvasState> emit,
   ) async {
     if (state.contour == null || state.contourSvg == null) return;
+    // Read-only projects may still be shared, but saving to the gallery is
+    // hidden together with the other editing actions.
+    if (state.isViewOnly && event.exportType == ExportType.gallery) return;
 
     try {
       emit(state.copyWith(status: CanvasStatus.exporting, error: null));
@@ -592,8 +774,10 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
   }
 
   @override
-  Future<void> close() {
+  Future<void> close() async {
     _autosaveTimer?.cancel();
+    await _refundsSubscription?.cancel();
+    await _purchaseUpdatesSubscription?.cancel();
     return super.close();
   }
 }

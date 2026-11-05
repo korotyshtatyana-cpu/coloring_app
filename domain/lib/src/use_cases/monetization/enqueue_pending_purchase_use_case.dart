@@ -11,11 +11,15 @@ class EnqueuePendingPurchaseParams {
   /// Platform purchase token, when the store already returned one.
   final String? purchaseToken;
 
+  /// Contour the purchase unlocks, when it is a project purchase.
+  final String? contourId;
+
   /// Creates parameters for queuing a pending purchase.
   const EnqueuePendingPurchaseParams({
     required this.userId,
     required this.productId,
     this.purchaseToken,
+    this.contourId,
   });
 }
 
@@ -38,6 +42,7 @@ class EnqueuePendingPurchaseUseCase implements FutureUseCase<EnqueuePendingPurch
       userId: params.userId,
       productId: params.productId,
       purchaseToken: params.purchaseToken,
+      contourId: params.contourId,
     );
   }
 }

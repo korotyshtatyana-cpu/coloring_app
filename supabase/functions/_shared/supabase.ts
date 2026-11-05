@@ -1,6 +1,9 @@
 // Shared Supabase client helpers for the billing Edge Functions.
 
-import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
+import {
+  createClient,
+  type SupabaseClient,
+} from "https://esm.sh/@supabase/supabase-js@2";
 
 /** Creates a client authenticated with the service role key. */
 export function createAdminClient(): SupabaseClient {

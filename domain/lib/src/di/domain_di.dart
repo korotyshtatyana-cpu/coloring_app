@@ -35,11 +35,13 @@ abstract class DomainDI {
     );
 
     appLocator.registerLazySingleton<GetUsedCategoriesUseCase>(
-      () => GetUsedCategoriesUseCase(repository: appLocator<GalleryRepository>()),
+      () =>
+          GetUsedCategoriesUseCase(repository: appLocator<GalleryRepository>()),
     );
 
     appLocator.registerLazySingleton<GetContoursByIdsUseCase>(
-      () => GetContoursByIdsUseCase(repository: appLocator<GalleryRepository>()),
+      () =>
+          GetContoursByIdsUseCase(repository: appLocator<GalleryRepository>()),
     );
 
     appLocator.registerLazySingleton<GetFavoriteIdsUseCase>(
@@ -51,7 +53,8 @@ abstract class DomainDI {
     );
 
     appLocator.registerLazySingleton<GetWorkInProgressUseCase>(
-      () => GetWorkInProgressUseCase(repository: appLocator<GalleryRepository>()),
+      () =>
+          GetWorkInProgressUseCase(repository: appLocator<GalleryRepository>()),
     );
 
     appLocator.registerLazySingleton<GetContourByIdUseCase>(
@@ -59,7 +62,8 @@ abstract class DomainDI {
     );
 
     appLocator.registerLazySingleton<GetAvailableToolsUseCase>(
-      () => GetAvailableToolsUseCase(repository: appLocator<CanvasRepository>()),
+      () =>
+          GetAvailableToolsUseCase(repository: appLocator<CanvasRepository>()),
     );
 
     appLocator.registerLazySingleton<AddStrokeUseCase>(
@@ -79,7 +83,9 @@ abstract class DomainDI {
     );
 
     appLocator.registerLazySingleton<RenderProjectThumbnailUseCase>(
-      () => RenderProjectThumbnailUseCase(repository: appLocator<CanvasRepository>()),
+      () => RenderProjectThumbnailUseCase(
+        repository: appLocator<CanvasRepository>(),
+      ),
     );
 
     appLocator.registerLazySingleton<ShareFileUseCase>(
@@ -87,7 +93,8 @@ abstract class DomainDI {
     );
 
     appLocator.registerLazySingleton<SaveImageToGalleryUseCase>(
-      () => SaveImageToGalleryUseCase(repository: appLocator<CanvasRepository>()),
+      () =>
+          SaveImageToGalleryUseCase(repository: appLocator<CanvasRepository>()),
     );
 
     appLocator.registerLazySingleton<GetSettingsUseCase>(
@@ -99,11 +106,15 @@ abstract class DomainDI {
     );
 
     appLocator.registerLazySingleton<CheckCanvasOnboardingShownUseCase>(
-      () => CheckCanvasOnboardingShownUseCase(repository: appLocator<SettingsRepository>()),
+      () => CheckCanvasOnboardingShownUseCase(
+        repository: appLocator<SettingsRepository>(),
+      ),
     );
 
     appLocator.registerLazySingleton<SetCanvasOnboardingShownUseCase>(
-      () => SetCanvasOnboardingShownUseCase(repository: appLocator<SettingsRepository>()),
+      () => SetCanvasOnboardingShownUseCase(
+        repository: appLocator<SettingsRepository>(),
+      ),
     );
 
     appLocator.registerLazySingleton<SubmitFeedbackUseCase>(
@@ -111,35 +122,75 @@ abstract class DomainDI {
     );
 
     appLocator.registerLazySingleton<GetActiveSubscriptionUseCase>(
-      () => GetActiveSubscriptionUseCase(repository: appLocator<MonetizationRepository>()),
+      () => GetActiveSubscriptionUseCase(
+        repository: appLocator<MonetizationRepository>(),
+      ),
     );
 
     appLocator.registerLazySingleton<IsNoAdsPurchasedUseCase>(
-      () => IsNoAdsPurchasedUseCase(repository: appLocator<MonetizationRepository>()),
+      () => IsNoAdsPurchasedUseCase(
+        repository: appLocator<MonetizationRepository>(),
+      ),
     );
 
     appLocator.registerLazySingleton<GetEntitlementUseCase>(
-      () => GetEntitlementUseCase(repository: appLocator<MonetizationRepository>()),
+      () => GetEntitlementUseCase(
+        repository: appLocator<MonetizationRepository>(),
+      ),
     );
 
     appLocator.registerLazySingleton<GrantRewardedUnlockUseCase>(
-      () => GrantRewardedUnlockUseCase(repository: appLocator<MonetizationRepository>()),
+      () => GrantRewardedUnlockUseCase(
+        repository: appLocator<MonetizationRepository>(),
+      ),
     );
 
     appLocator.registerLazySingleton<RecordPurchaseUseCase>(
-      () => RecordPurchaseUseCase(repository: appLocator<MonetizationRepository>()),
+      () => RecordPurchaseUseCase(
+        repository: appLocator<MonetizationRepository>(),
+      ),
     );
 
     appLocator.registerLazySingleton<EnqueuePendingPurchaseUseCase>(
-      () => EnqueuePendingPurchaseUseCase(repository: appLocator<MonetizationRepository>()),
+      () => EnqueuePendingPurchaseUseCase(
+        repository: appLocator<MonetizationRepository>(),
+      ),
     );
 
     appLocator.registerLazySingleton<GetPendingPurchasesUseCase>(
-      () => GetPendingPurchasesUseCase(repository: appLocator<MonetizationRepository>()),
+      () => GetPendingPurchasesUseCase(
+        repository: appLocator<MonetizationRepository>(),
+      ),
     );
 
     appLocator.registerLazySingleton<GetPurchaseHistoryUseCase>(
-      () => GetPurchaseHistoryUseCase(repository: appLocator<MonetizationRepository>()),
+      () => GetPurchaseHistoryUseCase(
+        repository: appLocator<MonetizationRepository>(),
+      ),
+    );
+
+    appLocator.registerLazySingleton<GetPurchaseRefundsUseCase>(
+      () => GetPurchaseRefundsUseCase(
+        repository: appLocator<MonetizationRepository>(),
+      ),
+    );
+
+    appLocator.registerLazySingleton<AcknowledgePurchaseRefundUseCase>(
+      () => AcknowledgePurchaseRefundUseCase(
+        repository: appLocator<MonetizationRepository>(),
+      ),
+    );
+
+    appLocator.registerLazySingleton<WatchRefundsUseCase>(
+      () => WatchRefundsUseCase(
+        repository: appLocator<MonetizationRepository>(),
+      ),
+    );
+
+    appLocator.registerLazySingleton<RefreshPendingPurchaseUseCase>(
+      () => RefreshPendingPurchaseUseCase(
+        repository: appLocator<MonetizationRepository>(),
+      ),
     );
 
     appLocator.registerLazySingleton<GetSubscriptionPlanTypeUseCase>(
@@ -147,27 +198,47 @@ abstract class DomainDI {
     );
 
     appLocator.registerLazySingleton<GetGalleryItemsUseCase>(
-      () => GetGalleryItemsUseCase(repository: appLocator<MonetizationRepository>()),
+      () => GetGalleryItemsUseCase(
+        repository: appLocator<MonetizationRepository>(),
+      ),
     );
 
     appLocator.registerLazySingleton<GetBillingProductsUseCase>(
-      () => GetBillingProductsUseCase(repository: appLocator<MonetizationRepository>()),
+      () => GetBillingProductsUseCase(
+        repository: appLocator<MonetizationRepository>(),
+      ),
+    );
+
+    appLocator.registerLazySingleton<GetCreditProductUseCase>(
+      () => GetCreditProductUseCase(
+        repository: appLocator<MonetizationRepository>(),
+      ),
     );
 
     appLocator.registerLazySingleton<BuySubscriptionUseCase>(
-      () => BuySubscriptionUseCase(repository: appLocator<MonetizationRepository>()),
+      () => BuySubscriptionUseCase(
+        repository: appLocator<MonetizationRepository>(),
+      ),
     );
 
     appLocator.registerLazySingleton<BuyProjectUseCase>(
       () => BuyProjectUseCase(repository: appLocator<MonetizationRepository>()),
     );
 
+    appLocator.registerLazySingleton<BuyCreditUseCase>(
+      () => BuyCreditUseCase(repository: appLocator<MonetizationRepository>()),
+    );
+
     appLocator.registerLazySingleton<RestorePurchasesUseCase>(
-      () => RestorePurchasesUseCase(repository: appLocator<MonetizationRepository>()),
+      () => RestorePurchasesUseCase(
+        repository: appLocator<MonetizationRepository>(),
+      ),
     );
 
     appLocator.registerLazySingleton<WatchPurchaseUpdatesUseCase>(
-      () => WatchPurchaseUpdatesUseCase(repository: appLocator<MonetizationRepository>()),
+      () => WatchPurchaseUpdatesUseCase(
+        repository: appLocator<MonetizationRepository>(),
+      ),
     );
   }
 }

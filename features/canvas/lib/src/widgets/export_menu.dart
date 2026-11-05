@@ -10,10 +10,16 @@ class ExportMenu extends StatelessWidget {
   /// Callback when save to gallery is selected.
   final VoidCallback onSaveToGallery;
 
+  /// Whether the "save to gallery" option is available.
+  ///
+  /// Read-only projects can only be shared.
+  final bool showSaveToGallery;
+
   /// Creates an [ExportMenu].
   const ExportMenu({
     required this.onShare,
     required this.onSaveToGallery,
+    this.showSaveToGallery = true,
     super.key,
   });
 
@@ -58,22 +64,28 @@ class ExportMenu extends StatelessWidget {
                 visualDensity: VisualDensity.compact,
                 minLeadingWidth: 24,
               ),
-              ListTile(
-                leading: Icon(Icons.photo_library, color: colors.primaryText),
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(16)),
+              if (showSaveToGallery)
+                ListTile(
+                  leading: Icon(Icons.photo_library, color: colors.primaryText),
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(16)),
+                  ),
+                  splashColor: colors.accentLight,
+                  title: Text(
+                    LocaleKeys.save_to_gallery.tr(),
+                    style: AppFonts.normal16.copyWith(
+                      color: colors.primaryText,
+                    ),
+                  ),
+                  onTap: onSaveToGallery,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 0,
+                  ),
+                  dense: true,
+                  visualDensity: VisualDensity.compact,
+                  minLeadingWidth: 24,
                 ),
-                splashColor: colors.accentLight,
-                title: Text(
-                  LocaleKeys.save_to_gallery.tr(),
-                  style: AppFonts.normal16.copyWith(color: colors.primaryText),
-                ),
-                onTap: onSaveToGallery,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-                dense: true,
-                visualDensity: VisualDensity.compact,
-                minLeadingWidth: 24,
-              ),
             ],
           ),
         ),

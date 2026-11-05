@@ -19,14 +19,28 @@ class GalleryScreen extends StatefulWidget {
   State<GalleryScreen> createState() => _GalleryScreenState();
 }
 
-class _GalleryScreenState extends State<GalleryScreen> with AutoRouteAware {
+class _GalleryScreenState extends State<GalleryScreen>
+    with AutoRouteAware, WidgetsBindingObserver {
   AutoRouteObserver? _observer;
+  StreamSubscription<PurchaseUpdateEntity>? _purchaseUpdatesSubscription;
 
   /// The bloc is owned by this state (not created inside [build]) so that
   /// route-aware callbacks like [didPopNext] can access it without a
   /// [BuildContext] — the screen's own context is an ancestor of the
   /// [BlocProvider] and therefore cannot look it up.
   late final GalleryBloc _bloc = _createBloc();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    // Purchase updates are app-wide, not scoped to the purchase dialog. A
+    // deferred payment can therefore unlock the project and notify the user
+    // even after that dialog was closed.
+    _purchaseUpdatesSubscription = appLocator<WatchPurchaseUpdatesUseCase>()
+        .execute()
+        .listen(_onPurchaseUpdate);
+  }
 
   @override
   void didChangeDependencies() {
@@ -37,10 +51,22 @@ class _GalleryScreenState extends State<GalleryScreen> with AutoRouteAware {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _purchaseUpdatesSubscription?.cancel();
     _observer?.unsubscribe(this);
     // BlocProvider.value doesn't close the bloc, so we do it ourselves.
     _bloc.close();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed || _bloc.isClosed) {
+      return;
+    }
+    // A refund is processed by the store asynchronously. Re-checking on
+    // resume refreshes access and runs the refund fallback fetch.
+    _bloc.add(const LoadMonetizationStatus());
   }
 
   @override
@@ -69,9 +95,28 @@ class _GalleryScreenState extends State<GalleryScreen> with AutoRouteAware {
     });
   }
 
+  void _onPurchaseUpdate(PurchaseUpdateEntity update) {
+    if (!mounted ||
+        update.isRestore ||
+        update.contourId == null ||
+        update.status != PurchaseUpdateStatus.success) {
+      return;
+    }
+
+    _bloc.add(const LoadMonetizationStatus());
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(content: Text(LocaleKeys.purchase_success_text.tr())),
+      );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<GalleryBloc>.value(value: _bloc, child: const GalleryContent());
+    return BlocProvider<GalleryBloc>.value(
+      value: _bloc,
+      child: const GalleryContent(),
+    );
   }
 
   GalleryBloc _createBloc() {
@@ -86,6 +131,8 @@ class _GalleryScreenState extends State<GalleryScreen> with AutoRouteAware {
       getCurrentUserUseCase: appLocator<GetCurrentUserUseCase>(),
       getActiveSubscriptionUseCase: appLocator<GetActiveSubscriptionUseCase>(),
       isNoAdsPurchasedUseCase: appLocator<IsNoAdsPurchasedUseCase>(),
+      getPurchaseRefundsUseCase: appLocator<GetPurchaseRefundsUseCase>(),
+      watchRefundsUseCase: appLocator<WatchRefundsUseCase>(),
       adService: appLocator<AdService>(),
     )..add(const LoadContours(reset: true));
   }

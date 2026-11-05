@@ -35,6 +35,15 @@ class AppImages {
   /// Path to eraser icon.
   static const String eraser = '$_iconsPath/eraser.svg';
 
+  /// Path to the crown icon used for paid projects.
+  static const String paid = '$_iconsPath/paid.svg';
+
+  /// Path to the play icon used for rewarded projects.
+  static const String rewarded = '$_iconsPath/rewarded.svg';
+
+  /// Path to the icon used for read-only projects.
+  static const String readOnly = '$_iconsPath/read-only.svg';
+
   /// Watermark stamped onto exported images.
   static const String watermark = '$_basePath/watermark.png';
 
@@ -43,6 +52,5 @@ class AppImages {
   /// `rootBundle` has no `package:` argument like `Image.asset`, so assets of a
   /// dependency are addressed by the `packages/<name>/` prefix. Plain asset paths
   /// only resolve for widgets.
-  static const String watermarkAssetKey =
-      'packages/$packageName/$watermark';
+  static const String watermarkAssetKey = 'packages/$packageName/$watermark';
 }

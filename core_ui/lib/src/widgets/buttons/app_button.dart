@@ -12,8 +12,9 @@ import '../../theme/app_fonts.dart';
 /// Set [shrinkWrap] to true so the button only occupies the exact width
 /// required by its text content and padding, preventing it from stretching.
 ///
-/// The button is disabled when [onPressed] is null; a disabled button is
-/// rendered in [AppColors.iconDisabled] instead of [color].
+/// The button is disabled when [onPressed] is null or [isLoading] is true.
+/// Without an active loading state, a disabled button is rendered in
+/// [AppColors.iconDisabled] instead of [color].
 class AppButton extends StatelessWidget {
   /// Button label text.
   final String text;
@@ -39,6 +40,10 @@ class AppButton extends StatelessWidget {
   /// stretching.
   final bool shrinkWrap;
 
+  /// Whether to show a progress indicator instead of the label and disable
+  /// presses while an action is in progress.
+  final bool isLoading;
+
   /// Creates an [AppButton].
   const AppButton({
     required this.text,
@@ -47,20 +52,21 @@ class AppButton extends StatelessWidget {
     this.color,
     this.padding,
     this.shrinkWrap = false,
+    this.isLoading = false,
     super.key,
   });
 
   @override
   Widget build(BuildContext context) {
     final AppColors colors = AppColors.of(context);
-    final bool isDisabled = onPressed == null;
+    final bool isDisabled = onPressed == null && !isLoading;
     final Color effectiveColor = isDisabled
         ? colors.iconDisabled
         : color ?? (filled ? colors.accentDark : colors.iconPrimary);
     final Color textColor = filled ? colors.primaryBg : effectiveColor;
 
     Widget button = TextButton(
-      onPressed: onPressed,
+      onPressed: isLoading ? null : onPressed,
       style: TextButton.styleFrom(
         foregroundColor: textColor,
         backgroundColor: filled ? effectiveColor : Colors.transparent,
@@ -81,17 +87,26 @@ class AppButton extends StatelessWidget {
             ? MaterialTapTargetSize.shrinkWrap
             : null,
       ),
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        child: Text(
-          text,
-          style: AppFonts.normal14.copyWith(
-            color: textColor,
-            fontWeight: FontWeight.w600,
-          ),
-          maxLines: 1,
-        ),
-      ),
+      child: isLoading
+          ? SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: textColor,
+              ),
+            )
+          : FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                text,
+                style: AppFonts.normal14.copyWith(
+                  color: textColor,
+                  fontWeight: FontWeight.w600,
+                ),
+                maxLines: 1,
+              ),
+            ),
     );
 
     if (shrinkWrap) {

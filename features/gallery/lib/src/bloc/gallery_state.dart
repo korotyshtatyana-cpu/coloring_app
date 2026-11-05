@@ -32,16 +32,20 @@ class AccessRequest extends Equatable {
   /// How the rewarded ad ended, or `null` when no ad was required.
   final RewardedAdOutcome? outcome;
 
+  /// Whether this project can only be viewed, not edited.
+  final bool viewOnly;
+
   /// Creates an [AccessRequest].
   const AccessRequest({
     required this.id,
     required this.contourId,
     required this.granted,
     this.outcome,
+    this.viewOnly = false,
   });
 
   @override
-  List<Object?> get props => <Object?>[id, contourId, granted, outcome];
+  List<Object?> get props => <Object?>[id, contourId, granted, outcome, viewOnly];
 }
 
 /// State of the gallery feature.
