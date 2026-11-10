@@ -18,11 +18,20 @@ enum SubscriptionInterval {
   ///
   /// Falls back to [SubscriptionInterval.month] for unknown values.
   static SubscriptionInterval fromDb(String value) {
+    return tryFromDb(value) ?? SubscriptionInterval.month;
+  }
+
+  /// Returns the interval matching the given [value], or `null` when it is
+  /// missing or not recognized.
+  static SubscriptionInterval? tryFromDb(String? value) {
+    if (value == null) {
+      return null;
+    }
     for (final SubscriptionInterval interval in SubscriptionInterval.values) {
       if (interval.dbValue == value) {
         return interval;
       }
     }
-    return SubscriptionInterval.month;
+    return null;
   }
 }

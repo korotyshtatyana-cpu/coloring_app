@@ -32,8 +32,20 @@ class SubscriptionState extends Equatable {
   /// Selected billing interval of the Premium plan.
   final SubscriptionInterval selectedPremiumInterval;
 
+  /// Store prices of the No Ads base plans by billing interval.
+  final Map<SubscriptionInterval, String> noAdsPrices;
+
+  /// Store prices of the Premium base plans by billing interval.
+  final Map<SubscriptionInterval, String> premiumPrices;
+
   /// Whether a purchase or restore is currently in progress.
   final bool isPurchasing;
+
+  /// Whether already loaded content is being refreshed in the background.
+  ///
+  /// When `true`, the screen keeps showing the current data instead of
+  /// replacing it with a full-page spinner.
+  final bool isRefreshing;
 
   /// Latest purchase or restore outcome, shown as feedback by the UI.
   final PurchaseUpdateEntity? purchaseUpdate;
@@ -46,6 +58,9 @@ class SubscriptionState extends Equatable {
   /// Whether an unresolved purchase older than 24 hours exists.
   final bool hasStalePending;
 
+  /// Email of the current user, used to prefill the feedback form.
+  final String? userEmail;
+
   /// Error message, if any.
   final String? error;
 
@@ -56,10 +71,14 @@ class SubscriptionState extends Equatable {
     this.history = const <PendingPurchaseEntity>[],
     this.selectedNoAdsInterval = SubscriptionInterval.month,
     this.selectedPremiumInterval = SubscriptionInterval.month,
+    this.noAdsPrices = const <SubscriptionInterval, String>{},
+    this.premiumPrices = const <SubscriptionInterval, String>{},
     this.isPurchasing = false,
+    this.isRefreshing = false,
     this.purchaseUpdate,
     this.purchaseUpdateId = 0,
     this.hasStalePending = false,
+    this.userEmail,
     this.error,
   });
 
@@ -70,10 +89,14 @@ class SubscriptionState extends Equatable {
     history,
     selectedNoAdsInterval,
     selectedPremiumInterval,
+    noAdsPrices,
+    premiumPrices,
     isPurchasing,
+    isRefreshing,
     purchaseUpdate,
     purchaseUpdateId,
     hasStalePending,
+    userEmail,
     error,
   ];
 
@@ -81,25 +104,38 @@ class SubscriptionState extends Equatable {
   SubscriptionState copyWith({
     SubscriptionStatus? status,
     SubscriptionEntity? activeSubscription,
+    bool clearActiveSubscription = false,
     List<PendingPurchaseEntity>? history,
     SubscriptionInterval? selectedNoAdsInterval,
     SubscriptionInterval? selectedPremiumInterval,
+    Map<SubscriptionInterval, String>? noAdsPrices,
+    Map<SubscriptionInterval, String>? premiumPrices,
     bool? isPurchasing,
+    bool? isRefreshing,
     PurchaseUpdateEntity? purchaseUpdate,
     int? purchaseUpdateId,
     bool? hasStalePending,
+    String? userEmail,
     String? error,
   }) {
     return SubscriptionState(
       status: status ?? this.status,
-      activeSubscription: activeSubscription ?? this.activeSubscription,
+      activeSubscription: clearActiveSubscription
+          ? null
+          : activeSubscription ?? this.activeSubscription,
       history: history ?? this.history,
-      selectedNoAdsInterval: selectedNoAdsInterval ?? this.selectedNoAdsInterval,
-      selectedPremiumInterval: selectedPremiumInterval ?? this.selectedPremiumInterval,
+      selectedNoAdsInterval:
+          selectedNoAdsInterval ?? this.selectedNoAdsInterval,
+      selectedPremiumInterval:
+          selectedPremiumInterval ?? this.selectedPremiumInterval,
+      noAdsPrices: noAdsPrices ?? this.noAdsPrices,
+      premiumPrices: premiumPrices ?? this.premiumPrices,
       isPurchasing: isPurchasing ?? this.isPurchasing,
+      isRefreshing: isRefreshing ?? this.isRefreshing,
       purchaseUpdate: purchaseUpdate ?? this.purchaseUpdate,
       purchaseUpdateId: purchaseUpdateId ?? this.purchaseUpdateId,
       hasStalePending: hasStalePending ?? this.hasStalePending,
+      userEmail: userEmail ?? this.userEmail,
       error: error ?? this.error,
     );
   }

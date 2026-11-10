@@ -3,18 +3,20 @@ import 'package:domain/domain.dart';
 
 /// Formatting helpers shared across subscription widgets.
 abstract final class SubscriptionFormatters {
-  /// Formats [date] as `dd.MM.yyyy`.
+  /// Formats [date] as `dd.MM.yyyy` in the device's local timezone.
   static String date(DateTime date) {
-    final String day = date.day.toString().padLeft(2, '0');
-    final String month = date.month.toString().padLeft(2, '0');
-    return '$day.$month.${date.year}';
+    final DateTime local = date.toLocal();
+    final String day = local.day.toString().padLeft(2, '0');
+    final String month = local.month.toString().padLeft(2, '0');
+    return '$day.$month.${local.year}';
   }
 
-  /// Formats [date] as `dd.MM.yyyy HH:mm`.
+  /// Formats [date] as `dd.MM.yyyy HH:mm` in the device's local timezone.
   static String dateTime(DateTime date) {
-    final String hour = date.hour.toString().padLeft(2, '0');
-    final String minute = date.minute.toString().padLeft(2, '0');
-    return '${SubscriptionFormatters.date(date)} $hour:$minute';
+    final DateTime local = date.toLocal();
+    final String hour = local.hour.toString().padLeft(2, '0');
+    final String minute = local.minute.toString().padLeft(2, '0');
+    return '${SubscriptionFormatters.date(local)} $hour:$minute';
   }
 
   /// Formats a price stored in [cents] as a ruble amount.
@@ -26,15 +28,6 @@ abstract final class SubscriptionFormatters {
     return '$amount ₽';
   }
 
-  /// Formats [duration] as `DD:HH:MM`, clamped at zero.
-  static String countdown(Duration duration) {
-    final Duration safe = duration.isNegative ? Duration.zero : duration;
-    final String days = safe.inDays.toString().padLeft(2, '0');
-    final String hours = (safe.inHours % 24).toString().padLeft(2, '0');
-    final String minutes = (safe.inMinutes % 60).toString().padLeft(2, '0');
-    return '$days:$hours:$minutes';
-  }
-
   /// Localized title of the given subscription [planType].
   static String planTitle(SubscriptionPlanType planType) {
     switch (planType) {
@@ -42,6 +35,18 @@ abstract final class SubscriptionFormatters {
         return LocaleKeys.subscription_no_ads_title.tr();
       case SubscriptionPlanType.premium:
         return LocaleKeys.subscription_premium_title.tr();
+    }
+  }
+
+  /// Localized title of the given billing [interval].
+  static String intervalTitle(SubscriptionInterval interval) {
+    switch (interval) {
+      case SubscriptionInterval.week:
+        return LocaleKeys.subscription_week.tr();
+      case SubscriptionInterval.month:
+        return LocaleKeys.subscription_month.tr();
+      case SubscriptionInterval.year:
+        return LocaleKeys.subscription_year.tr();
     }
   }
 }

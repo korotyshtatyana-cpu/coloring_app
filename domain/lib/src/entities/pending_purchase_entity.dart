@@ -1,5 +1,8 @@
 import 'package:equatable/equatable.dart';
 
+import 'subscription_interval.dart';
+import 'subscription_plan_type.dart';
+
 /// Status of a queued purchase awaiting confirmation.
 enum PendingPurchaseStatus {
   /// Waiting to be verified against Google Play Billing.
@@ -59,6 +62,18 @@ class PendingPurchaseEntity extends Equatable {
   /// Contour the purchase unlocks, when it is a project purchase.
   final String? contourId;
 
+  /// Title of the purchased contour, when known.
+  final String? contourTitle;
+
+  /// Preview image URL of the purchased contour, when known.
+  final String? contourPreviewUrl;
+
+  /// Billing period of a subscription purchase, when known.
+  final SubscriptionInterval? subscriptionInterval;
+
+  /// Whether a subscription period was paid automatically by the store.
+  final bool isAutoRenewal;
+
   /// Current confirmation status.
   final PendingPurchaseStatus status;
 
@@ -71,6 +86,12 @@ class PendingPurchaseEntity extends Equatable {
   /// Moment the purchase was confirmed or rejected.
   final DateTime? resolvedAt;
 
+  /// Whether this purchase belongs to a subscription rather than a one-time
+  /// project purchase.
+  bool get isSubscription =>
+      productId == SubscriptionPlanType.noAds.dbValue ||
+      productId == SubscriptionPlanType.premium.dbValue;
+
   /// Creates a [PendingPurchaseEntity].
   const PendingPurchaseEntity({
     required this.id,
@@ -82,6 +103,10 @@ class PendingPurchaseEntity extends Equatable {
     required this.errorMessage,
     required this.createdAt,
     required this.resolvedAt,
+    this.contourTitle,
+    this.contourPreviewUrl,
+    this.subscriptionInterval,
+    this.isAutoRenewal = false,
   });
 
   @override
@@ -91,6 +116,10 @@ class PendingPurchaseEntity extends Equatable {
     productId,
     purchaseToken,
     contourId,
+    contourTitle,
+    contourPreviewUrl,
+    subscriptionInterval,
+    isAutoRenewal,
     status,
     errorMessage,
     createdAt,

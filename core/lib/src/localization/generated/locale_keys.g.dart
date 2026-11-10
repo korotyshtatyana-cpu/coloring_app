@@ -70,6 +70,7 @@ abstract class  LocaleKeys {
   static const subscription_restore_hint = 'subscription_restore_hint';
   static const subscription_history_title = 'subscription_history_title';
   static const subscription_history_empty = 'subscription_history_empty';
+  static const subscription_history_auto_renewal = 'subscription_history_auto_renewal';
   static const subscription_status_active = 'subscription_status_active';
   static const subscription_status_inactive = 'subscription_status_inactive';
   static const subscription_expires_at = 'subscription_expires_at';
@@ -79,6 +80,7 @@ abstract class  LocaleKeys {
   static const subscription_buy_button = 'subscription_buy_button';
   static const subscription_terms_of_service = 'subscription_terms_of_service';
   static const subscription_privacy_policy = 'subscription_privacy_policy';
+  static const subscription_stale_pending_notice = 'subscription_stale_pending_notice';
   static const purchase_placeholder_message = 'purchase_placeholder_message';
   static const rewarded_ad_loading = 'rewarded_ad_loading';
   static const rewarded_ad_unavailable = 'rewarded_ad_unavailable';

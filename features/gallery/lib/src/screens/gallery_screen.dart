@@ -71,8 +71,9 @@ class _GalleryScreenState extends State<GalleryScreen>
 
   @override
   void didPopNext() {
-    // The canvas completes its save (including thumbnail) before popping,
-    // so no delay is needed here — just reload immediately.
+    // Returning from the canvas or settings may have changed the active plan
+    // (avatar frame) and the access state of the contours. The reset load
+    // also re-resolves the monetization status once it completes.
     if (mounted && !_bloc.isClosed) {
       _addResetLoadWhenIdle();
     }
@@ -98,7 +99,6 @@ class _GalleryScreenState extends State<GalleryScreen>
   void _onPurchaseUpdate(PurchaseUpdateEntity update) {
     if (!mounted ||
         update.isRestore ||
-        update.contourId == null ||
         update.status != PurchaseUpdateStatus.success) {
       return;
     }
@@ -131,6 +131,8 @@ class _GalleryScreenState extends State<GalleryScreen>
       getCurrentUserUseCase: appLocator<GetCurrentUserUseCase>(),
       getActiveSubscriptionUseCase: appLocator<GetActiveSubscriptionUseCase>(),
       isNoAdsPurchasedUseCase: appLocator<IsNoAdsPurchasedUseCase>(),
+      getSubscriptionPlanTypeUseCase:
+          appLocator<GetSubscriptionPlanTypeUseCase>(),
       getPurchaseRefundsUseCase: appLocator<GetPurchaseRefundsUseCase>(),
       watchRefundsUseCase: appLocator<WatchRefundsUseCase>(),
       adService: appLocator<AdService>(),

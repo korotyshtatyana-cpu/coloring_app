@@ -12,6 +12,7 @@ abstract final class RequestConstants {
   static const String projectsTable = 'projects';
   static const String feedbackTable = 'feedback';
   static const String subscriptionsTable = 'subscriptions';
+  static const String subscriptionPurchasesTable = 'subscription_purchases';
   static const String userEntitlementsTable = 'user_entitlements';
   static const String pendingPurchasesTable = 'pending_purchases';
   static const String purchaseRefundsTable = 'purchase_refunds';
@@ -39,16 +40,21 @@ abstract final class RequestConstants {
   static const String createdAtColumn = 'created_at';
   static const String categoryColumn = 'category';
   static const String userIdColumn = 'user_id';
+  static const String subscriptionIdColumn = 'subscription_id';
   static const String contourIdColumn = 'contour_id';
   static const String lastOpenedColumn = 'last_opened';
   static const String dataColumn = 'data';
   static const String thumbnailUrlColumn = 'thumbnail_url';
   static const String updatedAtColumn = 'updated_at';
   static const String planTypeColumn = 'plan_type';
+  static const String basePlanIdColumn = 'base_plan_id';
   static const String isActiveColumn = 'is_active';
   static const String startedAtColumn = 'started_at';
   static const String expiresAtColumn = 'expires_at';
   static const String purchaseTokenColumn = 'purchase_token';
+  static const String orderIdColumn = 'order_id';
+  static const String isAutoRenewalColumn = 'is_auto_renewal';
+  static const String isAutoRenewColumn = 'is_auto_renew';
   static const String grantedAtColumn = 'granted_at';
   static const String productIdColumn = 'product_id';
   static const String statusColumn = 'status';
@@ -60,6 +66,8 @@ abstract final class RequestConstants {
   static const String noAdsPurchasedColumn = 'no_ads_purchased';
   static const String accessTypeColumn = 'access_type';
   static const String priceColumn = 'price';
+  static const String titleColumn = 'title';
+  static const String previewUrlColumn = 'preview_url';
 
   // Supabase query parameters
   static const String limitParam = 'limit';
@@ -74,6 +82,13 @@ abstract final class RequestConstants {
 
   // Monetization column selections
   static const String selectNoAdsPurchased = 'no_ads_purchased';
+
+  /// Entitlement row together with the contour it unlocks.
+  ///
+  /// The embedded `contours` object supplies the title and preview image shown
+  /// in the purchase history.
+  static const String selectPurchasedEntitlements =
+      '*, contours(title, preview_url)';
 
   // Monetization enum values stored in the database
   static const String planTypeNoAds = 'no_ads';
@@ -90,22 +105,18 @@ abstract final class RequestConstants {
   // Monetization defaults
   static const String defaultContourAccessType = 'free';
 
-  // Google Play Billing product identifiers
-  static const String noAdsWeekProductId = 'no_ads_week';
-  static const String noAdsMonthProductId = 'no_ads_month';
-  static const String noAdsYearProductId = 'no_ads_year';
-  static const String premiumWeekProductId = 'premium_week';
-  static const String premiumMonthProductId = 'premium_month';
-  static const String premiumYearProductId = 'premium_year';
+  // Google Play Billing product identifiers.
+  //
+  // Google Play's modern subscription model uses one product per plan with
+  // multiple base plans. The billing period (week/month/year) is the base plan
+  // id and is resolved at runtime from `subscriptionOfferDetails`.
+  static const String noAdsProductId = 'no_ads';
+  static const String premiumProductId = 'premium';
 
   /// Every subscription product offered by the app.
   static const List<String> subscriptionProductIds = <String>[
-    noAdsWeekProductId,
-    noAdsMonthProductId,
-    noAdsYearProductId,
-    premiumWeekProductId,
-    premiumMonthProductId,
-    premiumYearProductId,
+    noAdsProductId,
+    premiumProductId,
   ];
 
   /// Prefix of the fallback product identifier of a paid project.
@@ -137,15 +148,18 @@ abstract final class RequestConstants {
   /// entry can never grant access to an expired plan.
   static const Duration monetizationCacheTtl = Duration(minutes: 5);
 
-  /// Returns the store product identifier for a [plan] and [interval].
-  static String subscriptionProductId(
+  /// Resolves the store product id and base plan id for [plan] and [interval].
+  ///
+  /// Google Play exposes one subscription product per plan; the billing period
+  /// is a base plan inside that product.
+  static ({String productId, String basePlanId}) subscriptionProduct(
     SubscriptionPlanType plan,
     SubscriptionInterval interval,
   ) {
-    return '${plan.dbValue}_${interval.dbValue}';
+    return (productId: plan.dbValue, basePlanId: interval.dbValue);
   }
 
-  /// Returns whether [productId] is one of the subscription SKUs.
+  /// Returns whether [productId] is one of the subscription products.
   static bool isSubscriptionProduct(String productId) {
     return subscriptionProductIds.contains(productId);
   }

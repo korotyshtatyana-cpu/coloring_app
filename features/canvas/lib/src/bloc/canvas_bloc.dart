@@ -112,7 +112,7 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     if (productId == null) {
       return false;
     }
-    if (productId.startsWith('${SubscriptionPlanType.premium.dbValue}_')) {
+    if (productId == SubscriptionPlanType.premium.dbValue) {
       return true;
     }
     return state.contour?.productId == productId;

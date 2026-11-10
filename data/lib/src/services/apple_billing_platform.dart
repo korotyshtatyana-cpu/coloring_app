@@ -31,6 +31,16 @@ class AppleBillingPlatform implements BillingPlatform {
   }
 
   @override
+  Future<void> purchaseSubscription({
+    required String productId,
+    required String basePlanId,
+    String? currentProductId,
+    String? currentBasePlanId,
+  }) {
+    throw UnimplementedError('Apple billing not implemented yet');
+  }
+
+  @override
   Future<void> purchaseConsumable(String productId) {
     throw UnimplementedError('Apple billing not implemented yet');
   }

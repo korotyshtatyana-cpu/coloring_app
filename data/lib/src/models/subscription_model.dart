@@ -1,4 +1,5 @@
 import '../constants/request_constants.dart';
+import '../utils/server_time.dart';
 
 /// Data transfer object mirroring the `subscriptions` table.
 class SubscriptionModel {
@@ -14,8 +15,17 @@ class SubscriptionModel {
   /// Raw plan type value, for example `no_ads`.
   final String planType;
 
+  /// Billing period (base plan) of the subscription, for example `month`.
+  final String? basePlanId;
+
   /// Whether the subscription is active.
   final bool isActive;
+
+  /// Whether Google Play will renew the subscription automatically.
+  ///
+  /// `false` after the user cancels auto-renew, while [expiresAt] still
+  /// grants access until the paid period ends.
+  final bool isAutoRenew;
 
   /// Moment the subscription started.
   final DateTime startedAt;
@@ -44,6 +54,8 @@ class SubscriptionModel {
     required this.purchaseToken,
     required this.createdAt,
     required this.updatedAt,
+    this.basePlanId,
+    this.isAutoRenew = true,
   });
 
   /// Creates a [SubscriptionModel] from a JSON map.
@@ -53,14 +65,24 @@ class SubscriptionModel {
       userId: json[RequestConstants.userIdColumn] as String,
       productId: json[RequestConstants.productIdColumn] as String,
       planType: json[RequestConstants.planTypeColumn] as String,
+      basePlanId: json[RequestConstants.basePlanIdColumn] as String?,
       isActive: json[RequestConstants.isActiveColumn] as bool? ?? false,
-      startedAt: DateTime.parse(json[RequestConstants.startedAtColumn] as String),
-      expiresAt: DateTime.parse(json[RequestConstants.expiresAtColumn] as String),
+      isAutoRenew: json[RequestConstants.isAutoRenewColumn] as bool? ?? true,
+      startedAt: parseServerTimestamp(
+        json[RequestConstants.startedAtColumn] as String,
+      ),
+      expiresAt: parseServerTimestamp(
+        json[RequestConstants.expiresAtColumn] as String,
+      ),
       purchaseToken: json[RequestConstants.purchaseTokenColumn] as String?,
-      createdAt: DateTime.parse(json[RequestConstants.createdAtColumn] as String),
+      createdAt: parseServerTimestamp(
+        json[RequestConstants.createdAtColumn] as String,
+      ),
       updatedAt: json[RequestConstants.updatedAtColumn] == null
           ? null
-          : DateTime.parse(json[RequestConstants.updatedAtColumn] as String),
+          : parseServerTimestamp(
+              json[RequestConstants.updatedAtColumn] as String,
+            ),
     );
   }
 
@@ -71,12 +93,14 @@ class SubscriptionModel {
       RequestConstants.userIdColumn: userId,
       RequestConstants.productIdColumn: productId,
       RequestConstants.planTypeColumn: planType,
+      RequestConstants.basePlanIdColumn: basePlanId,
       RequestConstants.isActiveColumn: isActive,
-      RequestConstants.startedAtColumn: startedAt.toIso8601String(),
-      RequestConstants.expiresAtColumn: expiresAt.toIso8601String(),
+      RequestConstants.isAutoRenewColumn: isAutoRenew,
+      RequestConstants.startedAtColumn: startedAt.toUtc().toIso8601String(),
+      RequestConstants.expiresAtColumn: expiresAt.toUtc().toIso8601String(),
       RequestConstants.purchaseTokenColumn: purchaseToken,
-      RequestConstants.createdAtColumn: createdAt.toIso8601String(),
-      RequestConstants.updatedAtColumn: updatedAt?.toIso8601String(),
+      RequestConstants.createdAtColumn: createdAt.toUtc().toIso8601String(),
+      RequestConstants.updatedAtColumn: updatedAt?.toUtc().toIso8601String(),
     };
   }
 }

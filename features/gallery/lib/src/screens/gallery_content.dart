@@ -31,7 +31,17 @@ class GalleryContent extends StatelessWidget {
         surfaceTintColor: colors.primaryBg,
         title: GalleryTitle(title: context.tr(LocaleKeys.gallery)),
         actions: <Widget>[
-          UserAvatarButton(onPressed: () => _onProfilePressed(context)),
+          BlocBuilder<GalleryBloc, GalleryState>(
+            buildWhen: (GalleryState previous, GalleryState current) =>
+                previous.planType != current.planType ||
+                previous.noAdsPurchased != current.noAdsPurchased,
+            builder: (BuildContext context, GalleryState state) =>
+                UserAvatarButton(
+                  onPressed: () => _onProfilePressed(context),
+                  planType: state.planType,
+                  noAdsPurchased: state.noAdsPurchased,
+                ),
+          ),
           const SizedBox(width: 16),
         ],
       ),

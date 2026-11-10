@@ -44,6 +44,7 @@ const TABLES = {
   processedPurchases: "processed_purchases",
   purchaseRefunds: "purchase_refunds",
   subscriptions: "subscriptions",
+  subscriptionPurchases: "subscription_purchases",
   userEntitlements: "user_entitlements",
   users: "users",
 } as const;
@@ -51,8 +52,16 @@ const TABLES = {
 const COLUMNS = {
   id: "id",
   userId: "user_id",
+  subscriptionId: "subscription_id",
   productId: "product_id",
+  planType: "plan_type",
+  basePlanId: "base_plan_id",
   purchaseToken: "purchase_token",
+  orderId: "order_id",
+  isAutoRenewal: "is_auto_renewal",
+  isAutoRenew: "is_auto_renew",
+  startedAt: "started_at",
+  createdAt: "created_at",
   isActive: "is_active",
   expiresAt: "expires_at",
   credits: "credits",
@@ -243,8 +252,9 @@ function asNumber(value: unknown): number | null {
 }
 
 /**
- * Marks a subscription row inactive. Cancellation through RTDN only disables
- * auto-renew, but revoked and expired notifications use the same helper.
+ * Marks a subscription row inactive. Revoked and expired notifications use
+ * this helper; a user-initiated cancellation only disables auto-renew and
+ * keeps access until the paid period ends.
  */
 async function setSubscriptionInactive(
   admin: ReturnType<typeof createAdminClient>,
@@ -267,11 +277,93 @@ async function setSubscriptionInactive(
 }
 
 /**
- * Refetches a subscription and updates its expiry and active flag.
+ * Updates the auto-renew flag without touching access. Cancelling a
+ * subscription keeps the row active until `expires_at`; Google Play stops
+ * charging at the end of the paid period.
+ */
+async function setSubscriptionAutoRenew(
+  admin: ReturnType<typeof createAdminClient>,
+  purchaseToken: string,
+  isAutoRenew: boolean,
+): Promise<void> {
+  const { data, error } = await admin
+    .from(TABLES.subscriptions)
+    .update({ [COLUMNS.isAutoRenew]: isAutoRenew })
+    .eq(COLUMNS.purchaseToken, purchaseToken)
+    .select(COLUMNS.id);
+  if (error) {
+    logError("failed to update subscription auto-renew", error);
+    return;
+  }
+  if (!Array.isArray(data) || data.length === 0) {
+    log(`no subscription row for token ...${tokenLabel(purchaseToken)}`);
+    return;
+  }
+  log(
+    `subscription auto-renew set to ${isAutoRenew} for ...${
+      tokenLabel(purchaseToken)
+    }`,
+  );
+}
+
+/**
+ * Stores one paid subscription period so renewals survive the single-row
+ * `subscriptions` record. Duplicate notifications for the same token and
+ * expiry are ignored.
+ */
+async function recordSubscriptionPurchase(
+  admin: ReturnType<typeof createAdminClient>,
+  record: {
+    userId: string;
+    subscriptionId: string | null;
+    purchaseToken: string;
+    productId: string;
+    planType: string;
+    basePlanId: string | null;
+    orderId: string | null;
+    isAutoRenewal: boolean;
+    startedAt: string;
+    expiresAt: string;
+  },
+): Promise<void> {
+  const { error } = await admin
+    .from(TABLES.subscriptionPurchases)
+    .upsert(
+      {
+        [COLUMNS.userId]: record.userId,
+        [COLUMNS.subscriptionId]: record.subscriptionId,
+        [COLUMNS.purchaseToken]: record.purchaseToken,
+        [COLUMNS.productId]: record.productId,
+        [COLUMNS.planType]: record.planType,
+        [COLUMNS.basePlanId]: record.basePlanId,
+        [COLUMNS.orderId]: record.orderId,
+        [COLUMNS.isAutoRenewal]: record.isAutoRenewal,
+        [COLUMNS.startedAt]: record.startedAt,
+        [COLUMNS.expiresAt]: record.expiresAt,
+      },
+      {
+        onConflict: `${COLUMNS.purchaseToken},${COLUMNS.expiresAt}`,
+        ignoreDuplicates: true,
+      },
+    );
+  if (error) {
+    logError("failed to record subscription purchase", error);
+    return;
+  }
+  log(
+    `subscription ${record.isAutoRenewal ? "renewal" : "purchase"} recorded ` +
+      `for ...${tokenLabel(record.purchaseToken)}`,
+  );
+}
+
+/**
+ * Refetches a subscription, updates its expiry and active flag, and records
+ * the paid period. Renewals are marked as automatic.
  */
 async function refreshSubscription(
   admin: ReturnType<typeof createAdminClient>,
   purchaseToken: string,
+  notificationType: number,
 ): Promise<void> {
   const purchase = await getSubscription(purchaseToken);
   if (purchase.expiryTimeMillis == null) {
@@ -286,13 +378,39 @@ async function refreshSubscription(
   const expiresAt = new Date(purchase.expiryTimeMillis).toISOString();
   const isActive = purchase.state !== SUBSCRIPTION_STATE_EXPIRED &&
     purchase.expiryTimeMillis > Date.now();
+  const isAutoRenewal = notificationType === SUBSCRIPTION_RENEWED;
+
+  const existing = await admin
+    .from(TABLES.subscriptions)
+    .select(
+      `${COLUMNS.id}, ${COLUMNS.userId}, ${COLUMNS.productId}, ` +
+        `${COLUMNS.planType}, ${COLUMNS.startedAt}, ${COLUMNS.expiresAt}`,
+    )
+    .eq(COLUMNS.purchaseToken, purchaseToken)
+    .maybeSingle();
+  if (existing.error) {
+    logError("failed to load subscription before refresh", existing.error);
+    return;
+  }
+  const existingRow = existing.data as Record<string, unknown> | null;
+
+  const update: Record<string, unknown> = {
+    [COLUMNS.expiresAt]: expiresAt,
+    [COLUMNS.isActive]: isActive,
+  };
+  if (purchase.autoRenewing != null) {
+    update[COLUMNS.isAutoRenew] = purchase.autoRenewing;
+  }
+  if (purchase.basePlanId != null) {
+    update[COLUMNS.basePlanId] = purchase.basePlanId;
+  }
+  if (purchase.productId != null) {
+    update[COLUMNS.productId] = purchase.productId;
+  }
 
   const { data, error } = await admin
     .from(TABLES.subscriptions)
-    .update({
-      [COLUMNS.expiresAt]: expiresAt,
-      [COLUMNS.isActive]: isActive,
-    })
+    .update(update)
     .eq(COLUMNS.purchaseToken, purchaseToken)
     .select(COLUMNS.id);
   if (error) {
@@ -303,10 +421,37 @@ async function refreshSubscription(
     log(`no subscription row for token ...${tokenLabel(purchaseToken)}`);
     return;
   }
+
+  const userId = asNullableString(existingRow?.[COLUMNS.userId]);
+  const productId = purchase.productId ??
+    asNullableString(existingRow?.[COLUMNS.productId]);
+  const planType = asNullableString(existingRow?.[COLUMNS.planType]) ??
+    productId;
+  if (userId != null && productId != null && planType != null) {
+    const previousExpiry = asNullableString(existingRow?.[COLUMNS.expiresAt]);
+    const periodStartedAt = isAutoRenewal &&
+        previousExpiry != null &&
+        Date.parse(previousExpiry) < purchase.expiryTimeMillis
+      ? previousExpiry
+      : new Date().toISOString();
+    await recordSubscriptionPurchase(admin, {
+      userId,
+      subscriptionId: asNullableString(existingRow?.[COLUMNS.id]),
+      purchaseToken,
+      productId,
+      planType,
+      basePlanId: purchase.basePlanId,
+      orderId: purchase.orderId,
+      isAutoRenewal,
+      startedAt: periodStartedAt,
+      expiresAt,
+    });
+  }
+
   log(
-    `subscription refreshed active=${isActive} for ...${
-      tokenLabel(purchaseToken)
-    }`,
+    `subscription refreshed product=${purchase.productId ?? "unknown"}, ` +
+      `basePlan=${purchase.basePlanId ?? "unknown"}, active=${isActive} ` +
+      `for ...${tokenLabel(purchaseToken)}`,
   );
 }
 
@@ -594,6 +739,10 @@ async function handleSubscriptionNotification(
 ): Promise<void> {
   switch (notificationType) {
     case SUBSCRIPTION_CANCELED:
+      // The user turned off auto-renew. Access stays until `expires_at`; the
+      // later `SUBSCRIPTION_EXPIRED` notification deactivates the row.
+      await setSubscriptionAutoRenew(admin, purchaseToken, false);
+      return;
     case SUBSCRIPTION_REVOKED:
     case SUBSCRIPTION_EXPIRED:
       await setSubscriptionInactive(admin, purchaseToken);
@@ -601,7 +750,7 @@ async function handleSubscriptionNotification(
     case SUBSCRIPTION_RENEWED:
     case SUBSCRIPTION_PURCHASED:
     case SUBSCRIPTION_RESTARTED:
-      await refreshSubscription(admin, purchaseToken);
+      await refreshSubscription(admin, purchaseToken, notificationType);
       return;
     default:
       log(`ignored subscription notification type ${notificationType}`);
@@ -651,10 +800,15 @@ Deno.serve(async (req: Request): Promise<Response> => {
       typeof subscription.notificationType === "number"
     ) {
       const purchaseToken = subscription.purchaseToken;
+      const subscriptionId =
+        typeof subscription.subscriptionId === "string"
+          ? subscription.subscriptionId
+          : "unknown";
       log(
-        `subscription notification type ${subscription.notificationType} for ...${
-          tokenLabel(purchaseToken)
-        }`,
+        `subscription notification type ${subscription.notificationType} ` +
+          `for product=${subscriptionId}, token ...${
+            tokenLabel(purchaseToken)
+          }`,
       );
       await handleSubscriptionNotification(
         admin,

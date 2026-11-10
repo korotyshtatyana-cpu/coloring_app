@@ -338,6 +338,7 @@ class _PurchaseDialogState extends State<PurchaseDialog> {
               text: LocaleKeys.purchase_dialog_subscribe.tr(),
               filled: true,
               color: colors.premiumGold,
+              isLoading: _isPurchasing,
               onPressed: _isPurchasing ? null : _onSubscribe,
             ),
           ),
@@ -533,7 +534,7 @@ class _PurchaseDialogState extends State<PurchaseDialog> {
         return;
       }
       setState(() {
-        _isPurchasing = false;
+        _isPurchasing = true;
         _isPending = true;
       });
       await _checkPendingPurchase();

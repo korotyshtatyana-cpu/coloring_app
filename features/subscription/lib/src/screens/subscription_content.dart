@@ -1,6 +1,7 @@
 import 'package:core/core.dart';
 import 'package:core_ui/core_ui.dart';
 import 'package:domain/domain.dart';
+import 'package:feedback/feedback.dart';
 import 'package:flutter/material.dart';
 
 import '../bloc/subscription_bloc.dart';
@@ -59,8 +60,9 @@ class SubscriptionContent extends StatelessWidget {
             ErrorDialog.show(
               context,
               message: LocaleKeys.something_went_wrong.tr(),
-              onRetry: () =>
-                  context.read<SubscriptionBloc>().add(const LoadSubscription()),
+              onRetry: () => context.read<SubscriptionBloc>().add(
+                const LoadSubscription(),
+              ),
             );
             return;
           }
@@ -70,71 +72,96 @@ class SubscriptionContent extends StatelessWidget {
           }
         },
         child: state.status == SubscriptionStatus.loading
-            ? Center(
-                child: CircularProgressIndicator(color: colors.accentDark),
-              )
-            : ListView(
-                padding: const EdgeInsets.all(24),
+            ? Center(child: CircularProgressIndicator(color: colors.accentDark))
+            : Column(
                 children: <Widget>[
-                  SubscriptionStatusBlock(
-                    activeSubscription: state.activeSubscription,
+                  // A background refresh keeps the current content visible;
+                  // the fixed-height slot avoids rebuilding the list when the
+                  // indicator toggles.
+                  SizedBox(
+                    height: 2,
+                    child: state.isRefreshing
+                        ? LinearProgressIndicator(
+                            minHeight: 2,
+                            backgroundColor: Colors.transparent,
+                            color: colors.accentDark,
+                          )
+                        : null,
                   ),
-                  if (state.hasStalePending) ...<Widget>[
-                    const SizedBox(height: 16),
-                    const _StalePendingNotice(),
-                  ],
-                  const SizedBox(height: 24),
-                  SubscriptionPlanCard(
-                    title: LocaleKeys.subscription_no_ads_title.tr(),
-                    description: LocaleKeys.subscription_no_ads_description.tr(),
-                    accentColor: colors.averagePurple,
-                    selectedPeriod: state.selectedNoAdsInterval,
-                    isLoading: state.isPurchasing,
-                    onPeriodChanged: (interval) => context
-                        .read<SubscriptionBloc>()
-                        .add(ChangePlanPeriod(
-                          plan: SubscriptionPlanType.noAds,
-                          interval: interval,
-                        )),
-                    onSubscribe: () => _onPurchase(
-                      context,
-                      SubscriptionPlanType.noAds,
-                      state.selectedNoAdsInterval,
+                  Expanded(
+                    child: ListView(
+                      padding: const EdgeInsets.all(24),
+                      children: <Widget>[
+                        SubscriptionStatusBlock(
+                          activeSubscription: state.activeSubscription,
+                        ),
+                        if (state.hasStalePending) ...<Widget>[
+                          const SizedBox(height: 16),
+                          _StalePendingNotice(email: state.userEmail),
+                        ],
+                        const SizedBox(height: 24),
+                        SubscriptionPlanCard(
+                          title: LocaleKeys.subscription_no_ads_title.tr(),
+                          description: LocaleKeys
+                              .subscription_no_ads_description
+                              .tr(),
+                          accentColor: colors.averagePurple,
+                          selectedPeriod: state.selectedNoAdsInterval,
+                          price: state.noAdsPrices[state.selectedNoAdsInterval],
+                          isLoading: state.isPurchasing,
+                          onPeriodChanged: (interval) =>
+                              context.read<SubscriptionBloc>().add(
+                                ChangePlanPeriod(
+                                  plan: SubscriptionPlanType.noAds,
+                                  interval: interval,
+                                ),
+                              ),
+                          onSubscribe: () => _onPurchase(
+                            context,
+                            SubscriptionPlanType.noAds,
+                            state.selectedNoAdsInterval,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        SubscriptionPlanCard(
+                          title: LocaleKeys.subscription_premium_title.tr(),
+                          description: LocaleKeys
+                              .subscription_premium_description
+                              .tr(),
+                          badge: LocaleKeys.subscription_premium_badge.tr(),
+                          accentColor: colors.premiumGold,
+                          selectedPeriod: state.selectedPremiumInterval,
+                          price: state
+                              .premiumPrices[state.selectedPremiumInterval],
+                          isLoading: state.isPurchasing,
+                          onPeriodChanged: (interval) =>
+                              context.read<SubscriptionBloc>().add(
+                                ChangePlanPeriod(
+                                  plan: SubscriptionPlanType.premium,
+                                  interval: interval,
+                                ),
+                              ),
+                          onSubscribe: () => _onPurchase(
+                            context,
+                            SubscriptionPlanType.premium,
+                            state.selectedPremiumInterval,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        _RestorePurchases(
+                          onPressed: state.isPurchasing
+                              ? null
+                              : () => context.read<SubscriptionBloc>().add(
+                                  const RestorePurchases(),
+                                ),
+                        ),
+                        const SizedBox(height: 24),
+                        PurchaseHistorySection(history: state.history),
+                        const SizedBox(height: 24),
+                        const _LegalFooter(),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  SubscriptionPlanCard(
-                    title: LocaleKeys.subscription_premium_title.tr(),
-                    description:
-                        LocaleKeys.subscription_premium_description.tr(),
-                    badge: LocaleKeys.subscription_premium_badge.tr(),
-                    accentColor: colors.premiumGold,
-                    selectedPeriod: state.selectedPremiumInterval,
-                    isLoading: state.isPurchasing,
-                    onPeriodChanged: (interval) => context
-                        .read<SubscriptionBloc>()
-                        .add(ChangePlanPeriod(
-                          plan: SubscriptionPlanType.premium,
-                          interval: interval,
-                        )),
-                    onSubscribe: () => _onPurchase(
-                      context,
-                      SubscriptionPlanType.premium,
-                      state.selectedPremiumInterval,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  _RestorePurchases(
-                    onPressed: state.isPurchasing
-                        ? null
-                        : () => context
-                            .read<SubscriptionBloc>()
-                            .add(const RestorePurchases()),
-                  ),
-                  const SizedBox(height: 24),
-                  PurchaseHistorySection(history: state.history),
-                  const SizedBox(height: 24),
-                  const _LegalFooter(),
                 ],
               ),
       ),
@@ -190,7 +217,9 @@ class SubscriptionContent extends StatelessWidget {
 }
 
 class _StalePendingNotice extends StatelessWidget {
-  const _StalePendingNotice();
+  final String? email;
+
+  const _StalePendingNotice({required this.email});
 
   @override
   Widget build(BuildContext context) {
@@ -204,14 +233,32 @@ class _StalePendingNotice extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: colors.accentLight),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Icon(Icons.info_outline, color: colors.accentDark, size: 24),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              LocaleKeys.error_contact_support.tr(),
-              style: AppFonts.normal14.copyWith(color: colors.primaryText),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Icon(Icons.error_outline, color: colors.accentDark, size: 24),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  LocaleKeys.subscription_stale_pending_notice.tr(),
+                  style: AppFonts.normal14.copyWith(color: colors.primaryText),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: AppButton(
+              text: LocaleKeys.report_a_problem.tr(),
+              onPressed: () => showFeedbackForm(
+                context,
+                type: FeedbackType.bug,
+                initialEmail: email ?? '',
+              ),
             ),
           ),
         ],
@@ -263,10 +310,6 @@ class _LegalFooter extends StatelessWidget {
             LocaleKeys.subscription_terms_of_service.tr(),
             style: AppFonts.normal12.copyWith(color: colors.secondaryText),
           ),
-        ),
-        Text(
-          '•',
-          style: AppFonts.normal12.copyWith(color: colors.secondaryText),
         ),
         TextButton(
           onPressed: () {},

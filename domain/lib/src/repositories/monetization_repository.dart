@@ -5,6 +5,7 @@ import '../entities/purchase_update_entity.dart';
 import '../entities/subscription_entity.dart';
 import '../entities/subscription_interval.dart';
 import '../entities/subscription_plan_type.dart';
+import '../entities/subscription_price_entity.dart';
 import '../entities/user_entitlement_entity.dart';
 
 /// Repository for monetization and billing operations.
@@ -85,14 +86,25 @@ abstract class MonetizationRepository {
   /// Returns the store products available for purchase.
   Future<List<BillingProductEntity>> getBillingProducts();
 
+  /// Returns localized store prices for every subscription base plan.
+  ///
+  /// Products whose price cannot be resolved are omitted.
+  Future<List<SubscriptionPriceEntity>> getSubscriptionPrices();
+
   /// Returns the one-time credit product, or `null` when the store does not
   /// offer it.
   Future<BillingProductEntity?> getCreditProduct();
 
   /// Starts the store purchase flow for a subscription [plan] and [interval].
+  ///
+  /// [currentProductId] and [currentBasePlanId] describe the subscription the
+  /// user already owns, so the store can replace it instead of creating a
+  /// second subscription.
   Future<void> buySubscription({
     required SubscriptionPlanType plan,
     required SubscriptionInterval interval,
+    String? currentProductId,
+    String? currentBasePlanId,
   });
 
   /// Starts the store purchase flow for a single project.

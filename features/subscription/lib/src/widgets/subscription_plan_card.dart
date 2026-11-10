@@ -22,6 +22,9 @@ class SubscriptionPlanCard extends StatelessWidget {
   /// Currently selected billing interval.
   final SubscriptionInterval selectedPeriod;
 
+  /// Localized store price for the selected billing interval, when available.
+  final String? price;
+
   /// Called when the user selects another billing interval.
   final ValueChanged<SubscriptionInterval> onPeriodChanged;
 
@@ -40,6 +43,7 @@ class SubscriptionPlanCard extends StatelessWidget {
     required this.onPeriodChanged,
     required this.onSubscribe,
     this.badge,
+    this.price,
     this.isLoading = false,
     super.key,
   });
@@ -101,6 +105,16 @@ class SubscriptionPlanCard extends StatelessWidget {
             selected: selectedPeriod,
             onChanged: onPeriodChanged,
           ),
+          if (price != null) ...<Widget>[
+            const SizedBox(height: 16),
+            Align(
+              alignment: Alignment.center,
+              child: Text(
+                price!,
+                style: AppFonts.price.copyWith(color: colors.primaryText),
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
           PrimaryButton(
             text: LocaleKeys.subscription_buy_button.tr(),

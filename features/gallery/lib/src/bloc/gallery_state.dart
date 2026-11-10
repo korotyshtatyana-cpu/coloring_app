@@ -95,6 +95,14 @@ class GalleryState extends Equatable {
   /// active subscription or a lifetime No Ads purchase.
   final bool showAds;
 
+  /// Active subscription plan, or `null` when there is no active plan.
+  ///
+  /// Drives the frame color of the gallery user avatar.
+  final SubscriptionPlanType? planType;
+
+  /// Whether the user permanently owns the No Ads plan.
+  final bool noAdsPurchased;
+
   /// Pending one-shot access request, if any.
   final AccessRequest? accessRequest;
 
@@ -116,6 +124,8 @@ class GalleryState extends Equatable {
     this.workInProgressThumbnails = const <String, String?>{},
     this.projectAccessById = const <String, ProjectAccess>{},
     this.showAds = false,
+    this.planType,
+    this.noAdsPurchased = false,
     this.accessRequest,
     this.isLoadingAd = false,
   });
@@ -135,6 +145,8 @@ class GalleryState extends Equatable {
     workInProgressThumbnails,
     projectAccessById,
     showAds,
+    planType,
+    noAdsPurchased,
     accessRequest,
     isLoadingAd,
   ];
@@ -155,6 +167,9 @@ class GalleryState extends Equatable {
     Map<String, String?>? workInProgressThumbnails,
     Map<String, ProjectAccess>? projectAccessById,
     bool? showAds,
+    SubscriptionPlanType? planType,
+    bool clearPlanType = false,
+    bool? noAdsPurchased,
     AccessRequest? accessRequest,
     bool clearAccessRequest = false,
     bool? isLoadingAd,
@@ -173,6 +188,8 @@ class GalleryState extends Equatable {
       workInProgressThumbnails: workInProgressThumbnails ?? this.workInProgressThumbnails,
       projectAccessById: projectAccessById ?? this.projectAccessById,
       showAds: showAds ?? this.showAds,
+      planType: clearPlanType ? null : (planType ?? this.planType),
+      noAdsPurchased: noAdsPurchased ?? this.noAdsPurchased,
       accessRequest: clearAccessRequest ? null : (accessRequest ?? this.accessRequest),
       isLoadingAd: isLoadingAd ?? this.isLoadingAd,
     );

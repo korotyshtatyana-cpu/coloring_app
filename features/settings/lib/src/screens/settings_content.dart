@@ -10,7 +10,7 @@ import 'package:subscription/subscription.dart';
 import '../bloc/settings_bloc.dart';
 import '../widgets/feedback/feedback_actions.dart';
 import '../widgets/language_picker.dart';
-import '../widgets/profile_status_row.dart';
+import '../widgets/profile_subscription_status.dart';
 import '../widgets/profile_user_header.dart';
 import '../widgets/subscription_list_item.dart';
 
@@ -84,17 +84,17 @@ class SettingsContent extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
                 Divider(height: 1, thickness: 1, color: colors.accentLight),
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
 
                 // 2. Subscription Status
-                ProfileStatusRow(
-                  title: LocaleKeys.profile_status.tr(),
-                  value: _statusText(state),
-                ),
-                const SizedBox(height: 16),
                 SubscriptionListItem(
                   onTap: () => context.router.push(const SubscriptionRoute()),
                 ),
+                ProfileSubscriptionStatus(
+                  title: LocaleKeys.profile_status.tr(),
+                  value: _statusText(state),
+                ),
+
                 const SizedBox(height: 24),
                 Divider(height: 1, thickness: 1, color: colors.accentLight),
                 const SizedBox(height: 24),
@@ -149,19 +149,16 @@ class SettingsContent extends StatelessWidget {
           ? LocaleKeys.subscription_premium_title.tr()
           : LocaleKeys.subscription_no_ads_title.tr();
       return LocaleKeys.subscription_status_active.tr(
-        args: <String>[planTitle, _formatDate(subscription.expiresAt)],
+        args: <String>[
+          planTitle,
+          SubscriptionFormatters.date(subscription.expiresAt),
+        ],
       );
     }
     if (state.noAdsPurchased) {
       return LocaleKeys.subscription_no_ads_title.tr();
     }
     return LocaleKeys.subscription_status_inactive.tr();
-  }
-
-  String _formatDate(DateTime date) {
-    final String day = date.day.toString().padLeft(2, '0');
-    final String month = date.month.toString().padLeft(2, '0');
-    return '$day.$month.${date.year}';
   }
 
   void _showDeleteConfirmation(BuildContext context) {

@@ -23,14 +23,20 @@ class FeedbackActions extends StatelessWidget {
         FeedbackButton(
           icon: Icons.bug_report_rounded,
           label: LocaleKeys.report_a_problem.tr(),
-          onPressed: () =>
-              _showFeedbackForm(context, FeedbackType.bug, email ?? ''),
+          onPressed: () => showFeedbackForm(
+            context,
+            type: FeedbackType.bug,
+            initialEmail: email ?? '',
+          ),
         ),
         FeedbackButton(
           icon: Icons.lightbulb_rounded,
           label: LocaleKeys.suggest_an_idea.tr(),
-          onPressed: () =>
-              _showFeedbackForm(context, FeedbackType.feature, email ?? ''),
+          onPressed: () => showFeedbackForm(
+            context,
+            type: FeedbackType.feature,
+            initialEmail: email ?? '',
+          ),
         ),
       ],
     );
@@ -69,25 +75,6 @@ class FeedbackActions extends StatelessWidget {
             ],
           ),
         ],
-      ),
-    );
-  }
-
-  void _showFeedbackForm(
-    BuildContext context,
-    FeedbackType type,
-    String email,
-  ) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: AppColors.of(context).primaryBg,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-        ),
-        child: FeedbackForm(type: type, initialEmail: email),
       ),
     );
   }

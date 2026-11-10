@@ -19,6 +19,22 @@ abstract class BillingPlatform {
   /// Starts the store purchase flow for [productId].
   Future<void> purchase(String productId);
 
+  /// Starts the store purchase flow for a subscription [productId] and one of
+  /// its base plans.
+  ///
+  /// Google Play models the billing period as a base plan, so implementations
+  /// resolve the matching offer token from the product details before launching
+  /// the purchase. [currentProductId] and [currentBasePlanId] describe the
+  /// subscription the user already owns, when known, so the store can replace
+  /// it instead of creating a second subscription. Passing the same plan that
+  /// is already active re-verifies the existing purchase.
+  Future<void> purchaseSubscription({
+    required String productId,
+    required String basePlanId,
+    String? currentProductId,
+    String? currentBasePlanId,
+  });
+
   /// Starts the store purchase flow for a consumable [productId].
   Future<void> purchaseConsumable(String productId);
 

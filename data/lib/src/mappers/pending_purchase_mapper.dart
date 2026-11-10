@@ -6,13 +6,24 @@ import '../models/pending_purchase_model.dart';
 abstract final class PendingPurchaseMapper {
   /// Converts a model to an entity, mapping the raw status string to
   /// [PendingPurchaseStatus].
-  static PendingPurchaseEntity toEntity(PendingPurchaseModel model) {
+  ///
+  /// [contourTitle] and [contourPreviewUrl] come from a related entitlement
+  /// and are only used to enrich a resolved project purchase in the history.
+  static PendingPurchaseEntity toEntity(
+    PendingPurchaseModel model, {
+    String? contourTitle,
+    String? contourPreviewUrl,
+    SubscriptionInterval? subscriptionInterval,
+  }) {
     return PendingPurchaseEntity(
       id: model.id,
       userId: model.userId,
       productId: model.productId,
       purchaseToken: model.purchaseToken,
       contourId: model.contourId,
+      contourTitle: contourTitle,
+      contourPreviewUrl: contourPreviewUrl,
+      subscriptionInterval: subscriptionInterval,
       status: _toStatus(model.status),
       errorMessage: model.errorMessage,
       createdAt: model.createdAt,

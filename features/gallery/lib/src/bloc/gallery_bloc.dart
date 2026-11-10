@@ -20,6 +20,7 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
   final GetCurrentUserUseCase _getCurrentUserUseCase;
   final GetActiveSubscriptionUseCase _getActiveSubscriptionUseCase;
   final IsNoAdsPurchasedUseCase _isNoAdsPurchasedUseCase;
+  final GetSubscriptionPlanTypeUseCase _getSubscriptionPlanTypeUseCase;
   final GetPurchaseRefundsUseCase _getPurchaseRefundsUseCase;
   final WatchRefundsUseCase _watchRefundsUseCase;
   final AdService _adService;
@@ -39,6 +40,7 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
     required this._getCurrentUserUseCase,
     required this._getActiveSubscriptionUseCase,
     required this._isNoAdsPurchasedUseCase,
+    required this._getSubscriptionPlanTypeUseCase,
     required this._getPurchaseRefundsUseCase,
     required this._watchRefundsUseCase,
     required this._adService,
@@ -175,6 +177,8 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
           state.copyWith(
             projectAccessById: const <String, ProjectAccess>{},
             showAds: false,
+            clearPlanType: true,
+            noAdsPurchased: false,
           ),
         );
         return;
@@ -186,11 +190,24 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
       // the access resolution below always sees the revoked state.
       await _loadRefunds(user.id);
 
+      final SubscriptionEntity? activeSubscription = await _getActiveSubscriptionUseCase.execute(
+        user.id,
+      );
+      final bool noAdsPurchased = await _isNoAdsPurchasedUseCase.execute(user.id);
+      final SubscriptionPlanType? planType = _getSubscriptionPlanTypeUseCase
+          .execute(activeSubscription);
+      final bool showAds = activeSubscription?.isActiveNow() != true && !noAdsPurchased;
+
+      // The plan drives the avatar frame, so it must be refreshed even when
+      // there are no contours to resolve access for.
       if (state.contours.isEmpty) {
         emit(
           state.copyWith(
             projectAccessById: const <String, ProjectAccess>{},
-            showAds: false,
+            showAds: showAds,
+            planType: planType,
+            clearPlanType: planType == null,
+            noAdsPurchased: noAdsPurchased,
           ),
         );
         return;
@@ -204,18 +221,15 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
         ),
       );
 
-      final SubscriptionEntity? activeSubscription = await _getActiveSubscriptionUseCase.execute(
-        user.id,
-      );
-      final bool noAdsPurchased = await _isNoAdsPurchasedUseCase.execute(user.id);
-      final bool showAds = activeSubscription?.isActiveNow() != true && !noAdsPurchased;
-
       emit(
         state.copyWith(
           projectAccessById: <String, ProjectAccess>{
             for (final GalleryItemEntity item in items) item.contour.id: item.access,
           },
           showAds: showAds,
+          planType: planType,
+          clearPlanType: planType == null,
+          noAdsPurchased: noAdsPurchased,
         ),
       );
     } catch (e, stackTrace) {

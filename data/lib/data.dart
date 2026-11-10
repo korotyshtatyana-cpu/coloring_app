@@ -34,6 +34,7 @@ export 'src/models/project_model.dart';
 export 'src/models/purchase_refund_model.dart';
 export 'src/models/stroke_model.dart';
 export 'src/models/subscription_model.dart';
+export 'src/models/subscription_purchase_model.dart';
 export 'src/models/user_entitlement_model.dart';
 export 'src/models/user_model.dart';
 export 'src/providers/monetization_remote_provider.dart';

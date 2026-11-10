@@ -10,14 +10,25 @@ class SubscriptionEntity extends Equatable {
   /// Identifier of the subscription owner.
   final String userId;
 
-  /// Store product identifier, for example `premium_month`.
+  /// Store product identifier of the plan, for example `premium`.
   final String productId;
 
   /// Purchased plan.
   final SubscriptionPlanType planType;
 
+  /// Billing period (base plan) of the subscription, for example `month`.
+  ///
+  /// `null` for subscriptions created before the store moved to base plans.
+  final String? basePlanId;
+
   /// Whether the subscription is marked as active on the server.
   final bool isActive;
+
+  /// Whether Google Play will renew the subscription automatically.
+  ///
+  /// `false` after the user cancels auto-renew, while [expiresAt] still
+  /// grants access until the paid period ends.
+  final bool isAutoRenew;
 
   /// Moment the subscription started.
   final DateTime startedAt;
@@ -37,7 +48,9 @@ class SubscriptionEntity extends Equatable {
     required this.isActive,
     required this.startedAt,
     required this.expiresAt,
+    this.basePlanId,
     this.purchaseToken,
+    this.isAutoRenew = true,
   });
 
   /// Whether the subscription has passed its expiry moment.
@@ -62,7 +75,9 @@ class SubscriptionEntity extends Equatable {
     userId,
     productId,
     planType,
+    basePlanId,
     isActive,
+    isAutoRenew,
     startedAt,
     expiresAt,
     purchaseToken,

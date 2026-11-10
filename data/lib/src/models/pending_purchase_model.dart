@@ -1,4 +1,5 @@
 import '../constants/request_constants.dart';
+import '../utils/server_time.dart';
 
 /// Data transfer object mirroring the `pending_purchases` table.
 class PendingPurchaseModel {
@@ -52,10 +53,14 @@ class PendingPurchaseModel {
       contourId: json[RequestConstants.contourIdColumn] as String?,
       status: json[RequestConstants.statusColumn] as String,
       errorMessage: json[RequestConstants.errorMessageColumn] as String?,
-      createdAt: DateTime.parse(json[RequestConstants.createdAtColumn] as String),
+      createdAt: parseServerTimestamp(
+        json[RequestConstants.createdAtColumn] as String,
+      ),
       resolvedAt: json[RequestConstants.resolvedAtColumn] == null
           ? null
-          : DateTime.parse(json[RequestConstants.resolvedAtColumn] as String),
+          : parseServerTimestamp(
+              json[RequestConstants.resolvedAtColumn] as String,
+            ),
     );
   }
 
@@ -69,8 +74,8 @@ class PendingPurchaseModel {
       RequestConstants.contourIdColumn: contourId,
       RequestConstants.statusColumn: status,
       RequestConstants.errorMessageColumn: errorMessage,
-      RequestConstants.createdAtColumn: createdAt.toIso8601String(),
-      RequestConstants.resolvedAtColumn: resolvedAt?.toIso8601String(),
+      RequestConstants.createdAtColumn: createdAt.toUtc().toIso8601String(),
+      RequestConstants.resolvedAtColumn: resolvedAt?.toUtc().toIso8601String(),
     };
   }
 }

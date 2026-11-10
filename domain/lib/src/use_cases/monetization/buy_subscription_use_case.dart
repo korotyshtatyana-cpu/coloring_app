@@ -8,8 +8,19 @@ class BuySubscriptionParams {
   /// Billing interval to purchase.
   final SubscriptionInterval interval;
 
+  /// Product identifier of the subscription the user already owns, if any.
+  final String? currentProductId;
+
+  /// Base plan identifier of the subscription the user already owns, if any.
+  final String? currentBasePlanId;
+
   /// Creates parameters for a subscription purchase.
-  const BuySubscriptionParams({required this.plan, required this.interval});
+  const BuySubscriptionParams({
+    required this.plan,
+    required this.interval,
+    this.currentProductId,
+    this.currentBasePlanId,
+  });
 }
 
 /// Starts the platform store purchase flow for a subscription.
@@ -28,6 +39,11 @@ class BuySubscriptionUseCase implements FutureUseCase<BuySubscriptionParams, voi
     if (params == null) {
       throw ArgumentError('params must not be null');
     }
-    return _repository.buySubscription(plan: params.plan, interval: params.interval);
+    return _repository.buySubscription(
+      plan: params.plan,
+      interval: params.interval,
+      currentProductId: params.currentProductId,
+      currentBasePlanId: params.currentBasePlanId,
+    );
   }
 }

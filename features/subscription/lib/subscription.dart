@@ -2,6 +2,7 @@ import 'package:auto_route/auto_route.dart';
 
 import 'src/screens/subscription_screen.dart';
 
+export 'src/utils/subscription_formatters.dart';
 export 'src/widgets/purchase_dialog.dart';
 
 part 'subscription.gr.dart';

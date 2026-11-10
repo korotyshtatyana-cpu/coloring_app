@@ -32,8 +32,6 @@ const PLATFORM_GOOGLE = "google";
 const PLATFORM_APPLE = "apple";
 
 const CREDIT_PRODUCT_ID = "unlock_credit";
-const NO_ADS_PREFIX = "no_ads_";
-const PREMIUM_PREFIX = "premium_";
 const PLAN_NO_ADS = "no_ads";
 const PLAN_PREMIUM = "premium";
 
@@ -50,18 +48,24 @@ const VERIFICATION_STATUS_FAILED = "failed";
 const TABLES = {
   pendingPurchases: "pending_purchases",
   subscriptions: "subscriptions",
+  subscriptionPurchases: "subscription_purchases",
   users: "users",
 } as const;
 
 const COLUMNS = {
   id: "id",
   userId: "user_id",
+  subscriptionId: "subscription_id",
   productId: "product_id",
   planType: "plan_type",
+  basePlanId: "base_plan_id",
   isActive: "is_active",
   startedAt: "started_at",
   expiresAt: "expires_at",
   purchaseToken: "purchase_token",
+  orderId: "order_id",
+  isAutoRenewal: "is_auto_renewal",
+  isAutoRenew: "is_auto_renew",
   credits: "credits",
   status: "status",
   errorMessage: "error_message",
@@ -102,12 +106,15 @@ function asString(value: unknown): string {
 
 /**
  * Maps a Google Play subscription product id to the stored plan type.
+ *
+ * The product id is the plan id (`no_ads` / `premium`); the billing period is
+ * a base plan inside that product and does not affect `plan_type`.
  */
 function resolvePlanType(productId: string): string | null {
-  if (productId.startsWith(NO_ADS_PREFIX)) {
+  if (productId === PLAN_NO_ADS) {
     return PLAN_NO_ADS;
   }
-  if (productId.startsWith(PREMIUM_PREFIX)) {
+  if (productId === PLAN_PREMIUM) {
     return PLAN_PREMIUM;
   }
   return null;
@@ -306,6 +313,55 @@ async function grantCredits(
 }
 
 /**
+ * Stores one paid subscription period.
+ *
+ * The token marks the subscription; the expiry identifies the period, so a
+ * repeated notification for the same renewal is ignored rather than added to
+ * the history twice.
+ */
+async function recordSubscriptionPurchase(
+  admin: ReturnType<typeof createAdminClient>,
+  record: {
+    userId: string;
+    subscriptionId: string | null;
+    purchaseToken: string;
+    productId: string;
+    planType: string;
+    basePlanId: string | null;
+    orderId: string | null;
+    isAutoRenewal: boolean;
+    startedAt: string;
+    expiresAt: string;
+  },
+): Promise<void> {
+  const { error } = await admin
+    .from(TABLES.subscriptionPurchases)
+    .upsert(
+      {
+        [COLUMNS.userId]: record.userId,
+        [COLUMNS.subscriptionId]: record.subscriptionId,
+        [COLUMNS.purchaseToken]: record.purchaseToken,
+        [COLUMNS.productId]: record.productId,
+        [COLUMNS.planType]: record.planType,
+        [COLUMNS.basePlanId]: record.basePlanId,
+        [COLUMNS.orderId]: record.orderId,
+        [COLUMNS.isAutoRenewal]: record.isAutoRenewal,
+        [COLUMNS.startedAt]: record.startedAt,
+        [COLUMNS.expiresAt]: record.expiresAt,
+      },
+      {
+        onConflict: `${COLUMNS.purchaseToken},${COLUMNS.expiresAt}`,
+        ignoreDuplicates: true,
+      },
+    );
+  if (error) {
+    console.error(
+      `[verify-purchase] failed to record subscription purchase: ${error.message}`,
+    );
+  }
+}
+
+/**
  * Verifies a subscription purchase and stores or refreshes its row.
  */
 async function grantSubscription(
@@ -327,15 +383,22 @@ async function grantSubscription(
   }
 
   const actualProductId = purchase.productId ?? productId;
+  const basePlanId = purchase.basePlanId;
   const planType = resolvePlanType(actualProductId);
   if (planType == null) {
     return json({ error: "Unsupported subscription product" }, 400);
   }
+  console.log(
+    `[verify-purchase] subscription product=${actualProductId}, basePlan=${
+      basePlanId ?? "unknown"
+    }`,
+  );
 
   const expiresAt = new Date(purchase.expiryTimeMillis).toISOString();
+  const isAutoRenew = purchase.autoRenewing ?? true;
   const existing = await admin
     .from(TABLES.subscriptions)
-    .select(COLUMNS.id)
+    .select(`${COLUMNS.id}, ${COLUMNS.startedAt}`)
     .eq(COLUMNS.purchaseToken, purchaseToken)
     .maybeSingle();
   if (existing.error) {
@@ -344,34 +407,64 @@ async function grantSubscription(
     );
   }
 
-  if (existing.data) {
+  const existingRow = existing.data as Record<string, unknown> | null;
+  let subscriptionId = asString(existingRow?.[COLUMNS.id]);
+  const startedAt = asString(existingRow?.[COLUMNS.startedAt]) ||
+    new Date().toISOString();
+
+  if (existingRow) {
     const { error } = await admin
       .from(TABLES.subscriptions)
       .update({
+        [COLUMNS.productId]: actualProductId,
+        [COLUMNS.planType]: planType,
+        [COLUMNS.basePlanId]: basePlanId,
         [COLUMNS.expiresAt]: expiresAt,
         [COLUMNS.isActive]: true,
+        [COLUMNS.isAutoRenew]: isAutoRenew,
       })
       .eq(COLUMNS.purchaseToken, purchaseToken);
     if (error) {
       throw new Error(`Failed to update subscription: ${error.message}`);
     }
   } else {
-    const { error } = await admin
+    const { data, error } = await admin
       .from(TABLES.subscriptions)
       .insert({
         [COLUMNS.userId]: userId,
         [COLUMNS.productId]: actualProductId,
         [COLUMNS.planType]: planType,
+        [COLUMNS.basePlanId]: basePlanId,
         [COLUMNS.isActive]: true,
-        [COLUMNS.startedAt]: new Date().toISOString(),
+        [COLUMNS.isAutoRenew]: isAutoRenew,
+        [COLUMNS.startedAt]: startedAt,
         [COLUMNS.expiresAt]: expiresAt,
         [COLUMNS.purchaseToken]: purchaseToken,
-      });
+      })
+      .select(COLUMNS.id)
+      .single();
     if (error) {
       throw new Error(`Failed to store subscription: ${error.message}`);
     }
+    subscriptionId = asString(
+      (data as Record<string, unknown> | null)?.[COLUMNS.id],
+    );
   }
 
+  await recordSubscriptionPurchase(admin, {
+    userId,
+    subscriptionId: subscriptionId === "" ? null : subscriptionId,
+    purchaseToken,
+    productId: actualProductId,
+    planType,
+    basePlanId,
+    orderId: purchase.orderId,
+    // A direct verification is the initial purchase or a restore; renewals
+    // are recorded by the Google Play webhook.
+    isAutoRenewal: false,
+    startedAt,
+    expiresAt,
+  });
   await resolvePendingPurchase(admin, userId, purchaseToken);
 
   return json({
@@ -380,7 +473,9 @@ async function grantSubscription(
     subscription: {
       product_id: actualProductId,
       plan_type: planType,
+      base_plan_id: basePlanId,
       is_active: true,
+      is_auto_renew: isAutoRenew,
       expires_at: expiresAt,
     },
   });

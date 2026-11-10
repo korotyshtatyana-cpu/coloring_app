@@ -151,7 +151,12 @@
 - [x] `MonetizationRepository` + `MonetizationRepositoryImpl`
 - [x] Google Play Billing (`BillingPlatform`, `in_app_purchase`) — Stage 6
 - [x] Подписки (No Ads / Premium) и индивидуальные покупки проектов
+- [x] Модель Google Play: 2 продукта (`no_ads`, `premium`) × 3 base plan (`week` / `month` / `year`), `offerToken` резолвится из `subscriptionOfferDetails`
+- [x] Смена плана с активной подписки через `ChangeSubscriptionParam` / `ReplacementMode.withTimeProration` (No Ads → Premium и смена base plan)
+- [x] Защита от дублей `pending_purchases` для одного purchase token
 - [x] Восстановление покупок (restore) с таймаутом `restoreResultTimeout`
+- [x] История покупок: подписки с интервалом (неделя/месяц/год), пометка «Автообновление», разовые покупки с превью
+- [x] `subscription_purchases` — отдельная запись на каждый оплаченный период, идемпотентность по `(purchase_token, expires_at)`
 - [x] Очередь `pending_purchases` и её разрешение
 - [x] Экран подписки (`SubscriptionBloc`, `SubscriptionScreen`, `PurchaseDialog`)
 - [x] Rewarded-видео (Yandex Mobile Ads) и баннер в галерее — Stage 7

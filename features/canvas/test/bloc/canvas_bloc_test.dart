@@ -161,7 +161,7 @@ void main() {
       purchaseUpdatesController.add(
         const PurchaseUpdateEntity(
           status: PurchaseUpdateStatus.success,
-          productId: 'premium_month',
+          productId: 'premium',
         ),
       );
 
@@ -172,7 +172,7 @@ void main() {
       purchaseUpdatesController.add(
         const PurchaseUpdateEntity(
           status: PurchaseUpdateStatus.success,
-          productId: 'no_ads_month',
+          productId: 'no_ads',
         ),
       );
       await Future<void>.delayed(Duration.zero);

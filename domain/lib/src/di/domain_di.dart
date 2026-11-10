@@ -209,6 +209,12 @@ abstract class DomainDI {
       ),
     );
 
+    appLocator.registerLazySingleton<GetSubscriptionPricesUseCase>(
+      () => GetSubscriptionPricesUseCase(
+        repository: appLocator<MonetizationRepository>(),
+      ),
+    );
+
     appLocator.registerLazySingleton<GetCreditProductUseCase>(
       () => GetCreditProductUseCase(
         repository: appLocator<MonetizationRepository>(),

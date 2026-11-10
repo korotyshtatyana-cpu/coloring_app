@@ -20,6 +20,8 @@ class SubscriptionScreen extends StatelessWidget {
         getActiveSubscriptionUseCase: appLocator<GetActiveSubscriptionUseCase>(),
         getPurchaseHistoryUseCase: appLocator<GetPurchaseHistoryUseCase>(),
         getPendingPurchasesUseCase: appLocator<GetPendingPurchasesUseCase>(),
+        getSubscriptionPricesUseCase:
+            appLocator<GetSubscriptionPricesUseCase>(),
         buySubscriptionUseCase: appLocator<BuySubscriptionUseCase>(),
         restorePurchasesUseCase: appLocator<RestorePurchasesUseCase>(),
         watchPurchaseUpdatesUseCase: appLocator<WatchPurchaseUpdatesUseCase>(),

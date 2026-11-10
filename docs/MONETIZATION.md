@@ -57,23 +57,47 @@ Badge colors use `colors.averagePurple` (`#7B35CA`) for rewarded and
 
 ## 2. Subscription Plans
 
-### Six SKUs (Google Play Billing)
+### Two Products × Three Base Plans (Google Play Billing)
 
-**No Ads** — removes all ads:
+Google Play's modern subscription model uses one **product** per plan and a
+**base plan** for each billing period. The app queries only two product ids:
 
-| SKU | Duration | Price |
-|-----|----------|-------|
-| `no_ads_week` | 1 week | 99 ₽ |
-| `no_ads_month` | 1 month | 249 ₽ |
-| `no_ads_year` | 1 year | 1990 ₽ |
+| Product | Base plans | Purpose |
+|---------|------------|---------|
+| `no_ads` | `week` / `month` / `year` | Removes all ads |
+| `premium` | `week` / `month` / `year` | Removes ads AND unlocks all paid projects |
 
-**Premium** — removes ads AND unlocks all paid projects:
+Prices are configured in Play Console for each base plan:
 
-| SKU | Duration | Price |
-|-----|----------|-------|
-| `premium_week` | 1 week | 149 ₽ |
-| `premium_month` | 1 month | 399 ₽ |
-| `premium_year` | 1 year | 2990 ₽ |
+| Plan | Week | Month | Year |
+|------|------|-------|------|
+| `no_ads` | 99 ₽ | 249 ₽ | 1990 ₽ |
+| `premium` | 149 ₽ | 399 ₽ | 2990 ₽ |
+
+The client resolves the selected period at runtime from
+`ProductDetails.subscriptionOfferDetails` (matching `basePlanId`) and passes
+that entry's `offerToken` to the purchase call.
+
+When the user already has an active subscription, the purchase is started as a
+plan change: the client reads the current purchases from the store and passes
+the existing transaction through `ChangeSubscriptionParam`. Changing to a
+different subscription product (No Ads → Premium) uses
+`ReplacementMode.withTimeProration`, so the replacement takes effect
+immediately and unused time is credited. Changing only the base plan inside the
+same product leaves the replacement mode to the Play Console configuration.
+Re-selecting the exact plan that is already active re-verifies the owned
+transaction instead of asking Google Play to replace a subscription with
+itself. Verification stores
+`subscriptions.product_id` as the plan-level id (`no_ads` / `premium`),
+`subscriptions.plan_type` as the same value, `subscriptions.base_plan_id` as
+the period (`week` / `month` / `year`) and `expires_at` from the Google Play
+API response (`lineItems[0].expiryTime`).
+
+Each paid period — the initial purchase, a restore, or an automatic renewal —
+is also appended to `subscription_purchases`, keyed idempotently by
+`(purchase_token, expires_at)`. The history screen reads that table, so a
+renewal does not overwrite the previous period even though `subscriptions`
+keeps a single row per token.
 
 ### Individual Project Purchase
 
@@ -187,24 +211,29 @@ rewarded projects keep asking for a video on every open.
 
 **2. Current Status**
 - If no subscription: "You don't have an active subscription."
-- If active: plan name + expiration date/time and a countdown (`days`, `hours`,
-  `minutes`). The same block is used for `no_ads` and `premium`.
+- If active: plan name + expiration date/time. The same block is used for
+  `no_ads` and `premium`.
 
 **3. Stale Pending Notice**
-- Shown when an unresolved `pending_purchases` row is older than 24 hours
-  (`Constants.stalePendingPurchaseThreshold`). Text asks the user to contact
-  support (`error_contact_support`).
+- Shown when a subscription `pending_purchases` row older than 24 hours
+  (`Constants.stalePendingPurchaseThreshold`) is not superseded by a newer
+  successful subscription. A successful re-purchase hides the notice
+  automatically, and it stays hidden after that subscription expires. Text
+  explains that subscription setup failed and asks the user to contact support
+  with a problem description, with a button that opens the feedback form.
 
 **4. Plans — Two Blocks**
 
 **Block "No Ads"** (purple accent)
 - Description: "Removes all ads from the app. All `rewarded` projects open without watching videos."
 - Segmented control: Week / Month / Year
+- Localized store price for the selected base plan
 - Button: "Subscribe"
 
 **Block "Premium"** (gold accent, badge "Best Value")
 - Description: "Full access to all projects in the app and complete ad removal."
 - Segmented control: Week / Month / Year
+- Localized store price for the selected base plan
 - Button: "Subscribe"
 
 **5. Restore Purchases Button**
@@ -212,9 +241,17 @@ rewarded projects keep asking for a video on every open.
 - Disabled while a purchase or restore is in progress.
 
 **6. Purchase and Subscription History**
-- `PurchaseHistorySection` lists resolved `pending_purchases` rows, most recent
-  first. Each row shows the **product ID** and the resolution/creation date
-  (no amount).
+- `PurchaseHistorySection` lists resolved `pending_purchases` rows, one-time
+  project purchases from `user_entitlements` (`type = 'purchase'`), and every
+  paid subscription period from `subscription_purchases` (most recent first).
+  Entries are deduplicated by purchase token; a stored subscription period is
+  authoritative over the generic `subscriptions` row and a resolved pending
+  row for the same token.
+- Subscription rows show the localized plan name, the billing interval
+  (`Неделя` / `Месяц` / `Год`), and an `Автообновление` badge for periods paid
+  automatically by the store (`is_auto_renewal = true`).
+- Project rows show the contour title and a preview thumbnail when available.
+  Every row shows the resolution/grant date (no amount).
 - If empty: "History is empty."
 
 **7. Footer**
@@ -254,6 +291,14 @@ The avatar frame color reflects subscription status:
   - active plan → plan name + expiration date;
   - permanent `no_ads_purchased` without an active subscription → No Ads title;
   - otherwise → "Subscription inactive".
+
+### Timestamps
+
+Monetization timestamps (`subscriptions`, `pending_purchases`,
+`user_entitlements`, `subscription_purchases`) are stored as `timestamptz` in
+UTC. The app parses them as UTC (`parseServerTimestamp`) and converts to the
+device timezone only when rendering the expiry or a history date. Changing the
+phone timezone therefore never changes the stored moment, only its display.
 
 ---
 
@@ -302,7 +347,10 @@ Sometimes Google Play Billing does not confirm a purchase immediately
    updates, so a delayed confirmation refreshes access and shows the success
    snackbar even when the purchase dialog is no longer open.
 6. Rows older than 24 hours trigger the stale-pending notice on the
-   subscription screen, asking the user to contact support.
+   subscription screen, asking the user to contact support. The notice is not
+   shown for a pending row that predates any successful subscription period:
+   a successful re-purchase supersedes the earlier failed attempt, and the
+   notice does not return when that subscription later expires.
 
 The client does not independently poll `pending_purchases` rows.
 
@@ -373,25 +421,47 @@ CREATE TABLE public.subscriptions (
   user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
   product_id text NOT NULL,
   plan_type text NOT NULL,
+  base_plan_id text, -- billing period: week / month / year
   is_active boolean DEFAULT true,
-  started_at timestamp DEFAULT now(),
-  expires_at timestamp NOT NULL,
+  is_auto_renew boolean NOT NULL DEFAULT true, -- false after user-initiated cancellation
+  started_at timestamptz DEFAULT now(),
+  expires_at timestamptz NOT NULL,
   purchase_token text,
-  created_at timestamp DEFAULT now()
+  created_at timestamptz DEFAULT now()
 );
 
--- 5. User entitlements to projects
+-- 5. One row per paid subscription period (initial purchase or renewal)
+CREATE TABLE public.subscription_purchases (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  subscription_id uuid REFERENCES public.subscriptions(id) ON DELETE SET NULL,
+  purchase_token text NOT NULL,
+  product_id text NOT NULL,
+  plan_type text NOT NULL,
+  base_plan_id text,
+  order_id text,
+  is_auto_renewal boolean NOT NULL DEFAULT false,
+  started_at timestamptz NOT NULL DEFAULT now(),
+  expires_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- Google Play can repeat a notification; the same period must not be listed twice.
+CREATE UNIQUE INDEX subscription_purchases_token_expiry_key
+  ON public.subscription_purchases (purchase_token, expires_at);
+
+-- 6. User entitlements to projects
 CREATE TABLE public.user_entitlements (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
   contour_id uuid NOT NULL REFERENCES public.contours(id) ON DELETE CASCADE,
   type text NOT NULL,
-  granted_at timestamp DEFAULT now(),
-  expires_at timestamp,
+  granted_at timestamptz DEFAULT now(),
+  expires_at timestamptz,
   UNIQUE(user_id, contour_id)
 );
 
--- 6. Pending purchases queue
+-- 7. Pending purchases queue
 CREATE TABLE public.pending_purchases (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
@@ -400,38 +470,54 @@ CREATE TABLE public.pending_purchases (
   contour_id uuid REFERENCES public.contours(id) ON DELETE SET NULL,
   status text DEFAULT 'pending',
   error_message text,
-  created_at timestamp DEFAULT now(),
-  resolved_at timestamp
+  created_at timestamptz DEFAULT now(),
+  resolved_at timestamptz
 );
 ```
 
+The `subscriptions.base_plan_id` column and the `subscription_purchases`
+table are created by
+`supabase/migrations/20261110000000_subscription_purchases.sql`. The migration
+also backfills one period per existing subscription (`is_auto_renewal = false`,
+`base_plan_id` unknown) and adds the `select` RLS policy for
+`subscription_purchases`. The related timestamp columns were converted from
+`timestamp without time zone` to `timestamptz` by
+`supabase/migrations/20261110000001_utc_monetization_timestamps.sql`, keeping
+their existing UTC values. The auto-renew flag was added by
+`supabase/migrations/20261110000002_subscription_auto_renew.sql`; it is
+independent from `is_active`, so a cancelled subscription keeps access until
+`expires_at`.
+
 ## 10. Google Play Billing Setup
 
-### Step 1. Create Subscriptions (No Ads)
+### Step 1. Create Subscription Products
 1. Play Console → Monetization → Products → Subscriptions
-2. Create 3 subscriptions:
-    - no_ads_week
-    - no_ads_month
-    - no_ads_year
+2. Create product `no_ads` with three base plans:
+    - `week` — 99 ₽
+    - `month` — 249 ₽
+    - `year` — 1990 ₽
+3. Create product `premium` with three base plans:
+    - `week` — 149 ₽
+    - `month` — 399 ₽
+    - `year` — 2990 ₽
+4. Activate every base plan. The client queries only `['no_ads', 'premium']`
+   and resolves the selected `basePlanId` from `subscriptionOfferDetails`.
+5. Old per-period products (`no_ads_week`, `no_ads_month`, …) are archived and
+   no longer queried.
 
-### Step 2. Create Subscriptions (Premium)
-1. Play Console → Monetization → Products → Subscriptions
-2. Create 3 subscriptions:
-    - premium_week
-    - premium_month
-    - premium_year
-
-### Step 3. Create In-App Products (Paid Projects)
+### Step 2. Create In-App Products (Paid Projects)
 1. Play Console → Monetization → Products → In-app products
 2. For each paid contour, create a one-time product
    with ID = `contours.product_id` (fallback: `contour_{id}`)
 3. Price = `contours.price` (in cents)
 
-### Step 4. Install Package
+### Step 3. Install Package
 
 - `in_app_purchase: ^3.2.0` (official Flutter package).
+- `in_app_purchase_android: ^0.5.3` for `GooglePlayPurchaseParam` and
+  `subscriptionOfferDetails`.
 
-### Step 5. Configure Webhooks (for Refunds)
+### Step 4. Configure Webhooks (for Refunds)
 
 1. Supabase → **Edge Functions** → create `google-play-webhook`.
 2. Google Play Console → **Settings** → **Purchase notifications** → webhook URL.
@@ -610,13 +696,29 @@ granted on its own.
   when the store reports a canceled one-time payment. The client completes a
   store transaction only after `verified`; pending transactions are retried
   later, while failed ones stop blocking a new buy.
+- A store purchase is never reported as failed after Google Play already
+  confirmed the payment. If verification is unavailable (network, function or
+  database error), a subscription is queued as `pending` and the transaction
+  stays unacknowledged, so Play re-delivers it for another verification.
+- When Play reports `ITEM_ALREADY_OWNED` (for example, an earlier attempt left
+  the transaction unacknowledged), the client starts a restore instead of
+  showing a purchase error; the restored transaction is verified and
+  acknowledged normally.
 - `platform` is `google` or `apple`.
   - `google` — verified with the Android Publisher API
     (`purchases.subscriptionsv2.get` for subscriptions,
     `purchases.products.get` for one-time products).
   - `apple` — **not implemented yet**, returns `501`.
+- Subscription verification reads `lineItems[0].productId` (the plan product
+  id, `no_ads` / `premium`) and `lineItems[0].offerDetails.basePlanId` (the
+  period); `product_id`, `plan_type`, `base_plan_id`, `is_auto_renew` and
+  `expires_at` come from `lineItems[0]` (`autoRenewingPlan.autoRenewEnabled`
+  for the auto-renew flag).
 - Subscriptions are stored in `subscriptions` keyed by `purchase_token`;
   individual projects grant a row in `user_entitlements`.
+- Verification also appends the paid period to `subscription_purchases` with
+  `is_auto_renewal = false`, because a direct verification is the initial
+  purchase or a restore, not a store renewal.
 - The matching `pending_purchases` row is marked `resolved` after a grant or
   `failed` after a canceled one-time payment.
 
@@ -629,6 +731,18 @@ granted on its own.
 - Handles voids/refunds (removes `user_entitlements`, deactivates
   `subscriptions`, records a user-visible `purchase_refunds` notice), one-time
   product cancellations, and Pub/Sub test notifications.
+- On `SUBSCRIPTION_PURCHASED`, `SUBSCRIPTION_RESTARTED` and
+  `SUBSCRIPTION_RENEWED`, it refetches the subscription from Google Play,
+  updates `expires_at` / `base_plan_id` / `is_active` / `is_auto_renew`, and
+  appends the paid period to `subscription_purchases`.
+- `SUBSCRIPTION_CANCELED` (user turned off auto-renew) only sets
+  `subscriptions.is_auto_renew = false`; the subscription stays active until
+  `expires_at`. `SUBSCRIPTION_EXPIRED` and `SUBSCRIPTION_REVOKED` deactivate it
+  immediately.
+- `SUBSCRIPTION_RENEWED` (RTDN type `2`) is the only notification that writes
+  `is_auto_renewal = true`; the period starts at the previous expiry when the
+  new expiry is later. Repeated notifications for the same token and expiry are
+  ignored by the unique index.
 
 ### Secrets
 
@@ -649,8 +763,8 @@ implementation must satisfy the same contract.
 
 Checklist for the iOS release:
 
-1. Create the six subscription SKUs and the per-project products in App Store
-   Connect.
+1. Create the two subscription products (`no_ads`, `premium`) with three
+   periods each, plus the per-project products, in App Store Connect.
 2. Implement `AppleBillingPlatform` in
    `data/lib/src/services/apple_billing_platform.dart` via `in_app_purchase`
    (App Store) — replace the `UnimplementedError` stubs. Add the iOS-specific
@@ -725,6 +839,12 @@ real or sandbox Google Play account and the deployed Edge Functions.
       access on the next gallery open and emits
       `monetization_subscription_expired` exactly once.
 - [ ] A renewal extends `expires_at` and keeps access without any user action.
+- [ ] A renewal adds a `subscription_purchases` row with
+      `is_auto_renewal = true`, and the history shows the new period with the
+      `Автообновление` badge.
+- [ ] History rows show the purchased billing interval (week / month / year)
+      and list every paid period, newest first.
+- [ ] A re-delivered RTDN for an already stored period does not duplicate it.
 - [ ] Expired Premium keeps `viewOnly` access to paid projects the user had
       already started, and blocks the rest.
 - [ ] A server `is_active = false` subscription does not grant access even if

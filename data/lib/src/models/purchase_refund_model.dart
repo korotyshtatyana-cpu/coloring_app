@@ -1,4 +1,5 @@
 import '../constants/request_constants.dart';
+import '../utils/server_time.dart';
 
 /// Data transfer object mirroring the `purchase_refunds` table.
 class PurchaseRefundModel {
@@ -37,12 +38,12 @@ class PurchaseRefundModel {
       userId: json[RequestConstants.userIdColumn] as String,
       purchaseToken: json[RequestConstants.purchaseTokenColumn] as String,
       productId: json[RequestConstants.productIdColumn] as String,
-      createdAt: DateTime.parse(
+      createdAt: parseServerTimestamp(
         json[RequestConstants.createdAtColumn] as String,
       ),
       acknowledgedAt: json[RequestConstants.acknowledgedAtColumn] == null
           ? null
-          : DateTime.parse(
+          : parseServerTimestamp(
               json[RequestConstants.acknowledgedAtColumn] as String,
             ),
     );
@@ -55,9 +56,9 @@ class PurchaseRefundModel {
       RequestConstants.userIdColumn: userId,
       RequestConstants.purchaseTokenColumn: purchaseToken,
       RequestConstants.productIdColumn: productId,
-      RequestConstants.createdAtColumn: createdAt.toIso8601String(),
+      RequestConstants.createdAtColumn: createdAt.toUtc().toIso8601String(),
       RequestConstants.acknowledgedAtColumn:
-          acknowledgedAt?.toIso8601String(),
+          acknowledgedAt?.toUtc().toIso8601String(),
     };
   }
 }

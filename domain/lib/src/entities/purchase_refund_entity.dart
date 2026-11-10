@@ -40,7 +40,7 @@ class PurchaseRefundEntity extends Equatable {
   /// Whether the refunded purchase is a subscription plan.
   bool get isSubscriptionRefund {
     return SubscriptionPlanType.values.any(
-      (SubscriptionPlanType plan) => productId.startsWith('${plan.dbValue}_'),
+      (SubscriptionPlanType plan) => productId == plan.dbValue,
     );
   }
 

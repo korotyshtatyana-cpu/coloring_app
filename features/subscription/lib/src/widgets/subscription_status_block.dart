@@ -32,16 +32,13 @@ class SubscriptionStatusBlock extends StatelessWidget {
     final String expiresAt = SubscriptionFormatters.dateTime(
       subscription.expiresAt,
     );
-    final String countdown = SubscriptionFormatters.countdown(
-      subscription.remainingDuration(),
-    );
 
     return _StatusCard(
       color: colors.accentDark,
       title: LocaleKeys.subscription_status_active.tr(
         args: <String>[planTitle, expiresAt],
       ),
-      trailing: countdown,
+      showAutoRenewDisabled: !subscription.isAutoRenew,
     );
   }
 }
@@ -49,9 +46,13 @@ class SubscriptionStatusBlock extends StatelessWidget {
 class _StatusCard extends StatelessWidget {
   final Color color;
   final String title;
-  final String? trailing;
+  final bool showAutoRenewDisabled;
 
-  const _StatusCard({required this.color, required this.title, this.trailing});
+  const _StatusCard({
+    required this.color,
+    required this.title,
+    this.showAutoRenewDisabled = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -65,20 +66,41 @@ class _StatusCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Icon(Icons.workspace_premium, color: color, size: 28),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              title,
-              style: AppFonts.normal16.copyWith(color: colors.primaryText),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  title,
+                  style: AppFonts.normal16.copyWith(color: colors.primaryText),
+                ),
+                if (showAutoRenewDisabled) ...<Widget>[
+                  const SizedBox(height: 6),
+                  Row(
+                    children: <Widget>[
+                      Icon(
+                        Icons.sync_disabled,
+                        color: colors.secondaryText,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        LocaleKeys.subscription_history_auto_renewal.tr(),
+                        style: AppFonts.normal12.copyWith(
+                          color: colors.secondaryText,
+                          decoration: TextDecoration.lineThrough,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
             ),
           ),
-          if (trailing != null)
-            Text(
-              trailing!,
-              style: AppFonts.semiBold20.copyWith(color: colors.accentDark),
-            ),
         ],
       ),
     );

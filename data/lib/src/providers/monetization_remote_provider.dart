@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../data.dart';
+import '../utils/server_time.dart';
 
 /// Outcome of a server-side store verification.
 enum PurchaseVerificationResult {
@@ -82,7 +83,13 @@ class MonetizationRemoteProvider {
         .select(RequestConstants.selectAll)
         .eq(RequestConstants.userIdColumn, userId)
         .eq(RequestConstants.isActiveColumn, true)
-        .gt(RequestConstants.expiresAtColumn, DateTime.now().toIso8601String())
+        .gt(RequestConstants.expiresAtColumn, serverNowIso8601())
+        // A plan change can briefly leave the replaced subscription active in
+        // the table until its store notification arrives. The newest purchase
+        // is the plan the user currently owns, even when the old one has a
+        // later expiry (for example an annual No Ads replaced by a monthly
+        // Premium).
+        .order(RequestConstants.startedAtColumn, ascending: false)
         .order(RequestConstants.expiresAtColumn, ascending: false)
         .limit(1);
 
@@ -90,6 +97,40 @@ class MonetizationRemoteProvider {
       return null;
     }
     return SubscriptionModel.fromJson(response.first);
+  }
+
+  /// Returns every subscription owned by the user, newest first.
+  Future<List<SubscriptionModel>> getSubscriptions(String userId) async {
+    final List<Map<String, dynamic>> response = await _client
+        .from(RequestConstants.subscriptionsTable)
+        .select(RequestConstants.selectAll)
+        .eq(RequestConstants.userIdColumn, userId)
+        .order(RequestConstants.startedAtColumn, ascending: false);
+
+    return response
+        .map((Map<String, dynamic> json) => SubscriptionModel.fromJson(json))
+        .toList();
+  }
+
+  /// Returns every paid subscription period, newest first.
+  ///
+  /// Each row is an initial purchase or an automatic renewal. The history
+  /// screen uses the billing period and the auto-renewal flag from these rows.
+  Future<List<SubscriptionPurchaseModel>> getSubscriptionPurchases(
+    String userId,
+  ) async {
+    final List<Map<String, dynamic>> response = await _client
+        .from(RequestConstants.subscriptionPurchasesTable)
+        .select(RequestConstants.selectAll)
+        .eq(RequestConstants.userIdColumn, userId)
+        .order(RequestConstants.startedAtColumn, ascending: false);
+
+    return response
+        .map(
+          (Map<String, dynamic> json) =>
+              SubscriptionPurchaseModel.fromJson(json),
+        )
+        .toList();
   }
 
   /// Returns the `no_ads_purchased` flag from the `users` table.
@@ -131,6 +172,30 @@ class MonetizationRemoteProvider {
         .from(RequestConstants.userEntitlementsTable)
         .select(RequestConstants.selectAll)
         .eq(RequestConstants.userIdColumn, userId);
+
+    return response
+        .map((Map<String, dynamic> json) => UserEntitlementModel.fromJson(json))
+        .toList();
+  }
+
+  /// Returns the user's individually purchased projects, newest first.
+  ///
+  /// Each row includes the contour title and preview URL so the purchase
+  /// history can show what was bought without a second request. Rewarded and
+  /// subscription entitlements are excluded: only `purchase` rows represent a
+  /// one-time project purchase.
+  Future<List<UserEntitlementModel>> getPurchasedEntitlements(
+    String userId,
+  ) async {
+    final List<Map<String, dynamic>> response = await _client
+        .from(RequestConstants.userEntitlementsTable)
+        .select(RequestConstants.selectPurchasedEntitlements)
+        .eq(RequestConstants.userIdColumn, userId)
+        .eq(
+          RequestConstants.typeColumn,
+          RequestConstants.entitlementTypePurchase,
+        )
+        .order(RequestConstants.grantedAtColumn, ascending: false);
 
     return response
         .map((Map<String, dynamic> json) => UserEntitlementModel.fromJson(json))
@@ -211,8 +276,7 @@ class MonetizationRemoteProvider {
     await _client
         .from(RequestConstants.purchaseRefundsTable)
         .update(<String, dynamic>{
-          RequestConstants.acknowledgedAtColumn:
-              DateTime.now().toIso8601String(),
+          RequestConstants.acknowledgedAtColumn: serverNowIso8601(),
         })
         .eq(RequestConstants.idColumn, refundId);
   }
