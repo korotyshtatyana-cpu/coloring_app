@@ -407,6 +407,11 @@ final GetIt appLocator = GetIt.instance;
 
 
 ## Локализация (easy_localization)
+### Поддерживаемые языки
+`en-US`, `ru-RU`, `es-ES`, `pt-BR`, `be-BY`, `de-DE`, `fr-FR`
+(`AppLocalization.supportedLocales`). Файлы переводов лежат в
+`core/resources/lang/`, ключи генерируются через `prebuild_script_core.sh`.
+
 ### Использование в коде
 ```dart
 Text(LocaleKeys.gallery).tr();

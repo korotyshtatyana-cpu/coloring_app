@@ -27,6 +27,26 @@ class LanguagePicker extends StatelessWidget {
           value: 'ru-RU',
           child: Text(LocaleKeys.russian.tr()),
         ),
+        DropdownMenuItem<String>(
+          value: 'es-ES',
+          child: Text(LocaleKeys.spanish.tr()),
+        ),
+        DropdownMenuItem<String>(
+          value: 'pt-BR',
+          child: Text(LocaleKeys.portuguese.tr()),
+        ),
+        DropdownMenuItem<String>(
+          value: 'be-BY',
+          child: Text(LocaleKeys.belarusian.tr()),
+        ),
+        DropdownMenuItem<String>(
+          value: 'de-DE',
+          child: Text(LocaleKeys.german.tr()),
+        ),
+        DropdownMenuItem<String>(
+          value: 'fr-FR',
+          child: Text(LocaleKeys.french.tr()),
+        ),
       ],
       onChanged: (String? value) {
         if (value != null) {

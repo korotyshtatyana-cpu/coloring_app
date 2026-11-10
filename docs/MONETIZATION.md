@@ -645,7 +645,10 @@ or future work): `subscription_expires_at`, `purchase_dialog_title`,
 
 Generated accessors live in
 `core/lib/src/localization/generated/locale_keys.g.dart` and are produced by
-`easy_localization:generate` from `core/resources/lang/{ru-RU,en-US}.json`.
+`easy_localization:generate` from the JSON files in `core/resources/lang/`
+(`en-US`, `ru-RU`, `es-ES`, `pt-BR`, `be-BY`, `de-DE`, `fr-FR`). Every locale
+must contain the same keys, otherwise missing translations fall back to
+`en-US`.
 
 ---
 

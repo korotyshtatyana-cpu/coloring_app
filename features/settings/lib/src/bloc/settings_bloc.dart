@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show Locale;
 
 import 'package:core/core.dart';
 import 'package:domain/domain.dart';
@@ -72,11 +73,18 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
 
   String? _normalizeLocaleCode(String? code) {
     if (code == null) return null;
-    if (code == 'en') return 'en-US';
-    if (code == 'ru') return 'ru-RU';
-    if (code == 'en_US') return 'en-US';
-    if (code == 'ru_RU') return 'ru-RU';
-    return code;
+    final List<String> parts = code.replaceAll('_', '-').split('-');
+    final String languageCode = parts.first;
+    final String? countryCode = parts.length > 1 ? parts[1] : null;
+
+    for (final Locale locale in AppLocalization.supportedLocales) {
+      if (locale.languageCode != languageCode) continue;
+      if (countryCode != null && locale.countryCode != countryCode) continue;
+      return '${locale.languageCode}-${locale.countryCode}';
+    }
+
+    final Locale fallback = AppLocalization.fallbackLocale;
+    return '${fallback.languageCode}-${fallback.countryCode}';
   }
 
   Future<void> _onChangeLanguage(

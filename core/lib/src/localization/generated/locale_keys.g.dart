@@ -58,6 +58,11 @@ abstract class  LocaleKeys {
   static const confirm = 'confirm';
   static const english = 'english';
   static const russian = 'russian';
+  static const spanish = 'spanish';
+  static const portuguese = 'portuguese';
+  static const belarusian = 'belarusian';
+  static const german = 'german';
+  static const french = 'french';
   static const user_placeholder = 'user_placeholder';
   static const profile_status = 'profile_status';
   static const subscription_title = 'subscription_title';
