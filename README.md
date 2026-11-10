@@ -6,8 +6,8 @@
 
 Проект построен по модульной архитектуре с чётким разделением ответственности:
 
-- **core** — локализация, темы, DI, утилиты и обработка ошибок.
-- **core_ui** — общие виджеты, цвета, шрифты и размеры.
+- **core** — локализация, DI, конфигурация, утилиты и обработка ошибок.
+- **core_ui** — тема, цвета, шрифты, размеры и общие виджеты.
 - **domain** — бизнес-логика, сущности, use cases и репозитории.
 - **data** — реализация репозиториев, провайдеры данных, сервисы.
 - **navigation** — централизованная навигация на базе `auto_route`.
@@ -15,7 +15,9 @@
   - `splash` — splash-экран с проверкой авторизации.
   - `gallery` — галерея контуров, избранное, работа в процессе.
   - `canvas` — редактор раскраски.
-  - `settings` — настройки приложения.
+  - `settings` — профиль, подписка, язык, обратная связь и удаление аккаунта.
+  - `subscription` — подписки, разовые покупки и история покупок.
+  - `feedback` — форма обратной связи с вложениями.
 
 Подробнее об архитектуре, спецификациях API и UI см. в документации:
 
@@ -25,6 +27,8 @@
 - [Дизайн и AI Промпты](docs/UI_DESIGN_PROMPT.md)
 - [UI спецификация](docs/UI_SPEC.md)
 - [API спецификация](docs/API_SPEC.md)
+- [Монетизация](docs/MONETIZATION.md)
+- [Спецификация SVG-контуров](docs/SVG_CONTOUR_SPEC.md)
 - [Чеклист](docs/CHECKLIST.md)
 
 ## Запуск
@@ -67,4 +71,7 @@ flutter run -t lib/main_prod.dart --flavor prod
 ./features/gallery/prebuild_script_gallery.sh
 ./features/canvas/prebuild_script_canvas.sh
 ./features/settings/prebuild_script_settings.sh
+./features/subscription/prebuild_script_subscription.sh
 ```
+
+Для `features/feedback` отдельный prebuild-скрипт не нужен: модуль не содержит кодогенерации.

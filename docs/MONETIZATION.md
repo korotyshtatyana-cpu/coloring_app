@@ -101,7 +101,13 @@ keeps a single row per token.
 
 ### Individual Project Purchase
 
-- Price stored in `contours.price` (in cents).
+- The store sells a single one-time **credit** product, `unlock_credit`
+  (`RequestConstants.creditProductId`). Buying it adds one credit; spending
+  that credit on a contour creates a permanent `purchase` entitlement through
+  the `spend_credit_and_unlock` RPC.
+- `contours.price` (in cents) and `contours.product_id` still exist in the
+  schema, and `BuyProjectUseCase` is registered, but the current purchase
+  dialog does not use them: it shows the localized price of `unlock_credit`.
 - After purchase → project is **permanently unlocked** for this user.
 - Independent of subscription status.
 
@@ -213,6 +219,11 @@ rewarded projects keep asking for a video on every open.
 - If no subscription: "You don't have an active subscription."
 - If active: plan name + expiration date/time. The same block is used for
   `no_ads` and `premium`.
+- If the active subscription has `is_auto_renew = false` (cancelled in Google
+  Play), the block adds a secondary line with a `sync_disabled` icon and a
+  struck-through `subscription_history_auto_renewal` label. Access stays
+  active until `expires_at`; the app has no cancel/manage button, cancellation
+  happens in Google Play.
 
 **3. Stale Pending Notice**
 - Shown when a subscription `pending_purchases` row older than 24 hours
@@ -247,11 +258,16 @@ rewarded projects keep asking for a video on every open.
   Entries are deduplicated by purchase token; a stored subscription period is
   authoritative over the generic `subscriptions` row and a resolved pending
   row for the same token.
+- The list is capped at `PurchaseHistorySection.maxHeight` (200 px) and scrolls
+  internally when there are more rows; it shrinks to fit otherwise.
 - Subscription rows show the localized plan name, the billing interval
   (`Неделя` / `Месяц` / `Год`), and an `Автообновление` badge for periods paid
   automatically by the store (`is_auto_renewal = true`).
-- Project rows show the contour title and a preview thumbnail when available.
-  Every row shows the resolution/grant date (no amount).
+- Project rows are currently rendered with an **empty title** even when the
+  contour title is stored: `_HistoryRow._title` returns `''` as soon as
+  `purchase.contourTitle` is non-empty. The preview thumbnail is still shown
+  when available. This is a known UI quirk and is left unchanged.
+- Every row shows the resolution/grant date (no amount).
 - If empty: "History is empty."
 
 **7. Footer**
@@ -395,7 +411,7 @@ The `purchase_refunds` table is the client's source of truth for refunds.
   open contour through `GetGalleryItemsUseCase`; when the unlock is gone it
   dispatches `MarkCurrentContourAsViewOnly`, which discards the in-flight
   stroke, disables every editing action and shows the reason banner at the
-  top; pan/zoom and sharing stay available. Editing a different contour is
+  bottom of the screen; pan/zoom and sharing stay available. Editing a different contour is
   unaffected because its access still resolves as unlocked.
 
 ---
@@ -409,11 +425,13 @@ CREATE TYPE contour_access_type AS ENUM ('free', 'rewarded', 'paid');
 -- 2. Fields in contours
 ALTER TABLE public.contours
   ADD COLUMN access_type contour_access_type NOT NULL DEFAULT 'free',
-  ADD COLUMN price integer; -- in cents, for paid projects only
+  ADD COLUMN price integer, -- in cents, for paid projects only
+  ADD COLUMN product_id text; -- explicit Google Play product id for paid projects
 
--- 3. Field in users
+-- 3. Fields in users
 ALTER TABLE public.users
-  ADD COLUMN no_ads_purchased boolean DEFAULT false;
+  ADD COLUMN no_ads_purchased boolean DEFAULT false,
+  ADD COLUMN credits integer NOT NULL DEFAULT 0;
 
 -- 4. Subscriptions table
 CREATE TABLE public.subscriptions (
@@ -458,6 +476,7 @@ CREATE TABLE public.user_entitlements (
   type text NOT NULL,
   granted_at timestamptz DEFAULT now(),
   expires_at timestamptz,
+  purchase_token text, -- store token backing this grant, when applicable
   UNIQUE(user_id, contour_id)
 );
 
@@ -473,6 +492,24 @@ CREATE TABLE public.pending_purchases (
   created_at timestamptz DEFAULT now(),
   resolved_at timestamptz
 );
+
+-- 8. Refund notices shown to the user
+CREATE TABLE public.purchase_refunds (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  purchase_token text NOT NULL UNIQUE,
+  product_id text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  acknowledged_at timestamptz
+);
+
+-- 9. Idempotency guard for credit purchases
+CREATE TABLE public.processed_purchases (
+  purchase_token text PRIMARY KEY,
+  user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  product_id text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
 ```
 
 The `subscriptions.base_plan_id` column and the `subscription_purchases`
@@ -487,6 +524,17 @@ their existing UTC values. The auto-renew flag was added by
 `supabase/migrations/20261110000002_subscription_auto_renew.sql`; it is
 independent from `is_active`, so a cancelled subscription keeps access until
 `expires_at`.
+
+`contours.product_id` (with a partial unique index) and the unique
+`subscriptions.purchase_token` index come from
+`supabase/migrations/20261009000000_monetization_billing.sql`. The
+`users.credits` column, `processed_purchases` table and the `add_credits` /
+`spend_credit_and_unlock` functions are added by
+`supabase/migrations/20261031000000_credits_and_unlock.sql`.
+`pending_purchases.contour_id` is added by
+`supabase/migrations/20261104000000_pending_purchase_contour.sql`, and
+`purchase_refunds` with its RLS policies by
+`supabase/migrations/20261105000000_purchase_refunds.sql`.
 
 ## 10. Google Play Billing Setup
 
@@ -507,9 +555,13 @@ independent from `is_active`, so a cancelled subscription keeps access until
 
 ### Step 2. Create In-App Products (Paid Projects)
 1. Play Console → Monetization → Products → In-app products
-2. For each paid contour, create a one-time product
-   with ID = `contours.product_id` (fallback: `contour_{id}`)
-3. Price = `contours.price` (in cents)
+2. Create the one-time product `unlock_credit`
+   (`RequestConstants.creditProductId`).
+3. Set its price: the current purchase dialog buys one credit and spends it on
+   the selected paid contour. Per-contour `contours.product_id` / `contours.price`
+   are kept in the schema but are not read by the current dialog (the
+   registered `BuyProjectUseCase` is unused).
+4. Configure the product as consumable so the same account can buy it again.
 
 ### Step 3. Install Package
 
@@ -594,6 +646,8 @@ subscription_restore_button
 subscription_restore_hint
 subscription_history_title
 subscription_history_empty
+subscription_history_auto_renewal
+subscription_stale_pending_notice
 subscription_status_active
 subscription_status_inactive
 subscription_week
@@ -603,11 +657,9 @@ subscription_buy_button
 subscription_terms_of_service
 subscription_privacy_policy
 
-purchase_dialog_project_price
 purchase_dialog_buy_project
 purchase_dialog_subscribe
 purchase_dialog_subscribe_badge
-purchase_dialog_cancel
 
 purchase_processing_title
 purchase_processing_text
@@ -632,16 +684,16 @@ rewarded_ad_loading
 rewarded_ad_unavailable
 banner_ad_label
 
-error_contact_support
 profile_status
 ```
 
 Defined but **not referenced** by the current UI (kept for backend-driven text
 or future work): `subscription_expires_at`, `purchase_dialog_title`,
-`purchase_placeholder_message`, `error_no_internet_title`,
-`error_no_internet_text`, `error_purchase_pending_title`,
-`error_purchase_pending_text`, `contour_access_free`, `contour_access_ads`,
-`contour_access_premium`.
+`purchase_dialog_project_price`, `purchase_dialog_cancel`,
+`purchase_placeholder_message`, `error_contact_support`,
+`error_no_internet_title`, `error_no_internet_text`,
+`error_purchase_pending_title`, `error_purchase_pending_text`,
+`contour_access_free`, `contour_access_ads`, `contour_access_premium`.
 
 Generated accessors live in
 `core/lib/src/localization/generated/locale_keys.g.dart` and are produced by
@@ -669,12 +721,19 @@ While an ad is loading, the gallery shows a full-screen `AdLoadingOverlay`.
 
 ### Purchase Dialog (for `paid` project)
 
-- Preview of the project
-- Title of the project
-- **Individual price** (only when `contours.price` is set) + "Buy Project"
-  button
-- **Premium description** + "Subscribe" button (with the "Best Value" badge)
-- "Cancel" button
+- Dismissed with the close (X) icon or the system back gesture; there is no
+  text "Cancel" button.
+- **Left/top block:** project preview, the Premium description text, a
+  localized price badge for `unlock_credit` when the product is loaded and no
+  purchase is pending, and the action button.
+  - loading the product → spinner;
+  - product load failure → `retry` text button;
+  - an existing pending purchase for this contour → processing text and a
+    "Payment Processing" button that re-checks the store;
+  - otherwise → "Buy Project" button, which buys one credit and spends it on
+    this contour (`BuyCreditUseCase`).
+- **Right/bottom block:** the "Best Value" badge, the Premium description and
+  the "Subscribe" button.
 
 Outcome handling while the dialog is open:
 - success → closes the dialog; the gallery-level purchase listener reloads

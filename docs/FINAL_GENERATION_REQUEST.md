@@ -1,5 +1,20 @@
 # ЗАПРОС НА ГЕНЕРАЦИЮ ПРОЕКТА "РАСКРАСКА PRO"
 
+> **Исторический документ.** Это исходный запрос на генерацию, а не описание
+> текущего состояния кода. Актуальные сведения поддерживаются в
+> [ARCHITECTURE.md](ARCHITECTURE.md), [UI_SPEC.md](UI_SPEC.md),
+> [API_SPEC.md](API_SPEC.md) и [MONETIZATION.md](MONETIZATION.md).
+>
+> Известные расхождения с текущим кодом:
+> - Drift-схема уже не v1, а v5, и содержит таблицы `Projects`, `Strokes`,
+>   `Brushes`, `Contours`;
+> - `ContourEntity` использует `svgUrl` и поля монетизации;
+> - параметров толщины контура (`contourDefaultWidth`, `minContourWidth`,
+>   `maxContourWidth`, `contourWidth`) больше нет;
+> - `ContourCard` перенесён из `core_ui` в `features/gallery`;
+> - появились модули `subscription` и `feedback`, монетизация и 7 локалей;
+> - маршрут `Subscription` добавлен, защищённые маршруты используют `AuthGuard`.
+
 ## ЦЕЛЬ
 Сгенерировать полный код Flutter-приложения "Раскраска PRO" на основе архитектуры, описанной в документации проекта.
 
@@ -31,7 +46,7 @@
 **Core_UI:**
 - `core_ui/lib/core_ui.dart` — публичный API
 - `core_ui/lib/src/theme/` — app_colors.dart, app_dimens.dart, app_fonts.dart, app_theme.dart (только `lightTheme`)
-- `core_ui/lib/src/widgets/` — PrimaryButton, AppIconButton, LoadingDialog, ErrorDialog, CustomSlider, SearchField, ContourCard
+- `core_ui/lib/src/widgets/` — PrimaryButton, AppButton, AppIconButton, ToolbarContainer, LoadingDialog, ErrorDialog, RefundDialog, GradientSlider, AppDropdown, SearchField (исторически здесь были `CustomSlider` и `ContourCard`)
 
 **Domain:**
 - `domain/lib/domain.dart` — публичный API
@@ -51,11 +66,11 @@
 - `data/lib/src/repositories/` — AuthRepositoryImpl, GalleryRepositoryImpl, CanvasRepositoryImpl, SettingsRepositoryImpl
 - `data/lib/src/services/` — ShareService
 - `data/lib/src/constants/request_constants.dart` — константы Supabase
-- Drift: таблицы `Projects`, `Strokes`, `Contours`; `schemaVersion = 1`
+- Drift: таблицы `Projects`, `Strokes`, `Brushes`, `Contours`; `schemaVersion = 5`
 
 **Navigation:**
 - `navigation/lib/navigation.dart` — публичный API, экспортирует `auto_route`, `AppRouter`, `NavigationDI`
-- `navigation/lib/src/app_router/app_router.dart` — AppRouter с маршрутами: Splash, Canvas, Gallery, Settings
+- `navigation/lib/src/app_router/app_router.dart` — AppRouter с маршрутами: Splash, Canvas, Gallery, Settings, Subscription (все, кроме Splash, защищены `AuthGuard`)
 - `navigation/lib/src/app_router/app_router.gr.dart` — генерируется `auto_route`
 - `navigation/lib/src/di/navigation_di.dart` — регистрация AppRouter
 
@@ -91,10 +106,11 @@
   - `maxBrushSize = 100.0`
   - `defaultOpacity = 1.0`
   - `contourDefaultOpacity = 1.0`
-  - `contourDefaultWidth = 2.0`
-  - `minContourWidth = 0.5`
-  - `maxContourWidth = 10.0`
+  - `stalePendingPurchaseThreshold = 24h`
+  - `refundChannelReconnectDelay = 2s`
+  - `refundDialogMergeWindow = 400ms`
   - `autosaveDebounce = Duration(milliseconds: 500)`
+  - (исторические `contourDefaultWidth` / `minContourWidth` / `maxContourWidth` удалены: толщина контура не настраивается)
 - `core/lib/src/utils/logger.dart` — AppLogger с методами debug, info, warning, error, verbose, wtf
 - `core/lib/src/utils/result.dart` — Result/Either
 - `core/lib/src/localization/generated/locale_keys.g.dart` — сгенерированные ключи
@@ -105,9 +121,9 @@
 - `core_ui/lib/src/widgets/buttons/icon_button.dart` — AppIconButton
 - `core_ui/lib/src/widgets/dialogs/loading_dialog.dart`
 - `core_ui/lib/src/widgets/dialogs/error_dialog.dart` — ErrorDialog со статическим `show`
-- `core_ui/lib/src/widgets/inputs/custom_slider.dart`
+- `core_ui/lib/src/widgets/inputs/gradient_slider.dart`, `app_dropdown.dart`
 - `core_ui/lib/src/widgets/inputs/search_field.dart`
-- `core_ui/lib/src/widgets/cards/contour_card.dart`
+- `features/gallery/lib/src/widgets/grid/contour_card.dart` (исторически `core_ui/.../cards/`) — карточка контура
 - `core_ui/lib/src/theme/app_theme.dart` — только `lightTheme`
 
 > **Тёмная тема и ThemeSwitch не создаются.**
@@ -116,9 +132,9 @@
 - **Базовые классы UseCase:** `domain/lib/src/use_cases/use_case.dart`
 - **Entities:**
   - `UserEntity` — id, email, name, avatarUrl
-  - `ContourEntity` — id, title, category, svgData, previewUrl
+  - `ContourEntity` — id, title, category, svgUrl, previewUrl, createdAt, accessType, price, productId
   - `ProjectEntity` — id, contourId, userId, data (JSON), lastOpened, createdAt
-  - `StrokeEntity` — points, color, size, opacity, brushType
+  - `StrokeEntity` — `List<StrokePoint>` (offset + pressure), color, size, opacity, brushType, brushId, isPressureSensitive
   - `BrushType` — circle, square, watercolor, chalk, marker, calligraphy, texture, airbrush
 - **Repositories:**
   - `AuthRepository` — checkAuth, signIn, signInSilently
@@ -137,7 +153,7 @@
 ### 4. Data (поддерживать)
 - **Providers:**
   - `SupabaseProvider` — инициализация Supabase
-  - `AppDatabase` (Drift) — таблицы `Projects`, `Strokes`, `Contours`; `schemaVersion = 1`
+  - `AppDatabase` (Drift) — таблицы `Projects`, `Strokes`, `Brushes`, `Contours`; `schemaVersion = 5`
   - `AuthRemoteProvider` — auth, включая `currentUserId`
   - `GalleryRemoteProvider` — контуры и избранное
   - `GalleryLocalProvider` — кэширование контуров
@@ -182,7 +198,7 @@
 #### Canvas
 - **BLoC:** canvas_bloc, canvas_event, canvas_state
 - **События:** `LoadProject`, `StartDrawing`, `AddPoint`, `EndDrawing`, `Undo`, `Redo`, `SaveProject`, `ExportImage`, `ExportImageFinished`, `ChangeBrushSize`, `ChangeOpacity`, `ChangeColor`, `ChangeBrushType`, `ChangeContourSettings`, `ResetView`, `UpdateTransform`, `ToggleEraser`
-- **Состояние:** `status`, `strokes`, `currentStroke`, `contour`, `undoStack`, `redoStack`, `brushSize`, `opacity`, `color`, `brushType`, `isEraser`, `contourColor`, `contourOpacity`, `contourWidth`, `transform`, `error`
+- **Состояние:** `status`, `strokes`, `currentStroke`, `contour`, `undoStack`, `redoStack`, `brushSize`, `opacity`, `color`, `brushType`, `isEraser`, `contourColor`, `contourOpacity`, `transform`, `availableTools`, `activeBrushId`, `activeEraserId`, `isViewOnly`, `viewOnlyReason`, `error`
 - **Статусы:** `initial`, `loading`, `ready`, `drawing`, `saving`, `exporting`, `error`
 - **UseCases:** `AddStrokeUseCase`, `SaveProjectUseCase`, `LoadProjectUseCase`, `GetContourByIdUseCase`, `ExportImageUseCase`, `ShareFileUseCase`
 - **Экран:** `canvas_screen.dart`
@@ -194,7 +210,7 @@
 - **Виджеты:**
   - `color_picker.dart` — `ColorPickerDialog` на `flutter_colorpicker` + кнопка пипетки
   - `brush_picker.dart` — иконки-заглушки
-  - `contour_settings.dart` — цвет, прозрачность, толщина контура
+  - `contour_settings.dart` — цвет и прозрачность контура (толщина не настраивается)
   - `eyedropper_overlay.dart`
   - `export_menu.dart`
   - `toolbars/top_toolbar.dart`, `bottom_toolbar.dart`, `left_controls.dart`
@@ -280,8 +296,8 @@ targets:
 2. **Core_UI** — все виджеты и тема
 3. **Domain** — `use_case.dart` → entities → repositories → usecases → `domain_di.dart`
 4. **Data** — providers → models → mappers → repositories → services → `data_di.dart`
-5. **Navigation** — `AppRouter` с маршрутами Splash, Canvas, Gallery, Settings
-6. **Features** — Splash → Gallery → Canvas → Settings
+5. **Navigation** — `AppRouter` с маршрутами Splash, Canvas, Gallery, Settings, Subscription
+6. **Features** — Splash → Gallery → Canvas → Settings (+ Subscription, Feedback)
 7. **Обновить pubspec.yaml** и **build.yaml**
 8. **Запустить** `./fast_prebuild_script.sh`
 
@@ -298,8 +314,8 @@ targets:
 8. **Ошибки** — UseCase выбрасывают исключения, BLoC перехватывает и вызывает `ErrorHandler`
 9. **Clean Architecture** — Presentation → Domain → Data
 10. **Именование:** папки — snake_case, файлы — snake_case, классы — PascalCase, переменные — camelCase
-11. **Drift** — `Projects`, `Strokes`, `Contours`; `schemaVersion = 1`
-12. **Контур** — отображается `SvgPicture.string` (с применённой толщиной), не рисуется в `CanvasPainter`
+11. **Drift** — `Projects`, `Strokes`, `Brushes`, `Contours`; `schemaVersion = 5`
+12. **Контур** — отображается `SvgPicture.string`/`ContourLayer` без изменения оригинальной толщины, не рисуется в `CanvasPainter`
 13. **Касания** — `Listener`, давление `event.pressure`
 14. **Локализация** — ключи в `core/lib/src/localization/generated/locale_keys.g.dart`
 15. **Тема** — только светлая; `ThemeSwitch` не реализовывать

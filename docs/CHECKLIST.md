@@ -12,62 +12,56 @@
 ## ✅ Core модуль
 - [x] Настроена локализация (easy_localization)
 - [x] Сгенерирован locale_keys.g.dart в `core/lib/src/localization/generated/`
-- [x] Создана светлая тема (AppTheme, lightTheme)
-- [x] Созданы утилиты (constants, logger, result)
-- [x] Добавлен `autosaveDebounce`
+- [x] Созданы утилиты (constants, logger, result, svg_utils, url_utils)
+- [x] Добавлены `autosaveDebounce`, `stalePendingPurchaseThreshold`, `refundDialogMergeWindow`
 - [x] Создан app_locator.dart (GetIt instance)
-- [x] Создан CoreDi (регистрация AppConfig, AppLogger)
-- [x] Создан публичный API (core.dart) с экспортом dotenv и easy_localization
+- [x] Создан CoreDi (регистрация AppConfig, AppLogger, AnalyticsService)
+- [x] Создан публичный API (core.dart) с экспортом dotenv, easy_localization, flutter_bloc и bloc_concurrency
 
 ## ✅ Core_UI модуль
-- [x] Созданы кнопки (PrimaryButton, AppIconButton)
-- [x] Созданы диалоги (LoadingDialog, ErrorDialog со статическим show)
-- [x] Созданы поля ввода (CustomSlider, SearchField)
-- [x] Созданы карточки (ContourCard)
+- [x] Создана светлая тема (AppTheme, lightTheme) — тема находится в `core_ui`, а не в `core`
+- [x] Созданы кнопки (PrimaryButton, AppButton, AppIconButton)
+- [x] Созданы контейнеры панелей (ToolbarContainer)
+- [x] Созданы диалоги (LoadingDialog, ErrorDialog, RefundDialog)
+- [x] Созданы поля ввода (GradientSlider, AppDropdown, SearchField)
 - [x] Создан публичный API (core_ui.dart)
 - [x] `ThemeSwitch` и тёмная тема удалены
+- [x] `ContourCard` перенесена в `features/gallery`
 
 ## ✅ Domain модуль
 - [x] Создан `domain/lib/src/use_cases/use_case.dart`
-- [x] Созданы модели (UserEntity, ContourEntity, ProjectEntity, StrokeEntity, BrushType)
-- [x] Созданы интерфейсы репозиториев (AuthRepository, GalleryRepository, CanvasRepository, SettingsRepository, ShareRepository)
+- [x] Созданы модели (UserEntity, ContourEntity, ProjectEntity, StrokeEntity, ToolEntity, BrushType, SubscriptionEntity, UserEntitlementEntity, PendingPurchaseEntity, PurchaseRefundEntity, FeedbackEntity и др.)
+- [x] Создана доменная логика (`ProjectAccessCalculator`, `StaleSubscriptionPending`)
+- [x] Созданы интерфейсы репозиториев (AuthRepository, GalleryRepository, CanvasRepository, MonetizationRepository, SettingsRepository, ShareRepository, FeedbackRepository)
 - [x] Созданы UseCases:
-    - [x] auth/check_auth_use_case.dart
-    - [x] auth/sign_in_use_case.dart
-    - [x] auth/sign_in_silently_use_case.dart
-    - [x] gallery/get_contours_use_case.dart
-    - [x] gallery/get_contours_by_ids_use_case.dart
-    - [x] gallery/get_favorite_ids_use_case.dart
-    - [x] gallery/toggle_favorite_use_case.dart
-    - [x] gallery/get_work_in_progress_use_case.dart
-    - [x] gallery/get_contour_by_id_use_case.dart
-    - [x] canvas/add_stroke_use_case.dart
-    - [x] canvas/save_project_use_case.dart
-    - [x] canvas/load_project_use_case.dart
-    - [x] canvas/export_image_use_case.dart
-    - [x] canvas/export_image_params.dart
-    - [x] canvas/share_file_use_case.dart
-    - [x] settings/get_settings_use_case.dart
-    - [x] settings/update_settings_use_case.dart
+    - [x] auth: CheckAuth, SignIn, SignInSilently, GetCurrentUser, DeleteAccount
+    - [x] gallery: GetContours, GetContoursByIds, GetFavoriteIds, ToggleFavorite, GetWorkInProgress, GetContourById, GetUsedCategories
+    - [x] canvas: AddStroke, SaveProject, LoadProject, ExportImage, RenderProjectThumbnail, GetAvailableTools, SaveImageToGallery, ShareFile, canvas onboarding
+    - [x] settings: GetSettings, UpdateSettings
+    - [x] feedback: SubmitFeedback
+    - [x] monetization: подписки, покупки проекта/кредита, restore, pending, история, refunds, rewarded unlock
 - [x] Создан DomainDI (регистрация всех UseCases)
 - [x] Создан публичный API (domain.dart)
 
 ## ✅ Data модуль
-- [x] Созданы провайдеры (SupabaseProvider, AppDatabase/Drift, AuthRemoteProvider с currentUserId, GalleryRemoteProvider, GalleryLocalProvider, CanvasRemoteProvider, CanvasLocalProvider)
+- [x] Созданы провайдеры (SupabaseProvider, AppDatabase/Drift, AuthRemoteProvider, GalleryRemoteProvider, GalleryLocalProvider, CanvasRemoteProvider, CanvasLocalProvider, FeedbackRemoteProvider, MonetizationRemoteProvider)
 - [x] В `data` нет папки `datasources`; используется `providers/`
-- [x] Созданы мапперы (ContourMapper, ProjectMapper, StrokeMapper)
-- [x] Созданы модели (UserModel, ContourModel, ProjectModel, StrokeModel)
-- [x] Созданы репозитории (AuthRepositoryImpl, GalleryRepositoryImpl, CanvasRepositoryImpl, SettingsRepositoryImpl, ShareRepositoryImpl)
+- [x] Созданы мапперы (Contour, Project, Stroke, Subscription, UserEntitlement, PendingPurchase, PurchaseRefund)
+- [x] Созданы модели (UserModel, ContourModel, ProjectModel, StrokeModel, SubscriptionModel, SubscriptionPurchaseModel, UserEntitlementModel, PendingPurchaseModel, PurchaseRefundModel)
+- [x] Созданы репозитории (AuthRepositoryImpl, GalleryRepositoryImpl, CanvasRepositoryImpl, MonetizationRepositoryImpl, SettingsRepositoryImpl, ShareRepositoryImpl, FeedbackRepositoryImpl)
 - [x] Создан ShareService (static)
 - [x] Создан GallerySaverService (static)
+- [x] Созданы сервисы биллинга (`BillingPlatform`, `GooglePlayBillingPlatform`), рекламы (`AdService`, `YandexAdService`) и возвратов (`RefundMonitor`, `SupabaseRefundMonitor`)
+- [x] Создан `SubscriptionCache` (in-memory + SharedPreferences, TTL)
 - [x] Создан DataDI (регистрация всех зависимостей)
 - [x] Создан публичный API (data.dart)
-- [x] Drift: таблицы `Projects`, `Strokes`, `Contours`, `schemaVersion = 1`
+- [x] Drift: таблицы `Projects`, `Strokes`, `Brushes`, `Contours`, `schemaVersion = 5`
 
 ## ✅ Navigation модуль
 - [x] Создан AppRouter с auto_route в `navigation/lib/src/app_router/`
-- [x] Маршруты в порядке: Splash, Canvas, Gallery, Settings
-- [x] Создан NavigationDI (регистрация AppRouter) в `navigation/lib/src/di/`
+- [x] Маршруты в порядке: Splash, Canvas, Gallery, Settings, Subscription
+- [x] Все маршруты, кроме Splash, защищены `AuthGuard`
+- [x] Создан NavigationDI (регистрация AuthGuard, AppRouter, AutoRouteObserver) в `navigation/lib/src/di/`
 - [x] Сгенерирован `app_router.gr.dart`
 - [x] Создан публичный API (`navigation.dart`) — экспортирует `auto_route`, `AppRouter`, `NavigationDI`
 
@@ -82,36 +76,61 @@
 ## ✅ Gallery Feature
 - [x] Создан GalleryBloc (события, состояния)
 - [x] Создан GalleryScreen (Screen + Content)
-- [x] Созданы виджеты (ContourCard, FilterChips, EmptyState)
+- [x] Созданы виджеты (GalleryContourCard/ContourCard, FilterChips, EmptyState, UserAvatarButton, ProjectAccessBadge, AdLoadingOverlay)
+- [x] Кнопка-аватар в AppBar открывает `SettingsRoute`
 - [x] FilterChips содержит All, Favorites, In Progress + категории
 - [x] Пагинация по `Constants.pageSize` для всех фильтров через `GetContoursByIdsUseCase`
 - [x] Ошибка отображается через `ErrorDialog`
+- [x] Обрабатываются rewarded-видео, покупка paid-проекта и баннер рекламы
 - [x] Создан публичный API (`gallery.dart`) — только `GalleryRouter` и `GalleryRoute`
 
 ## ✅ Canvas Feature
 - [x] Создан CanvasBloc (события, состояния)
 - [x] `CanvasState` содержит статусы initial, loading, ready, drawing, saving, exporting, error
 - [x] Создан CanvasScreen (Screen + Content)
-- [x] Создан CanvasPainter — рисует белый фон и мазки (полная история точек)
-- [x] Контур отображается через `SvgPicture.string` (с применением толщины)
+- [x] Отрисовка мазков через `RasterCanvasBuffer` (завершённые) и `ActiveStrokePainter` (текущий); `CanvasPainter` существует, но в текущем стеке холста не используется
+- [x] Контур отображается через `ContourLayer`/`SvgPicture.string` без изменения оригинальной толщины
 - [x] Реализовано сглаживание контура (Smooth Contour)
 - [x] Реализована поддержка поворота холста
 - [x] Обработка касаний через `Listener` с `event.pressure` и коррекцией масштаба
 - [x] Автосохранение с `autosaveDebounce` и при сворачивании (включая настройки контура)
-- [x] Интеллектуальный Undo/redo через `undoStack`/`redoStack`
+- [x] Интеллектуальный Undo/redo через `undoStack`/`redoStack` (до 5 шагов)
 - [x] Экспорт: `ExportImageUseCase` + `ShareFileUseCase` / `SaveImageToGalleryUseCase` через `CanvasBloc`
+- [x] Режим только просмотра (`isViewOnly`) с баннером причины и разблокировкой
+- [x] Onboarding холста и кнопка информации
 - [x] Созданы виджеты:
     - [x] Стандартизированный `AppIconButton` (24/18px)
     - [x] ColorPicker (Overlay + Hue slider + Black-fix)
-    - [x] ContourSettings (Overlay + Gradient Opacity Slider)
+    - [x] Палитра контура (цвет и прозрачность)
+    - [x] Toolbar-панели (`TopToolbar`, `BottomToolbar`, `LeftControls`)
 - [x] Создан публичный API (`canvas.dart`) — только `CanvasRouter` и `CanvasRoute`
 
 ## ✅ Settings Feature
 - [x] Создан SettingsBloc (события, состояния)
-- [x] Создан SettingsScreen (Screen + Content)
-- [x] Создан LanguagePicker
+- [x] Создан SettingsScreen (Screen + Content) — экран профиля
+- [x] Создан ProfileUserHeader с рамкой аватара по плану подписки
+- [x] Создан ProfileSubscriptionStatus и переход на `SubscriptionRoute`
+- [x] Создан LanguagePicker для 7 локалей
+- [x] Добавлены FeedbackActions/FeedbackButton
+- [x] Добавлено удаление аккаунта с подтверждением
 - [x] Удалён ThemeSwitch / тёмная тема
 - [x] Создан публичный API (`settings.dart`) — только `SettingsRouter` и `SettingsRoute`
+
+## ✅ Subscription Feature
+- [x] Создан SubscriptionBloc (события, состояния)
+- [x] Создан SubscriptionScreen (Screen + Content)
+- [x] Создан SubscriptionStatusBlock с датой окончания и бейджем отключённого автообновления
+- [x] Созданы SubscriptionPlanCard и PlanPeriodSelector для No Ads / Premium
+- [x] Создан PurchaseHistorySection (максимальная высота 200 px, внутренний скролл)
+- [x] Созданы PurchaseDialog и обработка результата покупки
+- [x] Фоновое обновление показывает `LinearProgressIndicator`, не скрывая контент
+- [x] Нет кнопки отмены подписки — отмена выполняется в Google Play
+- [x] Создан публичный API (`subscription.dart`) — `SubscriptionRoute`
+
+## ✅ Feedback Feature
+- [x] Создан FeedbackBloc (события, состояния)
+- [x] Созданы форма, вложения и `showFeedbackForm`
+- [x] Создан публичный API (`feedback.dart`)
 
 ## ✅ Error Handler
 - [x] Создан глобальный ErrorHandler с `GlobalKey<NavigatorState>`
@@ -142,7 +161,9 @@
 - [x] `prebuild_script_gallery.sh` (flutter pub get + build_runner)
 - [x] `prebuild_script_canvas.sh` (flutter pub get + build_runner)
 - [x] `prebuild_script_settings.sh` (flutter pub get + build_runner)
+- [x] `prebuild_script_subscription.sh` (flutter pub get + build_runner)
 - [x] `fast_prebuild_script.sh`
+- [x] У `features/feedback` нет prebuild-скрипта, потому что модуль не использует кодогенерацию
 
 ## ✅ Монетизация
 - [x] Доменные сущности: `ContourAccessType`, `SubscriptionPlanType`, `EntitlementType`, `SubscriptionEntity`, `UserEntitlementEntity`, `ProjectAccess`
@@ -184,6 +205,6 @@
 ## ✅ Деплой
 - [ ] Настроена сборка для dev
 - [ ] Настроена сборка для prod
-- [ ] Созданы иконки
-- [ ] Создан Splash Screen
+- [x] Созданы иконки (`flutter_launcher_icons`, Android/iOS ресурсы)
+- [x] Создан Splash Screen (`features/splash` + `flutter_native_splash`)
 - [ ] Настроена публикация в магазины

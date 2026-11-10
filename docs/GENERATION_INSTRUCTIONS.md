@@ -1,5 +1,18 @@
 # Инструкция для генерации кода
 
+> **Исторический документ.** Это исходное задание на генерацию проекта, а не
+> описание текущего кода. Актуальные сведения поддерживаются в
+> [ARCHITECTURE.md](ARCHITECTURE.md), [UI_SPEC.md](UI_SPEC.md),
+> [API_SPEC.md](API_SPEC.md) и [MONETIZATION.md](MONETIZATION.md).
+>
+> Известные расхождения с текущим кодом:
+> - `cards/contour_card.dart` перенесён из `core_ui` в `features/gallery`;
+> - Drift-схема уже не v3, а v5, и содержит таблицы `Projects`, `Strokes`,
+>   `Brushes`, `Contours`;
+> - появились модули `subscription` и `feedback`, монетизация (подписки,
+>   разовые покупки, реклама, возвраты) и 7 локалей;
+> - толщина контура больше не настраивается приложением.
+
 ## Цель
 Сгенерировать полностью работающее Flutter приложение на основе Clean Architecture с использованием BLoC, get_it (appLocator), easy_localization, auto_route и Drift (SQLite).
 
@@ -17,7 +30,7 @@
 3. `buttons/icon_button.dart` — `AppIconButton` (24px, иконка 18px).
 4. `dialogs/error_dialog.dart` — диалог ошибки со статическим методом `show`.
 5. `inputs/gradient_slider.dart` — слайдер с поддержкой градиентов.
-6. `cards/contour_card.dart` — карточка контура.
+6. `features/gallery` (исторически `core_ui/cards/contour_card.dart`) — карточка контура.
 7. Обновить `core_ui.dart` — добавить экспорты.
 
 ### Этап 3: Domain (создать полностью)
@@ -35,7 +48,7 @@
 
 ### Этап 4: Data (создать полностью)
 1. **Providers:**
-    - `database_provider.dart` — Drift БД. Таблица `Contours` с полем `svgUrl`. Схема v3.
+    - `database_provider.dart` — Drift БД. Таблица `Contours` с полем `svgUrl`. Исторически здесь была схема v3; текущая схема — v5.
     - `gallery_remote_provider.dart` — методы для получения контуров и списка категорий.
 2. **Models (DTO):**
     - `contour_model.dart` (мапинг `svg_data` из БД в `svgUrl`).
@@ -82,7 +95,7 @@
 3. Весь UI декларативен и разбит на мелкие файлы.
 
 ## Drift (SQLite)
-Генерация через `drift_dev`. Схема v3 (svg_url в контурах).
+Генерация через `drift_dev`. Историческая схема v3 (svg_url в контурах); текущая схема — v5 (`Projects`, `Strokes`, `Brushes`, `Contours`).
 
 ## Запуск приложения
 Через точки входа `main_dev.dart` и `main_prod.dart`.
