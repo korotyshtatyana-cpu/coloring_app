@@ -13,6 +13,8 @@ export 'src/services/ad_service_factory.dart';
 export 'src/services/apple_billing_platform.dart';
 export 'src/services/billing_platform.dart';
 export 'src/services/billing_platform_factory.dart';
+export 'src/services/firebase_crash_reporter.dart';
+export 'src/services/firebase_options_factory.dart';
 export 'src/services/google_play_billing_platform.dart';
 export 'src/services/refund_monitor.dart';
 export 'src/services/rewarded_ad_outcome.dart';

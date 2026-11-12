@@ -16,6 +16,7 @@
 - [x] Добавлены `autosaveDebounce`, `stalePendingPurchaseThreshold`, `refundDialogMergeWindow`
 - [x] Создан app_locator.dart (GetIt instance)
 - [x] Создан CoreDi (регистрация AppConfig, AppLogger, AnalyticsService)
+- [x] Создан CrashReporter (интерфейс, NoopCrashReporter, PiiScrubber, фильтрация логов)
 - [x] Создан публичный API (core.dart) с экспортом dotenv, easy_localization, flutter_bloc и bloc_concurrency
 
 ## ✅ Core_UI модуль

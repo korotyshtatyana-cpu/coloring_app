@@ -59,3 +59,6 @@ ios/Runner/GoogleService-Info.plist
 /android/app/*.jks
 
 .artifacts
+
+android/app/src/dev/google-services.json
+android/app/src/prod/google-services.json

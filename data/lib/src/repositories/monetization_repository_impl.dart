@@ -84,6 +84,7 @@ class MonetizationRepositoryImpl implements MonetizationRepository {
           'product_id': previous.productId,
         },
       );
+      appLocator<CrashReporter>().setCustomKey('monetization_plan', 'none');
     }
 
     // An inactive-to-active transition means a renewal or a restored plan.
@@ -94,7 +95,15 @@ class MonetizationRepositoryImpl implements MonetizationRepository {
       _logger.debug(
         '[Monetization] Subscription activated: plan=${model.planType}',
       );
+      appLocator<CrashReporter>().setCustomKey(
+        'monetization_plan',
+        model.planType,
+      );
     }
+
+    final String activePlan =
+        (model != null && model.isActive) ? model.planType : 'none';
+    appLocator<CrashReporter>().setCustomKey('monetization_plan', activePlan);
 
     _subscriptionCache.writeSubscription(userId, model);
     return model == null ? null : SubscriptionMapper.toEntity(model);
@@ -892,7 +901,6 @@ class MonetizationRepositoryImpl implements MonetizationRepository {
         ),
       );
     } catch (error, stackTrace) {
-      ErrorHandler.report(error, stackTrace);
       // The store already confirmed the payment, so a verification failure
       // (network hiccup, function error, database issue) must never be shown
       // as a failed purchase: the transaction stays owned by the store and is
@@ -904,6 +912,8 @@ class MonetizationRepositoryImpl implements MonetizationRepository {
           'product=${purchase.productID}'
           '${_basePlanLogPart(purchase.productID)}, '
           'error=$error',
+          error,
+          stackTrace,
         );
         _analytics.logEvent(
           AnalyticsEvents.purchasePending,
@@ -928,6 +938,8 @@ class MonetizationRepositoryImpl implements MonetizationRepository {
         '[Monetization] Purchase failed: product=${purchase.productID}'
         '${_basePlanLogPart(purchase.productID)}, '
         'error=$error',
+        error,
+        stackTrace,
       );
       _analytics.logEvent(
         AnalyticsEvents.purchaseFailed,

@@ -42,7 +42,7 @@
 - **Покупки:** in_app_purchase, in_app_purchase_android (Google Play Billing)
 - **Реклама:** yandex_mobileads (Rewarded Video + баннер)
 - **Флейворы:** dev, prod (через main_dev.dart и main_prod.dart)
-- **Логирование:** logger (AppLogger)
+- **Логирование и отчёты об ошибках:** logger (AppLogger), Firebase Crashlytics (CrashReporter, PiiScrubber)
 - **Экспорт:** share_plus, saver_gallery
 
 ## Структура проекта

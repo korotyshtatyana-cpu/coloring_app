@@ -4,10 +4,12 @@ import 'package:auto_route/auto_route.dart';
 import 'package:core/core.dart';
 import 'package:core_ui/core_ui.dart';
 import 'package:domain/domain.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:subscription/subscription.dart';
 
 import '../bloc/settings_bloc.dart';
+import '../widgets/debug_crash_button.dart';
 import '../widgets/feedback/feedback_actions.dart';
 import '../widgets/language_picker.dart';
 import '../widgets/profile_subscription_status.dart';
@@ -132,6 +134,7 @@ class SettingsContent extends StatelessWidget {
                   color: Colors.redAccent,
                   onPressed: () => _showDeleteConfirmation(context),
                 ),
+                if (kDebugMode) const DebugCrashButton(),
                 const SizedBox(height: 16),
               ],
             ),

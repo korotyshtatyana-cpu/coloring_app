@@ -1,5 +1,10 @@
+import 'dart:io';
+
 import 'package:core/core.dart';
 import 'package:domain/domain.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data.dart';
@@ -10,12 +15,52 @@ abstract class DataDI {
   static Future<void> initDependencies() async {
     final config = appLocator<AppConfig>();
 
+    await _initCrashlytics(config);
     await _initApi(config);
     _initProviders();
     await _initServices(config);
     _initRepositories(config);
     await _initBilling();
     await _initAds();
+  }
+
+  static Future<void> _initCrashlytics(AppConfig config) async {
+    if (config.hasFirebaseConfig) {
+      try {
+        await Firebase.initializeApp(
+          options: FirebaseOptionsFactory.create(config),
+        );
+        await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(
+          !kDebugMode,
+        );
+        final CrashReporter reporter = FirebaseCrashReporter();
+        appLocator.registerSingleton<CrashReporter>(reporter);
+
+        reporter.setCustomKey('flavor', config.flavor.name);
+        final String appVersion = await AppVersion.version;
+        final String buildNumber = await AppVersion.buildNumber;
+        reporter.setCustomKey('app_version', appVersion);
+        reporter.setCustomKey('build_number', buildNumber);
+        reporter.setCustomKey('platform', Platform.operatingSystem);
+        reporter.setCustomKey('locale', Platform.localeName);
+
+        appLocator<AppLogger>().setCrashReporter(reporter);
+        return;
+      } catch (error, stackTrace) {
+        ErrorHandler.report(error, stackTrace);
+        appLocator<AppLogger>().warning(
+          'Firebase Crashlytics init failed; using NoopCrashReporter',
+        );
+      }
+    } else {
+      appLocator<AppLogger>().warning(
+        'Firebase Crashlytics is not configured; using NoopCrashReporter',
+      );
+    }
+
+    const CrashReporter fallback = NoopCrashReporter();
+    appLocator.registerSingleton<CrashReporter>(fallback);
+    appLocator<AppLogger>().setCrashReporter(fallback);
   }
 
   static Future<void> _initApi(AppConfig config) async {
@@ -34,13 +79,17 @@ abstract class DataDI {
   }
 
   static void _initRepositories(AppConfig config) {
-    appLocator.registerLazySingleton<ShareRepository>(() => const ShareRepositoryImpl());
+    appLocator.registerLazySingleton<ShareRepository>(
+      () => const ShareRepositoryImpl(),
+    );
 
     appLocator.registerLazySingleton<SubscriptionCache>(
       () => SubscriptionCache(preferences: appLocator<SharedPreferences>()),
     );
 
-    appLocator.registerSingleton<BillingPlatform>(BillingPlatformFactory.create());
+    appLocator.registerSingleton<BillingPlatform>(
+      BillingPlatformFactory.create(),
+    );
 
     appLocator.registerSingleton<AdService>(
       AdServiceFactory.create(
@@ -58,7 +107,8 @@ abstract class DataDI {
     );
 
     appLocator.registerLazySingleton<GalleryRemoteProvider>(
-      () => GalleryRemoteProvider(client: appLocator<SupabaseProvider>().client),
+      () =>
+          GalleryRemoteProvider(client: appLocator<SupabaseProvider>().client),
     );
 
     appLocator.registerLazySingleton<GalleryLocalProvider>(
@@ -66,7 +116,8 @@ abstract class DataDI {
     );
 
     appLocator.registerLazySingleton<FeedbackRemoteProvider>(
-      () => FeedbackRemoteProvider(client: appLocator<SupabaseProvider>().client),
+      () =>
+          FeedbackRemoteProvider(client: appLocator<SupabaseProvider>().client),
     );
 
     appLocator.registerLazySingleton<CanvasRemoteProvider>(
@@ -78,7 +129,9 @@ abstract class DataDI {
     );
 
     appLocator.registerLazySingleton<MonetizationRemoteProvider>(
-      () => MonetizationRemoteProvider(client: appLocator<SupabaseProvider>().client),
+      () => MonetizationRemoteProvider(
+        client: appLocator<SupabaseProvider>().client,
+      ),
     );
 
     appLocator.registerLazySingleton<RefundMonitor>(
@@ -122,24 +175,29 @@ abstract class DataDI {
     );
 
     appLocator.registerLazySingleton<SettingsRepository>(
-      () => SettingsRepositoryImpl(preferences: appLocator<SharedPreferences>()),
+      () =>
+          SettingsRepositoryImpl(preferences: appLocator<SharedPreferences>()),
     );
 
     appLocator.registerLazySingleton<FeedbackRepository>(
-      () => FeedbackRepositoryImpl(remoteProvider: appLocator<FeedbackRemoteProvider>()),
+      () => FeedbackRepositoryImpl(
+        remoteProvider: appLocator<FeedbackRemoteProvider>(),
+      ),
     );
   }
 
   static Future<void> _initBilling() async {
     try {
-      // Resolve the repository eagerly so its purchase subscription is
-      // established before unfinished transactions are re-delivered.
       appLocator<MonetizationRepository>();
       await appLocator<BillingPlatform>().initialize();
     } on UnimplementedError catch (_) {
-      appLocator<AppLogger>().warning('Billing platform is not implemented yet');
+      appLocator<AppLogger>().warning(
+        'Billing platform is not implemented yet',
+      );
     } on UnsupportedError catch (_) {
-      appLocator<AppLogger>().warning('Billing is not supported on this platform');
+      appLocator<AppLogger>().warning(
+        'Billing is not supported on this platform',
+      );
     }
   }
 

@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:core/core.dart';
 import 'package:domain/domain.dart';
 import '../models/contour_model.dart';
 import '../providers/gallery_local_provider.dart';
@@ -103,7 +103,7 @@ class GalleryRepositoryImpl implements GalleryRepository {
     try {
       return await _remoteProvider.getFavoriteIds();
     } catch (e) {
-      debugPrint('Failed to fetch favorite IDs: $e');
+      appLocator<AppLogger>().warning('Failed to fetch favorite IDs: $e');
       return <String>[];
     }
   }
@@ -163,7 +163,7 @@ class GalleryRepositoryImpl implements GalleryRepository {
         return ContourMapper.toEntity(cached);
       }
     } catch (e) {
-      debugPrint('Error getting contour by ID: $e');
+      appLocator<AppLogger>().warning('Error getting contour by ID: $e');
     }
     return null;
   }

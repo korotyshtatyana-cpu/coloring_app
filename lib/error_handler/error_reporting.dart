@@ -9,6 +9,8 @@ abstract final class ErrorReporting {
     String? message,
   ]) {
     final String logMessage = message ?? 'Reporting error: $error';
-    appLocator<AppLogger>().error(logMessage, error, stackTrace);
+    if (appLocator.isRegistered<AppLogger>()) {
+      appLocator<AppLogger>().error(logMessage, error, stackTrace);
+    }
   }
 }

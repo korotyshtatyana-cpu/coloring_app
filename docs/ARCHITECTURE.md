@@ -52,7 +52,10 @@ core/lib/
     │       └── locale_keys.g.dart   # Автогенерируемые ключи
     ├── services/
     │   ├── analytics_service.dart   # Аналитические события
-    │   └── app_version.dart         # Номер сборки для dev-сборок
+    │   ├── app_version.dart         # Номер сборки для dev-сборок
+    │   ├── crash_reporter.dart      # Интерфейс CrashReporter
+    │   ├── noop_crash_reporter.dart # Заглушка NoopCrashReporter
+    │   └── pii_scrubber.dart        # Очистка PII персональных данных
     └── utils/
         ├── constants.dart       # Константы приложения
         ├── logger.dart          # AppLogger

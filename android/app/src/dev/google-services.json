@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "522189767130",
+    "project_id": "coloring-pro-dev",
+    "storage_bucket": "coloring-pro-dev.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:522189767130:android:2ac0a757419ea0e27340e3",
+        "android_client_info": {
+          "package_name": "com.korotysh.tatyana.coloringpro"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAr9yWVN51CTVKKthfPnJLGzxgS6cLq584"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
