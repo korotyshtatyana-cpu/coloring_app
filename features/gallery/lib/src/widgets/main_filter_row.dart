@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import '../bloc/gallery_bloc.dart';
 import 'gallery_filter_chip.dart';
 
-/// Main filters for gallery (All, Favorites, In Progress).
+/// Main filters for gallery (All, Favorites, In Progress, Free, New).
 class MainFilterRow extends StatelessWidget {
   /// Creates [MainFilterRow].
   const MainFilterRow({super.key});
@@ -38,6 +38,18 @@ class MainFilterRow extends StatelessWidget {
             label: context.tr(LocaleKeys.work_in_progress),
             isActive: activeFilter == FilterType.inProgress,
             onTap: () => _onFilterChanged(context, FilterType.inProgress),
+          ),
+          const SizedBox(width: 8),
+          GalleryFilterChip(
+            label: context.tr(LocaleKeys.contour_access_free),
+            isActive: activeFilter == FilterType.free,
+            onTap: () => _onFilterChanged(context, FilterType.free),
+          ),
+          const SizedBox(width: 8),
+          GalleryFilterChip(
+            label: context.tr(LocaleKeys.new_arrivals),
+            isActive: activeFilter == FilterType.newArrivals,
+            onTap: () => _onFilterChanged(context, FilterType.newArrivals),
           ),
         ],
       ),

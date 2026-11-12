@@ -46,7 +46,10 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
     required this._adService,
   }) : super(const GalleryState()) {
     on<LoadContours>(_onLoadContours, transformer: droppable());
-    on<LoadMonetizationStatus>(_onLoadMonetizationStatus, transformer: restartable());
+    on<LoadMonetizationStatus>(
+      _onLoadMonetizationStatus,
+      transformer: restartable(),
+    );
     on<ChangeFilter>(_onChangeFilter);
     on<SelectCategory>(_onSelectCategory);
     on<ToggleFavorite>(_onToggleFavorite);
@@ -55,14 +58,18 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
     _initRefundWatch();
   }
 
-  Future<void> _onLoadContours(LoadContours event, Emitter<GalleryState> emit) async {
+  Future<void> _onLoadContours(
+    LoadContours event,
+    Emitter<GalleryState> emit,
+  ) async {
     try {
       emit(state.copyWith(status: GalleryStatus.loading, error: null));
 
       // Fetch favorites and WIP IDs only on reset (first load or filter change)
       List<String> favoriteIds = state.favoriteIds;
       List<String> workInProgressIds = state.workInProgressIds;
-      Map<String, String?> workInProgressThumbnails = state.workInProgressThumbnails;
+      Map<String, String?> workInProgressThumbnails =
+          state.workInProgressThumbnails;
       List<ContourCategory> availableCategories = state.availableCategories;
 
       if (event.reset) {
@@ -70,7 +77,8 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
         availableCategories = await _getUsedCategoriesUseCase.execute();
         // Entries come ordered by the date of the last change, most recent
         // first; the ids below keep that order for the WIP filter.
-        final List<WorkInProgressEntity> workInProgress = await _getWorkInProgressUseCase.execute();
+        final List<WorkInProgressEntity> workInProgress =
+            await _getWorkInProgressUseCase.execute();
         workInProgressIds = workInProgress
             .map((WorkInProgressEntity entry) => entry.contourId)
             .toList();
@@ -84,37 +92,25 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
       final bool hasReachedMax;
       final int currentPage;
 
-      if (state.activeFilter == FilterType.all) {
+      if (_isCatalogFilter(state.activeFilter)) {
         final pageContours = await _getContoursUseCase.execute(
           GetContoursParams(
             limit: Constants.pageSize,
             offset: event.reset ? 0 : state.currentPage * Constants.pageSize,
             category: state.selectedCategory,
+            accessType: state.activeFilter == FilterType.free
+                ? ContourAccessType.free
+                : null,
+            onlyNew: state.activeFilter == FilterType.newArrivals,
           ),
         );
         final List<ContourEntity> combined = event.reset
             ? pageContours
             : <ContourEntity>[...state.contours, ...pageContours];
 
-        // Prioritize WIP items at the top of the "All" list
-        if (workInProgressIds.isNotEmpty) {
-          combined.sort((a, b) {
-            final aIndex = workInProgressIds.indexOf(a.id);
-            final bIndex = workInProgressIds.indexOf(b.id);
-
-            // Both are WIP: follow last_opened order (stored in workInProgressIds)
-            if (aIndex != -1 && bIndex != -1) return aIndex.compareTo(bIndex);
-            // Only A is WIP: A goes first
-            if (aIndex != -1) return -1;
-            // Only B is WIP: B goes first
-            if (bIndex != -1) return 1;
-
-            // Neither is WIP: keep default repository order (usually created_at desc)
-            return 0;
-          });
-        }
-
-        contours = combined;
+        // Catalog filters keep started projects on top; the remaining items
+        // keep the repository order (created_at desc for "New").
+        contours = _prioritizeWorkInProgress(combined, workInProgressIds);
         hasReachedMax = pageContours.length < Constants.pageSize;
         currentPage = event.reset ? 1 : state.currentPage + 1;
       } else {
@@ -128,14 +124,15 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
           hasReachedMax = true;
           currentPage = state.currentPage;
         } else {
-          final List<ContourEntity> pageContours = await _getContoursByIdsUseCase.execute(
-            GetContoursByIdsParams(
-              ids: targetIds,
-              limit: Constants.pageSize,
-              offset: offset,
-              category: state.selectedCategory,
-            ),
-          );
+          final List<ContourEntity> pageContours =
+              await _getContoursByIdsUseCase.execute(
+                GetContoursByIdsParams(
+                  ids: targetIds,
+                  limit: Constants.pageSize,
+                  offset: offset,
+                  category: state.selectedCategory,
+                ),
+              );
 
           contours = event.reset
               ? pageContours
@@ -190,13 +187,15 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
       // the access resolution below always sees the revoked state.
       await _loadRefunds(user.id);
 
-      final SubscriptionEntity? activeSubscription = await _getActiveSubscriptionUseCase.execute(
+      final SubscriptionEntity? activeSubscription =
+          await _getActiveSubscriptionUseCase.execute(user.id);
+      final bool noAdsPurchased = await _isNoAdsPurchasedUseCase.execute(
         user.id,
       );
-      final bool noAdsPurchased = await _isNoAdsPurchasedUseCase.execute(user.id);
       final SubscriptionPlanType? planType = _getSubscriptionPlanTypeUseCase
           .execute(activeSubscription);
-      final bool showAds = activeSubscription?.isActiveNow() != true && !noAdsPurchased;
+      final bool showAds =
+          activeSubscription?.isActiveNow() != true && !noAdsPurchased;
 
       // The plan drives the avatar frame, so it must be refreshed even when
       // there are no contours to resolve access for.
@@ -213,18 +212,20 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
         return;
       }
 
-      final List<GalleryItemEntity> items = await _getGalleryItemsUseCase.execute(
-        GetGalleryItemsParams(
-          contours: state.contours,
-          userId: user.id,
-          inProgressContourIds: state.workInProgressIds.toSet(),
-        ),
-      );
+      final List<GalleryItemEntity> items = await _getGalleryItemsUseCase
+          .execute(
+            GetGalleryItemsParams(
+              contours: state.contours,
+              userId: user.id,
+              inProgressContourIds: state.workInProgressIds.toSet(),
+            ),
+          );
 
       emit(
         state.copyWith(
           projectAccessById: <String, ProjectAccess>{
-            for (final GalleryItemEntity item in items) item.contour.id: item.access,
+            for (final GalleryItemEntity item in items)
+              item.contour.id: item.access,
           },
           showAds: showAds,
           planType: planType,
@@ -275,7 +276,10 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
     return super.close();
   }
 
-  Future<void> _onChangeFilter(ChangeFilter event, Emitter<GalleryState> emit) async {
+  Future<void> _onChangeFilter(
+    ChangeFilter event,
+    Emitter<GalleryState> emit,
+  ) async {
     emit(
       state.copyWith(
         activeFilter: event.filter,
@@ -287,12 +291,24 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
     add(const LoadContours(reset: true));
   }
 
-  Future<void> _onSelectCategory(SelectCategory event, Emitter<GalleryState> emit) async {
-    emit(state.copyWith(selectedCategory: event.category, currentPage: 0, hasReachedMax: false));
+  Future<void> _onSelectCategory(
+    SelectCategory event,
+    Emitter<GalleryState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        selectedCategory: event.category,
+        currentPage: 0,
+        hasReachedMax: false,
+      ),
+    );
     add(const LoadContours(reset: true));
   }
 
-  Future<void> _onToggleFavorite(ToggleFavorite event, Emitter<GalleryState> emit) async {
+  Future<void> _onToggleFavorite(
+    ToggleFavorite event,
+    Emitter<GalleryState> emit,
+  ) async {
     try {
       await _toggleFavoriteUseCase.execute(event.contourId);
 
@@ -317,7 +333,10 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
     }
   }
 
-  Future<void> _onOpenContour(OpenContour event, Emitter<GalleryState> emit) async {
+  Future<void> _onOpenContour(
+    OpenContour event,
+    Emitter<GalleryState> emit,
+  ) async {
     final ContourEntity? contour = _findContour(event.contourId);
     final ProjectAccess? access = state.projectAccessById[event.contourId];
     if (contour == null || access == null) {
@@ -335,7 +354,8 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
       return;
     }
 
-    final bool needsRewardedAd = access == ProjectAccess.locked &&
+    final bool needsRewardedAd =
+        access == ProjectAccess.locked &&
         contour.accessType == ContourAccessType.rewarded;
 
     if (!needsRewardedAd) {
@@ -369,8 +389,53 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
     );
   }
 
-  void _onAccessRequestHandled(AccessRequestHandled event, Emitter<GalleryState> emit) {
+  void _onAccessRequestHandled(
+    AccessRequestHandled event,
+    Emitter<GalleryState> emit,
+  ) {
     emit(state.copyWith(clearAccessRequest: true, isLoadingAd: false));
+  }
+
+  /// Whether [filter] pages through the catalog instead of a fixed id list.
+  bool _isCatalogFilter(FilterType filter) {
+    return filter == FilterType.all ||
+        filter == FilterType.free ||
+        filter == FilterType.newArrivals;
+  }
+
+  /// Moves started projects to the top in their last-opened order.
+  ///
+  /// The remaining contours keep their repository order, so a "New" query
+  /// stays ordered by `created_at` desc instead of being reshuffled by an
+  /// unstable sort.
+  List<ContourEntity> _prioritizeWorkInProgress(
+    List<ContourEntity> contours,
+    List<String> workInProgressIds,
+  ) {
+    if (workInProgressIds.isEmpty) {
+      return contours;
+    }
+
+    final Map<String, int> orderById = <String, int>{
+      for (int i = 0; i < workInProgressIds.length; i++)
+        workInProgressIds[i]: i,
+    };
+    final List<ContourEntity> started = <ContourEntity>[];
+    final List<ContourEntity> rest = <ContourEntity>[];
+
+    for (final ContourEntity contour in contours) {
+      if (orderById.containsKey(contour.id)) {
+        started.add(contour);
+      } else {
+        rest.add(contour);
+      }
+    }
+
+    started.sort(
+      (ContourEntity a, ContourEntity b) =>
+          orderById[a.id]!.compareTo(orderById[b.id]!),
+    );
+    return <ContourEntity>[...started, ...rest];
   }
 
   ContourEntity? _findContour(String contourId) {

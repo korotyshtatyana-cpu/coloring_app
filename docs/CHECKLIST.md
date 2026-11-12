@@ -79,7 +79,7 @@
 - [x] Создан GalleryScreen (Screen + Content)
 - [x] Созданы виджеты (GalleryContourCard/ContourCard, FilterChips, EmptyState, UserAvatarButton, ProjectAccessBadge, AdLoadingOverlay)
 - [x] Кнопка-аватар в AppBar открывает `SettingsRoute`
-- [x] FilterChips содержит All, Favorites, In Progress + категории
+- [x] FilterChips содержит All, Favorites, In Progress, Free, New + категории
 - [x] Пагинация по `Constants.pageSize` для всех фильтров через `GetContoursByIdsUseCase`
 - [x] Ошибка отображается через `ErrorDialog`
 - [x] Обрабатываются rewarded-видео, покупка paid-проекта и баннер рекламы

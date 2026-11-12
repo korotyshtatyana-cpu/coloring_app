@@ -191,7 +191,7 @@
 - **UseCases:** `GetContoursUseCase`, `GetContoursByIdsUseCase`, `GetFavoriteIdsUseCase`, `GetWorkInProgressUseCase`, `ToggleFavoriteUseCase`
 - **Экраны:** `gallery_screen.dart`
 - **Виджеты:** `contour_card.dart`, `filter_chips.dart`, `empty_state.dart`
-- **Фильтры:** All, Favorites, In Progress + категории из `API_SPEC.md`
+- **Фильтры:** All, Favorites, In Progress, Free, New + категории из `API_SPEC.md`
 - **Пагинация:** `Constants.pageSize` для всех фильтров, включая Favorites/InProgress через `GetContoursByIdsUseCase`
 - **Ошибка:** отображается через `ErrorDialog.show`
 

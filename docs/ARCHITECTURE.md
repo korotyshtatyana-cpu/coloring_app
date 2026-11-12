@@ -328,7 +328,7 @@ data/lib/
 **Провайдеры:**
 - `SupabaseProvider` — инициализация Supabase с конфигом
 - `AppDatabase` (Drift) — база данных SQLite с таблицами `Projects`, `Strokes`, `Brushes` и `Contours`. Текущая схема — v6 (добавлено поле `categories` типа JSON-массив с автоматической миграцией старых строк).
-- `GalleryRemoteProvider` — получение контуров и избранного из Supabase. Поддерживает миграционную стратегию **Expand and Contract**: выполняет фильтрацию контуров через `.contains('categories', [category_name])`, а при парсинге DTO отдает приоритет массиву `categories` с фолбеком на одиночное поле `category`. Метод `getUsedCategories` считывает массивы и одиночные поля, объединяя уникальные категории.
+- `GalleryRemoteProvider` — получение контуров и избранного из Supabase. Поддерживает миграционную стратегию **Expand and Contract**: выполняет фильтрацию контуров через `.contains('categories', [category_name])`, а при парсинге DTO отдает приоритет массиву `categories` с фолбеком на одиночное поле `category`. Метод `getUsedCategories` считывает массивы и одиночные поля, объединяя уникальные категории. Фильтры «Бесплатно» и «Новые» выполняются серверными запросами через `.eq('access_type', 'free')` и `.gte('created_at', now - 30 days)` с сортировкой `created_at desc`.
 - `MonetizationRemoteProvider` — подписки, покупки, entitlements, pending-покупки и возвраты.
 - `FeedbackRemoteProvider` — загрузка вложений в Storage и запись обратной связи.
 - `CanvasRenderingService` — рендеринг холста в PNG. Использует raw XML контура.

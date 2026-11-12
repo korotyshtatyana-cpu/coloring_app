@@ -22,29 +22,68 @@ class GalleryRepositoryImpl implements GalleryRepository {
     required int limit,
     required int offset,
     ContourCategory? category,
+    ContourAccessType? accessType,
+    DateTime? createdAfter,
   }) async {
     try {
       final contours = await _remoteProvider.getContours(
         limit: limit,
         offset: offset,
         category: category,
+        accessType: accessType,
+        createdAfter: createdAfter,
       );
       await _localProvider.cacheContours(contours);
       return contours.map(ContourMapper.toEntity).toList();
     } catch (_) {
       final cached = await _localProvider.getCachedContours();
-      final filtered = cached
-          .where(
-            (ContourModel contour) =>
-                category == null || contour.categories.contains(category),
-          )
-          .toList();
+      final filtered = _filterCached(
+        cached,
+        category: category,
+        accessType: accessType,
+        createdAfter: createdAfter,
+      );
       return _paginate(
         filtered,
         offset: offset,
         limit: limit,
       ).map(ContourMapper.toEntity).toList();
     }
+  }
+
+  /// Applies catalog filters to cached contours for the offline fallback.
+  ///
+  /// When [createdAfter] is set the result is ordered newest first, matching
+  /// the remote `created_at desc` order used by the "New" filter.
+  List<ContourModel> _filterCached(
+    List<ContourModel> cached, {
+    ContourCategory? category,
+    ContourAccessType? accessType,
+    DateTime? createdAfter,
+  }) {
+    final List<ContourModel> filtered = cached.where((ContourModel contour) {
+      final bool matchesCategory =
+          category == null || contour.categories.contains(category);
+      final bool matchesAccess =
+          accessType == null || contour.accessType == accessType.dbValue;
+      final DateTime? createdAt = contour.createdAt;
+      final bool matchesDate =
+          createdAfter == null ||
+          (createdAt != null && !createdAt.isBefore(createdAfter));
+      return matchesCategory && matchesAccess && matchesDate;
+    }).toList();
+
+    if (createdAfter != null) {
+      filtered.sort((ContourModel a, ContourModel b) {
+        final DateTime aCreated =
+            a.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final DateTime bCreated =
+            b.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+        return bCreated.compareTo(aCreated);
+      });
+    }
+
+    return filtered;
   }
 
   @override

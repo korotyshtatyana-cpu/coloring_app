@@ -8,6 +8,7 @@ abstract class  LocaleKeys {
   static const all = 'all';
   static const favorites = 'favorites';
   static const work_in_progress = 'work_in_progress';
+  static const new_arrivals = 'new_arrivals';
   static const categories = 'categories';
   static const brush_size = 'brush_size';
   static const opacity = 'opacity';
@@ -39,6 +40,7 @@ abstract class  LocaleKeys {
   static const flowers = 'flowers';
   static const patterns = 'patterns';
   static const abstract = 'abstract';
+  static const city = 'city';
   static const export_failed = 'export_failed';
   static const save_to_gallery = 'save_to_gallery';
   static const saved_to_gallery = 'saved_to_gallery';

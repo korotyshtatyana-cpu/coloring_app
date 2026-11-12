@@ -18,6 +18,7 @@ extension ContourCategoryLocalization on ContourCategory {
       ContourCategory.flowers => LocaleKeys.flowers,
       ContourCategory.patterns => LocaleKeys.patterns,
       ContourCategory.abstract => LocaleKeys.abstract,
+      ContourCategory.city => LocaleKeys.city,
     };
   }
 

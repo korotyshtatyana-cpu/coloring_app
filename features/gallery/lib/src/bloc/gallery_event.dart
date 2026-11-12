@@ -95,4 +95,10 @@ enum FilterType {
 
   /// Contours with started projects.
   inProgress,
+
+  /// Free-to-play contours (`access_type = free`).
+  free,
+
+  /// Contours created during the last month.
+  newArrivals,
 }

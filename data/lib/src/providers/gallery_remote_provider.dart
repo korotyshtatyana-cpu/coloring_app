@@ -11,10 +11,16 @@ class GalleryRemoteProvider {
   GalleryRemoteProvider({required this._client});
 
   /// Fetches a paginated list of contours from Supabase.
+  ///
+  /// When [createdAfter] is set, the filter is applied in the query
+  /// (`.gte('created_at', ...)`) and the result is still ordered newest first,
+  /// so the gallery does not have to filter a loaded page on the client.
   Future<List<ContourModel>> getContours({
     required int limit,
     required int offset,
     ContourCategory? category,
+    ContourAccessType? accessType,
+    DateTime? createdAfter,
   }) async {
     PostgrestFilterBuilder<PostgrestList> query = _client
         .from(RequestConstants.contoursTable)
@@ -24,6 +30,17 @@ class GalleryRemoteProvider {
       query = query.contains(RequestConstants.categoriesColumn, <String>[
         category.name,
       ]);
+    }
+
+    if (accessType != null) {
+      query = query.eq(RequestConstants.accessTypeColumn, accessType.dbValue);
+    }
+
+    if (createdAfter != null) {
+      query = query.gte(
+        RequestConstants.createdAtColumn,
+        createdAfter.toUtc().toIso8601String(),
+      );
     }
 
     final List<Map<String, dynamic>> response = await query
