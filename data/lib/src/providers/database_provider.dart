@@ -64,7 +64,8 @@ class Strokes extends Table {
   TextColumn get brushId => text().nullable()();
 
   /// Whether the stroke reacts to pressure.
-  BoolColumn get isPressureSensitive => boolean().withDefault(const Constant(true))();
+  BoolColumn get isPressureSensitive =>
+      boolean().withDefault(const Constant(true))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -96,8 +97,14 @@ class Contours extends Table {
   /// Contour title.
   TextColumn get title => text()();
 
-  /// Contour category.
+  /// Legacy single category kept for backwards compatibility.
+  ///
+  /// New rows also populate [categories]; reads prefer that list.
   TextColumn get category => text()();
+
+  /// Serialized list of categories as JSON array.
+  TextColumn get categories =>
+      text().map(const StringListConverter()).nullable()();
 
   /// URL to the SVG file describing the contour.
   TextColumn get svgUrl => text()();
@@ -155,6 +162,37 @@ class PointsConverter extends TypeConverter<List<List<double>>, String> {
   }
 }
 
+/// Converts a JSON string to a List<String> and back.
+class StringListConverter extends TypeConverter<List<String>, String> {
+  /// Creates a [StringListConverter].
+  const StringListConverter();
+
+  @override
+  List<String> fromSql(String fromDb) {
+    if (fromDb.isEmpty) {
+      return const <String>[];
+    }
+    try {
+      final dynamic decoded = jsonDecode(fromDb);
+      if (decoded is List) {
+        return decoded
+            .whereType<String>()
+            .where((String value) => value.isNotEmpty)
+            .toList();
+      }
+    } catch (_) {
+      // Malformed cache rows are treated as empty; the caller falls back to
+      // the legacy `category` column.
+    }
+    return const <String>[];
+  }
+
+  @override
+  String toSql(List<String> value) {
+    return jsonEncode(value);
+  }
+}
+
 /// Drift database for local project, stroke and contour storage.
 @DriftDatabase(tables: <Type>[Projects, Strokes, Brushes, Contours])
 class AppDatabase extends _$AppDatabase {
@@ -163,7 +201,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// Current database schema version.
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -178,12 +216,9 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 3) {
         // Rename svgData to svgUrl in contours table.
-        // Drift doesn't support direct column renaming in migrations easily
-        // for all platforms without manual SQL or recreating the table.
-        // Since this is a cache, we can drop and recreate or just add new.
-        // For simplicity and since it's a major change in data content
-        // (XML vs URL), we'll use a manual SQL to rename.
-        await customStatement('ALTER TABLE contours RENAME COLUMN svg_data TO svg_url;');
+        await customStatement(
+          'ALTER TABLE contours RENAME COLUMN svg_data TO svg_url;',
+        );
       }
       if (from < 4) {
         // Add monetization fields to the contour cache so access data
@@ -195,13 +230,24 @@ class AppDatabase extends _$AppDatabase {
         // Add the explicit store product identifier used to buy paid projects.
         await m.addColumn(contours, contours.productId);
       }
+      if (from < 6) {
+        // Add categories column to the cached contours table and backfill
+        // existing rows from single category column into JSON array.
+        await m.addColumn(contours, contours.categories);
+        await customStatement(
+          "UPDATE contours SET categories = json_array(category) "
+          "WHERE categories IS NULL OR categories = '' OR categories = '[]';",
+        );
+      }
     },
   );
 
   static LazyDatabase _openConnection() {
     return LazyDatabase(() async {
       final Directory dbFolder = await getApplicationDocumentsDirectory();
-      final File file = File(path.join(dbFolder.path, 'coloring_pro_db.sqlite'));
+      final File file = File(
+        path.join(dbFolder.path, 'coloring_pro_db.sqlite'),
+      );
       return NativeDatabase.createInBackground(file);
     });
   }

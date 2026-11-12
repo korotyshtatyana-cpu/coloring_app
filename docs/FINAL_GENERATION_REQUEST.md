@@ -6,8 +6,8 @@
 > [API_SPEC.md](API_SPEC.md) и [MONETIZATION.md](MONETIZATION.md).
 >
 > Известные расхождения с текущим кодом:
-> - Drift-схема уже не v1, а v5, и содержит таблицы `Projects`, `Strokes`,
->   `Brushes`, `Contours`;
+> - Drift-схема уже не v1, а v6, и содержит таблицы `Projects`, `Strokes`,
+>   `Brushes`, `Contours` (включая JSON-поле `categories`);
 > - `ContourEntity` использует `svgUrl` и поля монетизации;
 > - параметров толщины контура (`contourDefaultWidth`, `minContourWidth`,
 >   `maxContourWidth`, `contourWidth`) больше нет;
@@ -66,7 +66,7 @@
 - `data/lib/src/repositories/` — AuthRepositoryImpl, GalleryRepositoryImpl, CanvasRepositoryImpl, SettingsRepositoryImpl
 - `data/lib/src/services/` — ShareService
 - `data/lib/src/constants/request_constants.dart` — константы Supabase
-- Drift: таблицы `Projects`, `Strokes`, `Brushes`, `Contours`; `schemaVersion = 5`
+- Drift: таблицы `Projects`, `Strokes`, `Brushes`, `Contours`; `schemaVersion = 6`
 
 **Navigation:**
 - `navigation/lib/navigation.dart` — публичный API, экспортирует `auto_route`, `AppRouter`, `NavigationDI`
@@ -132,7 +132,7 @@
 - **Базовые классы UseCase:** `domain/lib/src/use_cases/use_case.dart`
 - **Entities:**
   - `UserEntity` — id, email, name, avatarUrl
-  - `ContourEntity` — id, title, category, svgUrl, previewUrl, createdAt, accessType, price, productId
+  - `ContourEntity` — id, title, categories (List<ContourCategory>), svgUrl, previewUrl, createdAt, accessType, price, productId; геттер `category` оставлен для обратной совместимости
   - `ProjectEntity` — id, contourId, userId, data (JSON), lastOpened, createdAt
   - `StrokeEntity` — `List<StrokePoint>` (offset + pressure), color, size, opacity, brushType, brushId, isPressureSensitive
   - `BrushType` — circle, square, watercolor, chalk, marker, calligraphy, texture, airbrush
@@ -153,7 +153,7 @@
 ### 4. Data (поддерживать)
 - **Providers:**
   - `SupabaseProvider` — инициализация Supabase
-  - `AppDatabase` (Drift) — таблицы `Projects`, `Strokes`, `Brushes`, `Contours`; `schemaVersion = 5`
+  - `AppDatabase` (Drift) — таблицы `Projects`, `Strokes`, `Brushes`, `Contours`; `schemaVersion = 6`
   - `AuthRemoteProvider` — auth, включая `currentUserId`
   - `GalleryRemoteProvider` — контуры и избранное
   - `GalleryLocalProvider` — кэширование контуров
@@ -314,7 +314,7 @@ targets:
 8. **Ошибки** — UseCase выбрасывают исключения, BLoC перехватывает и вызывает `ErrorHandler`
 9. **Clean Architecture** — Presentation → Domain → Data
 10. **Именование:** папки — snake_case, файлы — snake_case, классы — PascalCase, переменные — camelCase
-11. **Drift** — `Projects`, `Strokes`, `Brushes`, `Contours`; `schemaVersion = 5`
+11. **Drift** — `Projects`, `Strokes`, `Brushes`, `Contours`; `schemaVersion = 6`
 12. **Контур** — отображается `SvgPicture.string`/`ContourLayer` без изменения оригинальной толщины, не рисуется в `CanvasPainter`
 13. **Касания** — `Listener`, давление `event.pressure`
 14. **Локализация** — ключи в `core/lib/src/localization/generated/locale_keys.g.dart`

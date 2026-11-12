@@ -213,7 +213,7 @@ domain/lib/
 
 **Сущности:**
 - `UserEntity` — пользователь (id, email, name, avatarUrl)
-- `ContourEntity` — контур (id, title, category, svgUrl, previewUrl, createdAt, accessType, price, productId)
+- `ContourEntity` — контур (id, title, categories: List<ContourCategory>, svgUrl, previewUrl, createdAt, accessType, price, productId). Поддерживает множественные категории с геттером `category` для обратной совместимости.
 - `ContourCategory` — enum категорий контура. `all` — UI-значение «Все категории».
 - `ContourAccessType` — enum доступа: `free`, `rewarded`, `paid`
 - `ProjectEntity` — проект (id, contourId, userId, data, lastOpened, createdAt)
@@ -327,8 +327,8 @@ data/lib/
 
 **Провайдеры:**
 - `SupabaseProvider` — инициализация Supabase с конфигом
-- `AppDatabase` (Drift) — база данных SQLite с таблицами `Projects`, `Strokes`, `Brushes` и `Contours`. Текущая схема — v5.
-- `GalleryRemoteProvider` — получение контуров и избранного из Supabase. Метод `getUsedCategories` выбирает `category` из всех строк, а уникальность обеспечивает на клиенте через `Set`.
+- `AppDatabase` (Drift) — база данных SQLite с таблицами `Projects`, `Strokes`, `Brushes` и `Contours`. Текущая схема — v6 (добавлено поле `categories` типа JSON-массив с автоматической миграцией старых строк).
+- `GalleryRemoteProvider` — получение контуров и избранного из Supabase. Поддерживает миграционную стратегию **Expand and Contract**: выполняет фильтрацию контуров через `.contains('categories', [category_name])`, а при парсинге DTO отдает приоритет массиву `categories` с фолбеком на одиночное поле `category`. Метод `getUsedCategories` считывает массивы и одиночные поля, объединяя уникальные категории.
 - `MonetizationRemoteProvider` — подписки, покупки, entitlements, pending-покупки и возвраты.
 - `FeedbackRemoteProvider` — загрузка вложений в Storage и запись обратной связи.
 - `CanvasRenderingService` — рендеринг холста в PNG. Использует raw XML контура.
@@ -348,6 +348,29 @@ data/lib/
 - `SubscriptionCache` — кэш состояния подписки с TTL.
 
 **DataDI:** регистрирует провайдеры, сервисы и репозитории в правильном порядке, включая инициализацию биллинга и рекламы.
+
+
+### Expand-and-Contract для категорий контуров
+Категории переведены с одного значения на many-to-many без разрыва со старыми клиентами:
+
+1. **Expand (Supabase).** Добавлена колонка `contours.categories text[]`
+   рядом с legacy-колонкой `category`; существующие значения перенесены
+   миграцией `20261112000000_contour_multi_categories.sql`. Колонка `category`
+   не удаляется до Contract-фазы. Триггер БД заполняет `categories`, если запись
+   пришла только со старым полем.
+2. **Двойное чтение.** `ContourModel` и `GalleryLocalProvider` сначала читают
+   массив `categories`; если он пуст или отсутствует — используют `category`.
+   Неизвестные значения пропускаются через `ContourCategory.tryParse`.
+3. **Двойная запись.** `ContourModel.toJson` и локальный кэш Drift пишут оба
+   поля, поэтому старые версии приложения продолжают видеть `category`.
+4. **Drift.** `Contours` хранит `categories` как JSON-строку через
+   `StringListConverter`; схема v6, миграция добавляет колонку и заполняет её
+   из `category` без очистки пользовательских данных.
+5. **Фильтрация.** Сервер получает `.contains('categories', [category.name])`;
+   офлайн-фолбек проверяет `contour.categories.contains(category)`.
+   `GetUsedCategoriesUseCase` возвращает плоский уникальный список категорий.
+6. **Contract (позже).** После вывода старых версий из эксплуатации колонку
+   `category`, fallback-ветки и дублирующую запись можно удалить.
 
 
 ### navigation
@@ -516,9 +539,9 @@ Text(LocaleKeys.gallery).tr();
 - `Projects` — данные проекта и настройки контура (цвет, прозрачность).
 - `Strokes` — мазки (включают `brushId` и `isPressureSensitive`).
 - `Brushes` — доступные инструменты (`id`, `nameKey`, `previewPath`, `isPressureSensitive`).
-- `Contours` — кэш метаданных контура (`svg_url`, а также `access_type`, `price`, `product_id`).
+- `Contours` — кэш метаданных контура (`svg_url`, `categories` в виде JSON-массива, а также `access_type`, `price`, `product_id`).
 
-Текущая версия схемы — `schemaVersion = 5`. Миграции добавляют `Brushes` и поля мазков (v2), переименовывают `svg_data` → `svg_url` (v3), добавляют поля монетизации (v4) и `product_id` (v5).
+Текущая версия схемы — `schemaVersion = 6`. Миграции добавляют `Brushes` и поля мазков (v2), переименовывают `svg_data` → `svg_url` (v3), добавляют поля монетизации (v4), `product_id` (v5) и `categories` с backfill из `category` (v6).
 
 ### Генерация кода
 ```bash

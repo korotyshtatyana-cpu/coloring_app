@@ -7,8 +7,8 @@
 >
 > Известные расхождения с текущим кодом:
 > - `cards/contour_card.dart` перенесён из `core_ui` в `features/gallery`;
-> - Drift-схема уже не v3, а v5, и содержит таблицы `Projects`, `Strokes`,
->   `Brushes`, `Contours`;
+> - Drift-схема уже не v3, а v6, и содержит таблицы `Projects`, `Strokes`,
+>   `Brushes`, `Contours` (включая `categories`);
 > - появились модули `subscription` и `feedback`, монетизация (подписки,
 >   разовые покупки, реклама, возвраты) и 7 локалей;
 > - толщина контура больше не настраивается приложением.
@@ -48,7 +48,7 @@
 
 ### Этап 4: Data (создать полностью)
 1. **Providers:**
-    - `database_provider.dart` — Drift БД. Таблица `Contours` с полем `svgUrl`. Исторически здесь была схема v3; текущая схема — v5.
+    - `database_provider.dart` — Drift БД. Таблица `Contours` с полем `svgUrl`. Исторически здесь была схема v3; текущая схема — v6 (множественные категории в `categories`).
     - `gallery_remote_provider.dart` — методы для получения контуров и списка категорий.
 2. **Models (DTO):**
     - `contour_model.dart` (мапинг `svg_data` из БД в `svgUrl`).
@@ -95,7 +95,7 @@
 3. Весь UI декларативен и разбит на мелкие файлы.
 
 ## Drift (SQLite)
-Генерация через `drift_dev`. Историческая схема v3 (svg_url в контурах); текущая схема — v5 (`Projects`, `Strokes`, `Brushes`, `Contours`).
+Генерация через `drift_dev`. Историческая схема v3 (svg_url в контурах); текущая схема — v6 (`Projects`, `Strokes`, `Brushes`, `Contours` с JSON-полем `categories`).
 
 ## Запуск приложения
 Через точки входа `main_dev.dart` и `main_prod.dart`.

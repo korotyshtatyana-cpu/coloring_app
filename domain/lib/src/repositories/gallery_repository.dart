@@ -32,6 +32,9 @@ abstract class GalleryRepository {
   /// Loads a single cached contour by its identifier.
   Future<ContourEntity?> getContourById(String id);
 
-  /// Returns the list of categories that have at least one contour.
+  /// Returns the unique categories that have at least one contour.
+  ///
+  /// Categories are flattened across all contours, so a contour with several
+  /// categories contributes each of them.
   Future<List<ContourCategory>> getUsedCategories();
 }

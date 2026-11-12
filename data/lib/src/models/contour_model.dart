@@ -10,8 +10,8 @@ class ContourModel {
   /// Contour title.
   final String title;
 
-  /// Contour category.
-  final ContourCategory category;
+  /// Contour categories.
+  final List<ContourCategory> categories;
 
   /// URL to the SVG file describing the contour.
   final String svgUrl;
@@ -34,11 +34,15 @@ class ContourModel {
   /// Explicit store product identifier for paid projects, `null` otherwise.
   final String? productId;
 
+  /// Primary category getter kept for backwards compatibility.
+  ContourCategory get category =>
+      categories.isNotEmpty ? categories.first : ContourCategory.all;
+
   /// Creates a [ContourModel].
   const ContourModel({
     required this.id,
     required this.title,
-    required this.category,
+    required this.categories,
     required this.svgUrl,
     required this.previewUrl,
     this.createdAt,
@@ -52,10 +56,12 @@ class ContourModel {
     return ContourModel(
       id: json['id'] as String,
       title: json['title'] as String,
-      category: ContourCategory.values.byName(json['category'] as String),
+      categories: _parseCategories(json),
       svgUrl: json['svg_data'] as String,
       previewUrl: json['preview_url'] as String,
-      createdAt: json['created_at'] == null ? null : DateTime.parse(json['created_at'] as String),
+      createdAt: json['created_at'] == null
+          ? null
+          : DateTime.parse(json['created_at'] as String),
       accessType:
           json[RequestConstants.accessTypeColumn] as String? ??
           RequestConstants.defaultContourAccessType,
@@ -64,12 +70,53 @@ class ContourModel {
     );
   }
 
+  /// Reads the `categories` array, falling back to the legacy `category`.
+  ///
+  /// Unknown values are skipped, and an empty result falls back to
+  /// [ContourCategory.all] so the UI always has a value to work with.
+  static List<ContourCategory> _parseCategories(Map<String, dynamic> json) {
+    final Set<ContourCategory> categories = <ContourCategory>{};
+
+    final dynamic rawCategories = json[RequestConstants.categoriesColumn];
+    if (rawCategories is List) {
+      for (final dynamic item in rawCategories) {
+        if (item is String) {
+          final ContourCategory? category = ContourCategory.tryParse(item);
+          if (category != null) {
+            categories.add(category);
+          }
+        }
+      }
+    }
+
+    if (categories.isEmpty) {
+      final dynamic legacyCategory = json[RequestConstants.categoryColumn];
+      if (legacyCategory is String) {
+        final ContourCategory? category = ContourCategory.tryParse(
+          legacyCategory,
+        );
+        if (category != null) {
+          categories.add(category);
+        }
+      }
+    }
+
+    if (categories.isEmpty) {
+      categories.add(ContourCategory.all);
+    }
+
+    return categories.toList();
+  }
+
   /// Converts this model to a JSON map.
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
       'id': id,
       'title': title,
-      'category': category.name,
+      RequestConstants.categoryColumn: category.name,
+      RequestConstants.categoriesColumn: categories
+          .map((ContourCategory c) => c.name)
+          .toList(),
       'svg_data': svgUrl,
       'preview_url': previewUrl,
       if (createdAt != null) 'created_at': createdAt!.toIso8601String(),

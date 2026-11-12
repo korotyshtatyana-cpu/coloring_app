@@ -9,7 +9,7 @@ abstract final class ContourMapper {
     return ContourEntity(
       id: model.id,
       title: model.title,
-      category: model.category,
+      categories: model.categories,
       svgUrl: model.svgUrl,
       previewUrl: model.previewUrl,
       createdAt: model.createdAt,
@@ -24,7 +24,7 @@ abstract final class ContourMapper {
     return ContourModel(
       id: entity.id,
       title: entity.title,
-      category: entity.category,
+      categories: entity.categories,
       svgUrl: entity.svgUrl,
       previewUrl: entity.previewUrl,
       createdAt: entity.createdAt,

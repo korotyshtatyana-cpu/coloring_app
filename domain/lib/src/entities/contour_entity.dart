@@ -11,8 +11,8 @@ class ContourEntity extends Equatable {
   /// Contour title.
   final String title;
 
-  /// Contour category.
-  final ContourCategory category;
+  /// Contour categories.
+  final List<ContourCategory> categories;
 
   /// URL to the SVG file describing the contour shape.
   final String svgUrl;
@@ -35,11 +35,21 @@ class ContourEntity extends Equatable {
   /// identifier the data layer falls back to `contour_{id}`.
   final String? productId;
 
+  /// Primary category getter kept for backwards compatibility.
+  ContourCategory get category =>
+      categories.isNotEmpty ? categories.first : ContourCategory.all;
+
+  /// Whether this contour belongs to [target].
+  ///
+  /// A contour can belong to several categories, so callers must use this
+  /// check instead of comparing a single category value.
+  bool hasCategory(ContourCategory target) => categories.contains(target);
+
   /// Creates a [ContourEntity].
   const ContourEntity({
     required this.id,
     required this.title,
-    required this.category,
+    required this.categories,
     required this.svgUrl,
     required this.previewUrl,
     this.createdAt,
@@ -52,7 +62,7 @@ class ContourEntity extends Equatable {
   List<Object?> get props => <Object?>[
     id,
     title,
-    category,
+    categories,
     svgUrl,
     previewUrl,
     createdAt,

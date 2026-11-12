@@ -31,5 +31,22 @@ enum ContourCategory {
   patterns,
 
   /// Abstract category.
-  abstract,
+  abstract;
+
+  /// Parses a stored category value, returning `null` for unknown values.
+  ///
+  /// Unknown categories are ignored instead of failing the whole response, so
+  /// a category added on the server does not break older clients. The UI-only
+  /// [all] value is not a stored category and is rejected as well.
+  static ContourCategory? tryParse(String value) {
+    if (value == all.name) {
+      return null;
+    }
+    for (final ContourCategory category in values) {
+      if (category.name == value) {
+        return category;
+      }
+    }
+    return null;
+  }
 }

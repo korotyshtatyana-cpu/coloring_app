@@ -31,6 +31,7 @@ abstract final class RequestConstants {
 
   // Supabase query columns
   static const String selectAll = '*';
+  static const String selectContourCategories = 'categories, category';
   static const String selectContourId = 'contour_id';
   static const String selectProjectData = 'contour_id, data, last_opened';
   static const String selectProjectThumbnails =
@@ -39,6 +40,7 @@ abstract final class RequestConstants {
   // Supabase columns
   static const String createdAtColumn = 'created_at';
   static const String categoryColumn = 'category';
+  static const String categoriesColumn = 'categories';
   static const String userIdColumn = 'user_id';
   static const String subscriptionIdColumn = 'subscription_id';
   static const String contourIdColumn = 'contour_id';

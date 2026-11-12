@@ -21,14 +21,18 @@ class GalleryRemoteProvider {
         .select(RequestConstants.selectAll);
 
     if (category != null) {
-      query = query.eq(RequestConstants.categoryColumn, category.name);
+      query = query.contains(RequestConstants.categoriesColumn, <String>[
+        category.name,
+      ]);
     }
 
     final List<Map<String, dynamic>> response = await query
         .order(RequestConstants.createdAtColumn, ascending: false)
         .range(offset, offset + limit - 1);
 
-    return response.map((Map<String, dynamic> json) => ContourModel.fromJson(json)).toList();
+    return response
+        .map((Map<String, dynamic> json) => ContourModel.fromJson(json))
+        .toList();
   }
 
   /// Fetches contours by their identifiers from Supabase.
@@ -50,12 +54,16 @@ class GalleryRemoteProvider {
         .inFilter(RequestConstants.contourIdColumn, ids);
 
     if (category != null) {
-      query = query.eq(RequestConstants.categoryColumn, category.name);
+      query = query.contains(RequestConstants.categoriesColumn, <String>[
+        category.name,
+      ]);
     }
 
     final List<Map<String, dynamic>> response = await query;
 
-    return response.map((Map<String, dynamic> json) => ContourModel.fromJson(json)).toList();
+    return response
+        .map((Map<String, dynamic> json) => ContourModel.fromJson(json))
+        .toList();
   }
 
   /// Returns the current user's started (work in progress) projects ordered
@@ -84,7 +92,9 @@ class GalleryRemoteProvider {
           (Map<String, dynamic> row) => WorkInProgressEntity(
             contourId: row[RequestConstants.contourIdColumn] as String,
             thumbnailPath: row[RequestConstants.thumbnailUrlColumn] as String?,
-            lastOpened: DateTime.parse(row[RequestConstants.lastOpenedColumn] as String),
+            lastOpened: DateTime.parse(
+              row[RequestConstants.lastOpenedColumn] as String,
+            ),
           ),
         )
         .toList();
@@ -105,7 +115,10 @@ class GalleryRemoteProvider {
         .order(RequestConstants.createdAtColumn, ascending: false);
 
     return response
-        .map((Map<String, dynamic> row) => row[RequestConstants.contourIdColumn] as String)
+        .map(
+          (Map<String, dynamic> row) =>
+              row[RequestConstants.contourIdColumn] as String,
+        )
         .toList();
   }
 
@@ -119,11 +132,15 @@ class GalleryRemoteProvider {
     try {
       await _client.rpc(
         RequestConstants.toggleFavoriteRpc,
-        params: {RequestConstants.pUserId: user.id, RequestConstants.pContourId: contourId},
+        params: {
+          RequestConstants.pUserId: user.id,
+          RequestConstants.pContourId: contourId,
+        },
       );
     } on PostgrestException catch (e) {
-      // Catch unique constraint violation (duplicate key) to handle race conditions.
-      // If the record was already created/deleted by another request, we consider it success.
+      // Catch unique constraint violation (duplicate key) to handle race
+      // conditions. If the record was already created/deleted by another
+      // request, we consider it success.
       if (e.code != RequestConstants.codeUniqueViolation) {
         rethrow;
       }
@@ -131,15 +148,47 @@ class GalleryRemoteProvider {
   }
 
   /// Returns the list of categories that have at least one contour.
+  ///
+  /// Flattens the multi-value `categories` arrays and falls back to the legacy
+  /// `category` column for rows that were not backfilled yet. Duplicates are
+  /// removed by the [Set].
   Future<List<ContourCategory>> getUsedCategories() async {
     final List<Map<String, dynamic>> response = await _client
         .from(RequestConstants.contoursTable)
-        .select(RequestConstants.categoryColumn);
+        .select(RequestConstants.selectContourCategories);
 
-    return response
-        .map((Map<String, dynamic> row) => row[RequestConstants.categoryColumn] as String)
-        .toSet()
-        .map((String name) => ContourCategory.values.byName(name))
-        .toList();
+    final Set<ContourCategory> result = <ContourCategory>{};
+
+    for (final Map<String, dynamic> row in response) {
+      final Set<ContourCategory> rowCategories = <ContourCategory>{};
+      final dynamic rawCategories = row[RequestConstants.categoriesColumn];
+
+      if (rawCategories is List) {
+        for (final dynamic item in rawCategories) {
+          if (item is String) {
+            final ContourCategory? category = ContourCategory.tryParse(item);
+            if (category != null) {
+              rowCategories.add(category);
+            }
+          }
+        }
+      }
+
+      // Expand phase: fall back to the legacy column when this row has no
+      // usable value in the array yet.
+      if (rowCategories.isEmpty) {
+        final dynamic legacy = row[RequestConstants.categoryColumn];
+        if (legacy is String) {
+          final ContourCategory? category = ContourCategory.tryParse(legacy);
+          if (category != null) {
+            rowCategories.add(category);
+          }
+        }
+      }
+
+      result.addAll(rowCategories);
+    }
+
+    return result.toList();
   }
 }

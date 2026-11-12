@@ -69,6 +69,9 @@ class GalleryLocalProvider {
       id: contour.id,
       title: contour.title,
       category: contour.category.name,
+      categories: Value(
+        contour.categories.map((ContourCategory c) => c.name).toList(),
+      ),
       svgUrl: contour.svgUrl,
       previewUrl: contour.previewUrl,
       createdAt: contour.createdAt ?? DateTime.now(),
@@ -79,10 +82,34 @@ class GalleryLocalProvider {
   }
 
   ContourModel _fromRow(Contour row) {
+    final Set<ContourCategory> categories = <ContourCategory>{};
+
+    final List<String>? rawCategories = row.categories;
+    if (rawCategories != null) {
+      for (final String name in rawCategories) {
+        final ContourCategory? category = ContourCategory.tryParse(name);
+        if (category != null) {
+          categories.add(category);
+        }
+      }
+    }
+
+    // Expand phase: rows written by an older client only have `category`.
+    if (categories.isEmpty) {
+      final ContourCategory? legacy = ContourCategory.tryParse(row.category);
+      if (legacy != null) {
+        categories.add(legacy);
+      }
+    }
+
+    if (categories.isEmpty) {
+      categories.add(ContourCategory.all);
+    }
+
     return ContourModel(
       id: row.id,
       title: row.title,
-      category: ContourCategory.values.byName(row.category),
+      categories: categories.toList(),
       svgUrl: row.svgUrl,
       previewUrl: row.previewUrl,
       createdAt: row.createdAt,

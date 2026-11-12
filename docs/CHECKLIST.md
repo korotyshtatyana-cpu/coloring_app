@@ -56,7 +56,7 @@
 - [x] Создан `SubscriptionCache` (in-memory + SharedPreferences, TTL)
 - [x] Создан DataDI (регистрация всех зависимостей)
 - [x] Создан публичный API (data.dart)
-- [x] Drift: таблицы `Projects`, `Strokes`, `Brushes`, `Contours`, `schemaVersion = 5`
+- [x] Drift: таблицы `Projects`, `Strokes`, `Brushes`, `Contours`, `schemaVersion = 6` (множественные категории контура)
 
 ## ✅ Navigation модуль
 - [x] Создан AppRouter с auto_route в `navigation/lib/src/app_router/`

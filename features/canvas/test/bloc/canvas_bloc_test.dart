@@ -88,6 +88,8 @@ class _FakeLogger implements AppLogger {
   void verbose(dynamic message, [Object? error, StackTrace? stackTrace]) {}
   @override
   void wtf(dynamic message, [Object? error, StackTrace? stackTrace]) {}
+  @override
+  void setCrashReporter(CrashReporter? crashReporter) {}
 }
 
 void main() {
