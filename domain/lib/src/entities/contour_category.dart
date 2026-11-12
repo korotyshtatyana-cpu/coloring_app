@@ -31,7 +31,10 @@ enum ContourCategory {
   patterns,
 
   /// Abstract category.
-  abstract;
+  abstract,
+
+  /// City category.
+  city;
 
   /// Parses a stored category value, returning `null` for unknown values.
   ///
