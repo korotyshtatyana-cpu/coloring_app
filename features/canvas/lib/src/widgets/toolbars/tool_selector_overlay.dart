@@ -3,6 +3,8 @@ import 'package:core_ui/core_ui.dart';
 import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 
+import 'tool_preview.dart';
+
 /// Overlay for selecting a specific tool within a category (Brush or Eraser).
 class ToolSelectorOverlay extends StatelessWidget {
   /// List of available tools to display.
@@ -79,21 +81,7 @@ class ToolSelectorOverlay extends StatelessWidget {
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(8),
-                          child: tool.previewPath.isNotEmpty
-                              ? Image.asset(
-                                  tool.previewPath,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => Icon(
-                                    Icons.gesture,
-                                    size: 16,
-                                    color: colors.secondaryText,
-                                  ),
-                                )
-                              : Icon(
-                                  Icons.gesture,
-                                  size: 16,
-                                  color: colors.secondaryText,
-                                ),
+                          child: ToolPreview(tool: tool),
                         ),
                       ),
                     ],

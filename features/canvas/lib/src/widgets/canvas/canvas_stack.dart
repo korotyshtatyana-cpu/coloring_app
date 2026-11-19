@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../bloc/canvas_bloc.dart';
 import 'active_stroke.dart';
+import 'brush_cursor_controller.dart';
+import 'brush_cursor_layer.dart';
 import 'contour_layer.dart';
 import 'raster_canvas_buffer.dart';
 import '../../painters/canvas_painter.dart';
@@ -22,12 +24,16 @@ class CanvasStack extends StatelessWidget {
   /// Notifier for the stroke currently being drawn.
   final ActiveStroke currentStrokeNotifier;
 
+  /// Cursor drawn in canvas space above the artwork while a pointer is down.
+  final BrushCursorController brushCursor;
+
   /// The project size (viewBox).
   final Size canvasSize;
 
   /// Creates a [CanvasStack].
   const CanvasStack({
     required this.currentStrokeNotifier,
+    required this.brushCursor,
     required this.canvasSize,
     super.key,
   });
@@ -50,6 +56,9 @@ class CanvasStack extends StatelessWidget {
 
           // Layer 3: Contour (static vector on top)
           const _ContourLayerWrapper(),
+
+          // Layer 4: Brush cursor (own repaint boundary, canvas space)
+          Positioned.fill(child: BrushCursorLayer(controller: brushCursor)),
         ],
       ),
     );

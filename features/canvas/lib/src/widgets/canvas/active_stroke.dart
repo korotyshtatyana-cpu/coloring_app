@@ -12,10 +12,16 @@ import 'package:flutter/material.dart';
 class ActiveStroke extends ChangeNotifier {
   StrokeEntity? _stroke;
 
-  /// Cached path for non-pressure strokes. Pressure-sensitive strokes render
-  /// segment-by-segment (variable width), so a single uniform-width path
-  /// cannot be used; [path] stays `null` for them.
+  /// Cached path for non-pressure and soft pressure strokes.
+  ///
+  /// Soft pressure strokes use a filled silhouette so consecutive blurred
+  /// segments do not create darker joints. Other pressure-sensitive strokes
+  /// render segment-by-segment (variable width), so a single uniform-width path
+  /// cannot be used and [path] stays `null` for them.
   Path? _path;
+
+  /// Whether [_path] is a soft silhouette built by [SoftBrushPath].
+  bool _usesSoftSilhouette = false;
 
   /// Bounds of the raw points, maintained incrementally. Used for the
   /// `saveLayer` clip bounds of translucent strokes.
@@ -34,13 +40,21 @@ class ActiveStroke extends ChangeNotifier {
   /// the bounds.
   void begin(StrokeEntity stroke) {
     _stroke = stroke;
-    final first = stroke.points.first.offset;
-    if (stroke.isPressureSensitive) {
+    final first = stroke.points.first;
+    _usesSoftSilhouette = stroke.brushType.isSoft && stroke.isPressureSensitive;
+    if (_usesSoftSilhouette) {
+      _path = SoftBrushPath.start(first, stroke.size);
+    } else if (stroke.isPressureSensitive) {
       _path = null;
     } else {
-      _path = Path()..moveTo(first.dx, first.dy);
+      _path = Path()..moveTo(first.offset.dx, first.offset.dy);
     }
-    _rawBounds = Rect.fromLTRB(first.dx, first.dy, first.dx, first.dy);
+    _rawBounds = Rect.fromLTRB(
+      first.offset.dx,
+      first.offset.dy,
+      first.offset.dx,
+      first.offset.dy,
+    );
     notifyListeners();
   }
 
@@ -48,9 +62,17 @@ class ActiveStroke extends ChangeNotifier {
   /// bounds incrementally.
   void add(StrokePoint point) {
     if (_stroke == null) return;
+    final StrokePoint? previous = _stroke!.points.isEmpty
+        ? null
+        : _stroke!.points.last;
     _stroke!.points.add(point);
     final Offset o = point.offset;
-    _path?.lineTo(o.dx, o.dy);
+    if (_usesSoftSilhouette && previous != null) {
+      SoftBrushPath.addSegment(_path!, previous, point, _stroke!.size);
+      SoftBrushPath.addTip(_path!, point, _stroke!.size);
+    } else {
+      _path?.lineTo(o.dx, o.dy);
+    }
     final Rect b = _rawBounds!;
     _rawBounds = Rect.fromLTRB(
       min(b.left, o.dx),
@@ -65,6 +87,7 @@ class ActiveStroke extends ChangeNotifier {
   void clear() {
     _stroke = null;
     _path = null;
+    _usesSoftSilhouette = false;
     _rawBounds = null;
     notifyListeners();
   }

@@ -16,6 +16,9 @@ const double kWatermarkMarginFraction = 0.02;
 /// Asset path of the watermark PNG, relative to the `core_ui` package.
 const String kWatermarkAssetPath = 'resources/images/watermark.png';
 
+/// Blur sigma used by the legacy watercolor/airbrush brushes.
+const double _legacyBlurSigma = 4;
+
 /// Service responsible for rendering the canvas to an image.
 abstract final class CanvasRenderingService {
   /// Renders the whole canvas (white background, strokes and contour) into
@@ -124,41 +127,88 @@ abstract final class CanvasRenderingService {
   static void _drawStroke(Canvas canvas, StrokeEntity stroke) {
     if (stroke.points.length < 2) return;
 
-    final bool useLayer = stroke.opacity < 1.0;
+    // Soft strokes are single paths, so their opacity is folded into the paint
+    // below: Impeller can drop saveLayer alpha when the content has a mask
+    // filter. For multi-segment strokes the layer still prevents darker
+    // overlaps at the joints.
+    final bool isSoft = stroke.brushType.isSoft;
+    final bool useLayer = stroke.opacity < 1.0 && !isSoft;
     if (useLayer) {
       // Draw the stroke at full opacity into a layer, then composite the
       // layer once with the stroke opacity. This avoids darker overlaps at
       // segment joints, so a semi-transparent stroke looks like a uniform
       // line instead of a chain of dots.
-      canvas.saveLayer(null, Paint()..color = Colors.white.withValues(alpha: stroke.opacity));
+      canvas.saveLayer(
+        null,
+        Paint()..color = Colors.white.withValues(alpha: stroke.opacity),
+      );
     }
 
+    final Color baseColor = Color(stroke.color);
     final paint = Paint()
-      ..color = Color(stroke.color)
+      ..color = isSoft
+          ? baseColor.withValues(alpha: baseColor.a * stroke.opacity)
+          : baseColor
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round
       ..style = PaintingStyle.stroke;
 
-    if (stroke.brushType == BrushType.watercolor || stroke.brushType == BrushType.airbrush) {
-      paint.maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+    final double? sigma = _blurSigmaFor(stroke);
+    if (sigma != null) {
+      paint.maskFilter = MaskFilter.blur(BlurStyle.normal, sigma);
     }
 
-    for (int i = 0; i < stroke.points.length - 1; i++) {
-      final point = stroke.points[i];
-      final next = stroke.points[i + 1];
+    if (stroke.brushType.isSoft && stroke.isPressureSensitive) {
+      // One silhouette keeps the exported soft line continuous: blurring
+      // every segment separately would darken the joints.
+      paint.style = PaintingStyle.fill;
+      canvas.drawPath(SoftBrushPath.build(stroke), paint);
+    } else if (stroke.brushType.isSoft) {
+      paint.strokeWidth = stroke.size;
+      canvas.drawPath(_strokePath(stroke), paint);
+    } else {
+      for (int i = 0; i < stroke.points.length - 1; i++) {
+        final point = stroke.points[i];
+        final next = stroke.points[i + 1];
 
-      if (stroke.isPressureSensitive) {
-        paint.strokeWidth = stroke.size * point.pressure;
-      } else {
-        paint.strokeWidth = stroke.size;
+        if (stroke.isPressureSensitive) {
+          paint.strokeWidth = stroke.size * point.pressure;
+        } else {
+          paint.strokeWidth = stroke.size;
+        }
+
+        canvas.drawLine(point.offset, next.offset, paint);
       }
-
-      canvas.drawLine(point.offset, next.offset, paint);
     }
 
     if (useLayer) {
       canvas.restore();
     }
+  }
+
+  static double? _blurSigmaFor(StrokeEntity stroke) {
+    if (stroke.brushType.isSoft) {
+      return BrushSoftness.sigmaFor(
+        stroke.size,
+        pressureSensitive: stroke.isPressureSensitive,
+        pressure: BrushSoftness.effectivePressure(stroke),
+      );
+    }
+    if (stroke.brushType == BrushType.watercolor ||
+        stroke.brushType == BrushType.airbrush) {
+      return _legacyBlurSigma;
+    }
+    return null;
+  }
+
+  static Path _strokePath(StrokeEntity stroke) {
+    final Offset first = stroke.points.first.offset;
+    final Path path = Path()..moveTo(first.dx, first.dy);
+    for (int i = 1; i < stroke.points.length; i++) {
+      final Offset point = stroke.points[i].offset;
+      path.lineTo(point.dx, point.dy);
+    }
+    return path;
   }
 
   static Future<void> _drawContour(

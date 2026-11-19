@@ -44,6 +44,8 @@
   "eyedropper": "Pipette",
   "brush_round_basic": "Pinceau rond basique",
   "brush_fine_liner": "Feutre fin",
+  "brush_soft_liner": "Feutre doux",
+  "brush_soft_round_basic": "Pinceau rond doux",
   "eraser_standard": "Gomme standard",
   "eraser_soft": "Gomme douce",
   "reset_project_confirm_title": "Réinitialiser le projet",

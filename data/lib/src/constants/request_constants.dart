@@ -8,6 +8,7 @@ abstract final class RequestConstants {
   // Supabase table names
   static const String usersTable = 'users';
   static const String contoursTable = 'contours';
+  static const String brushesTable = 'brushes';
   static const String favoritesTable = 'favorites';
   static const String projectsTable = 'projects';
   static const String feedbackTable = 'feedback';

@@ -18,6 +18,9 @@ class AuthRemoteProvider {
   AuthRemoteProvider({required this._client, required String googleWebClientId})
     : _googleSignIn = GoogleSignIn.instance..initialize(serverClientId: googleWebClientId);
 
+  /// Creates a provider without platform sign-in plugins, for repository tests.
+  AuthRemoteProvider.forTesting({required this._client}) : _googleSignIn = null;
+
   /// Identifier of the currently authenticated user, or `null`.
   String? get currentUserId => _client.auth.currentUser?.id;
 

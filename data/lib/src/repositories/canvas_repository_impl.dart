@@ -40,8 +40,26 @@ class CanvasRepositoryImpl implements CanvasRepository {
   });
 
   @override
-  Future<List<ToolEntity>> getAvailableTools() {
-    return _localProvider.getAvailableTools();
+  Future<List<ToolEntity>> getAvailableTools() async {
+    final List<ToolEntity> localTools = await _localProvider
+        .getAvailableTools();
+    // The local catalog is enough to open the canvas immediately. Remote
+    // changes (for example a new brush added in Supabase) are merged in the
+    // background and appear the next time the canvas loads.
+    unawaited(_syncToolsFromRemote());
+    return localTools;
+  }
+
+  Future<void> _syncToolsFromRemote() async {
+    try {
+      final List<ToolEntity> remoteTools = await _remoteProvider.getBrushes();
+      await _localProvider.upsertTools(remoteTools);
+    } catch (e, stackTrace) {
+      // The brush catalog is optional: a network or schema error must not
+      // prevent drawing with the locally cached tools.
+      debugPrint('Brush catalog sync failed: $e');
+      debugPrint('$stackTrace');
+    }
   }
 
   @override
@@ -104,18 +122,33 @@ class CanvasRepositoryImpl implements CanvasRepository {
   @override
   Future<ProjectEntity?> loadProject(String contourId) async {
     final localProject = await _localProvider.loadProject(contourId);
-    if (localProject != null) {
-      final strokes = await _localProvider.loadStrokes(localProject.id);
-      _strokes[localProject.id] = strokes;
-      return ProjectMapper.toEntity(localProject);
+
+    // A locally cached project is only a cache. Another device may have saved
+    // newer strokes to Supabase, so always check the remote copy before using
+    // it. If Supabase is unreachable, fall back to the local copy.
+    ProjectModel? remoteProject;
+    try {
+      remoteProject = await _remoteProvider.loadProject(contourId);
+    } catch (e, stackTrace) {
+      debugPrint('Remote project load failed: $e');
+      debugPrint('$stackTrace');
     }
 
-    final remoteProject = await _remoteProvider.loadProject(contourId);
-    if (remoteProject != null) {
+    final bool useRemote = remoteProject != null &&
+        (localProject == null ||
+            remoteProject.lastOpened.isAfter(localProject.lastOpened));
+
+    if (useRemote) {
       final strokes = _strokesFromData(remoteProject.data);
       _strokes[remoteProject.id] = strokes;
       await _localProvider.saveProject(remoteProject, strokes);
       return ProjectMapper.toEntity(remoteProject);
+    }
+
+    if (localProject != null) {
+      final strokes = await _localProvider.loadStrokes(localProject.id);
+      _strokes[localProject.id] = strokes;
+      return ProjectMapper.toEntity(localProject);
     }
 
     return null;

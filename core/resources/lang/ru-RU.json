@@ -44,6 +44,8 @@
   "eyedropper": "Пипетка",
   "brush_round_basic": "Базовая кисть",
   "brush_fine_liner": "Художественная",
+  "brush_soft_liner": "Мягкая художественная",
+  "brush_soft_round_basic": "Мягкая базовая кисть",
   "eraser_standard": "Обычный ластик",
   "eraser_soft": "Мягкий ластик",
   "reset_project_confirm_title": "Начать заново",

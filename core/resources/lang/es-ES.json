@@ -44,6 +44,8 @@
   "eyedropper": "Cuentagotas",
   "brush_round_basic": "Pincel redondo básico",
   "brush_fine_liner": "Rotulador fino",
+  "brush_soft_liner": "Rotulador suave",
+  "brush_soft_round_basic": "Pincel redondo suave",
   "eraser_standard": "Borrador estándar",
   "eraser_soft": "Borrador suave",
   "reset_project_confirm_title": "Reiniciar proyecto",

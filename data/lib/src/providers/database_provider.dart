@@ -199,6 +199,9 @@ class AppDatabase extends _$AppDatabase {
   /// Creates a database instance.
   AppDatabase() : super(_openConnection());
 
+  /// Creates an in-memory database for repository tests.
+  AppDatabase.forTesting() : super(NativeDatabase.memory());
+
   /// Current database schema version.
   @override
   int get schemaVersion => 6;

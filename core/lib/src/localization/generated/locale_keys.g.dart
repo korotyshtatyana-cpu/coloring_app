@@ -48,6 +48,8 @@ abstract class  LocaleKeys {
   static const eyedropper = 'eyedropper';
   static const brush_round_basic = 'brush_round_basic';
   static const brush_fine_liner = 'brush_fine_liner';
+  static const brush_soft_liner = 'brush_soft_liner';
+  static const brush_soft_round_basic = 'brush_soft_round_basic';
   static const eraser_standard = 'eraser_standard';
   static const eraser_soft = 'eraser_soft';
   static const reset_project_confirm_title = 'reset_project_confirm_title';

@@ -18,6 +18,7 @@ import '../bloc/canvas_bloc.dart';
 import '../onboarding/canvas_onboarding_dialog.dart';
 import '../painters/canvas_painter.dart';
 import '../widgets/canvas/active_stroke.dart';
+import '../widgets/canvas/brush_cursor_controller.dart';
 import '../widgets/canvas/canvas_stack.dart';
 import '../widgets/eyedropper_overlay.dart';
 import '../widgets/export_menu.dart';
@@ -100,6 +101,12 @@ class _CanvasContentState extends State<CanvasContent>
   /// High-performance holder for the active stroke to avoid BLoC rebuilds
   /// and O(n) per-event copies while drawing.
   final ActiveStroke _activeStroke = ActiveStroke();
+
+  /// Cursor shown in canvas space while a pointer is down.
+  ///
+  /// Kept outside the BLoC on purpose: moving the cursor must not rebuild the
+  /// canvas tree, it only repaints the cursor's own layer.
+  final BrushCursorController _brushCursor = BrushCursorController();
 
   bool _isEyedropperActive = false;
 
@@ -262,6 +269,7 @@ class _CanvasContentState extends State<CanvasContent>
     }
     _transformationController.dispose();
     _activeStroke.dispose();
+    _brushCursor.dispose();
     _disposeEyedropperImage();
     super.dispose();
   }
@@ -270,6 +278,8 @@ class _CanvasContentState extends State<CanvasContent>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive) {
+      // Pointer-up is not guaranteed while the app is in the background.
+      _brushCursor.hide();
       // Background saves should only persist data, not re-render UI.
       context.read<CanvasBloc>().add(const SaveProject(withThumbnail: false));
     }
@@ -376,6 +386,7 @@ class _CanvasContentState extends State<CanvasContent>
                 // is still being drawn so it cannot leak into the artwork.
                 _activeStroke.clear();
                 _activeDrawPointer = null;
+                _brushCursor.hide();
               },
             ),
             BlocListener<CanvasBloc, CanvasState>(
@@ -427,6 +438,7 @@ class _CanvasContentState extends State<CanvasContent>
                         height: canvasSize.height,
                         child: CanvasStack(
                           currentStrokeNotifier: _activeStroke,
+                          brushCursor: _brushCursor,
                           canvasSize: canvasSize,
                         ),
                       ),
@@ -569,6 +581,7 @@ class _CanvasContentState extends State<CanvasContent>
         }
         _activeDrawPointer = null;
       }
+      _brushCursor.hide();
       _resetTwoFingerGesture();
       return;
     }
@@ -585,7 +598,8 @@ class _CanvasContentState extends State<CanvasContent>
       // if the finger moves outside the canvas boundaries.
       _activeDrawPointer = event.pointer;
       final Offset point = _viewportToScene(event.localPosition);
-      _startDrawingLocally(point, event.pressure);
+      final StrokeEntity stroke = _startDrawingLocally(point, event.pressure);
+      _showBrushCursor(stroke, point, event.pressure);
     }
   }
 
@@ -612,9 +626,20 @@ class _CanvasContentState extends State<CanvasContent>
       // (CanvasStack clips the ink to the page, so any excursion is visually clipped).
       final Offset point = _viewportToScene(event.localPosition);
       if (_activeStroke.stroke == null) {
-        _startDrawingLocally(point, event.pressure);
+        final StrokeEntity stroke = _startDrawingLocally(
+          point,
+          event.pressure,
+        );
+        _showBrushCursor(stroke, point, event.pressure);
       } else {
         _addPointLocally(point, event.pressure);
+        // The cursor follows every pointer event, even when the stroke itself
+        // skips points that are too close together. The pressure keeps the
+        // ring in sync with the width of the segment being drawn.
+        _brushCursor.move(
+          _clampToStrokeBounds(point),
+          pressure: event.pressure,
+        );
       }
     }
   }
@@ -631,6 +656,7 @@ class _CanvasContentState extends State<CanvasContent>
     if (event.pointer == _activeDrawPointer) {
       _finalizeDrawing();
       _activeDrawPointer = null;
+      _brushCursor.hide();
     }
 
     _finishTwoFingerGestureIfDone();
@@ -650,6 +676,7 @@ class _CanvasContentState extends State<CanvasContent>
       _activeStroke.clear();
       context.read<CanvasBloc>().add(const CancelDrawing());
       _activeDrawPointer = null;
+      _brushCursor.hide();
     }
 
     _finishTwoFingerGestureIfDone();
@@ -673,7 +700,35 @@ class _CanvasContentState extends State<CanvasContent>
     }
   }
 
-  void _startDrawingLocally(Offset point, double pressure) {
+  /// Shows the brush cursor for [stroke] at [scenePoint].
+  ///
+  /// The stroke is the source of truth: it already carries the tool's size and
+  /// pressure flag, so the ring can never diverge from the line being drawn.
+  /// [pressure] is the current pointer pressure; for pressure-sensitive tools
+  /// the diameter mirrors the stroke width (`size * pressure`).
+  ///
+  /// The cursor lives in canvas space, so it scales with the page. The current
+  /// scale is passed along only to keep the outline a constant thickness on
+  /// screen.
+  void _showBrushCursor(
+    StrokeEntity stroke,
+    Offset scenePoint,
+    double pressure,
+  ) {
+    _brushCursor.show(
+      position: scenePoint,
+      brushSize: stroke.size,
+      pressureSensitive: stroke.isPressureSensitive,
+      pressure: pressure,
+      sceneScale: _transformationController.value.getMaxScaleOnAxis(),
+    );
+  }
+
+  /// Creates the active stroke for a new gesture and returns it.
+  ///
+  /// Returning the stroke lets the cursor use exactly the same size and
+  /// pressure settings as the line that is about to be drawn.
+  StrokeEntity _startDrawingLocally(Offset point, double pressure) {
     final state = context.read<CanvasBloc>().state;
     final activeToolId = state.isEraser
         ? state.activeEraserId
@@ -683,18 +738,15 @@ class _CanvasContentState extends State<CanvasContent>
     );
 
     final isPressure = activeTool.isPressureSensitive;
-    final effectiveSize = isPressure
-        ? _effectiveSize(pressure, state)
-        : state.brushSize;
 
     final stroke = StrokeEntity(
       points: <StrokePoint>[
         StrokePoint(offset: point, pressure: isPressure ? pressure : 1.0),
       ],
       color: state.isEraser ? Colors.white.toARGB32() : state.color.toARGB32(),
-      size: state.isEraser ? effectiveSize : state.brushSize,
+      size: state.brushSize,
       opacity: state.isEraser ? 1.0 : state.opacity,
-      brushType: state.isEraser ? BrushType.circle : state.brushType,
+      brushType: activeTool.brushType,
       brushId: activeToolId,
       isPressureSensitive: isPressure,
     );
@@ -704,6 +756,7 @@ class _CanvasContentState extends State<CanvasContent>
     context.read<CanvasBloc>().add(
       StartDrawing(point: point, pressure: pressure),
     );
+    return stroke;
   }
 
   void _addPointLocally(Offset point, double pressure) {
@@ -1133,10 +1186,5 @@ class _CanvasContentState extends State<CanvasContent>
 
   void _onExportSelected(CanvasBloc bloc, ExportType exportType) {
     bloc.add(ExportImage(exportType));
-  }
-
-  double _effectiveSize(double pressure, CanvasState state) {
-    final clamped = pressure.clamp(0.0, 1.0);
-    return max(Constants.minBrushSize, state.brushSize * clamped);
   }
 }

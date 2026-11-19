@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:domain/domain.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../data.dart';
@@ -10,6 +11,21 @@ class CanvasRemoteProvider {
 
   /// Creates a provider with the given [_client].
   CanvasRemoteProvider({required this._client});
+
+  /// Fetches the brush catalog from Supabase.
+  ///
+  /// The result is not paginated: the brush catalog is small and is merged
+  /// into the local Drift cache by the canvas repository.
+  Future<List<ToolEntity>> getBrushes() async {
+    final List<Map<String, dynamic>> response = await _client
+        .from(RequestConstants.brushesTable)
+        .select(RequestConstants.selectAll);
+
+    return response
+        .map(ToolMapper.fromRemoteRow)
+        .whereType<ToolEntity>()
+        .toList();
+  }
 
   /// Saves the project to Supabase using upsert semantics.
   Future<void> saveProject(ProjectModel project) async {

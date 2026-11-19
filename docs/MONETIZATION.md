@@ -534,7 +534,9 @@ independent from `is_active`, so a cancelled subscription keeps access until
 `pending_purchases.contour_id` is added by
 `supabase/migrations/20261104000000_pending_purchase_contour.sql`, and
 `purchase_refunds` with its RLS policies by
-`supabase/migrations/20261105000000_purchase_refunds.sql`.
+`supabase/migrations/20261105000000_purchase_refunds.sql`. The table is added
+to the `supabase_realtime` publication by
+`supabase/migrations/20261119000000_add_purchase_refunds_to_realtime.sql`.
 
 ## 10. Google Play Billing Setup
 

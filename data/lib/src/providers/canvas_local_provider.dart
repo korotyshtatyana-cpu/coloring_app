@@ -66,18 +66,17 @@ class CanvasLocalProvider {
   }
 
   /// Loads available tools from the database.
+  ///
+  /// Built-in tools are inserted when missing, so an existing install that was
+  /// seeded before a tool was added still receives it without wiping the
+  /// brushes table. Rows synced from Supabase keep their name and preview.
   Future<List<ToolEntity>> getAvailableTools() async {
+    await _seedDefaultBrushes();
     final List<Brushe> rows = await _database.select(_database.brushes).get();
-
-    // Seed database if empty
-    if (rows.isEmpty) {
-      await _seedBrushes();
-      return getAvailableTools();
-    }
 
     return rows
         .map(
-          (row) => ToolEntity(
+          (row) => ToolMapper.fromFields(
             id: row.id,
             nameKey: row.nameKey,
             previewPath: row.previewPath,
@@ -87,26 +86,76 @@ class CanvasLocalProvider {
         .toList();
   }
 
-  Future<void> _seedBrushes() async {
-    final seeds = [
-      BrushesCompanion.insert(
-        id: 'round_basic',
-        nameKey: LocaleKeys.brush_round_basic,
-        previewPath: '',
-        isPressureSensitive: false,
-      ),
-      BrushesCompanion.insert(
-        id: 'fine_liner',
-        nameKey: LocaleKeys.brush_fine_liner,
-        previewPath: '',
-        isPressureSensitive: true,
-      ),
-    ];
-
-    for (final companion in seeds) {
-      await _database.into(_database.brushes).insert(companion);
-    }
+  /// Inserts the built-in tool catalog without overwriting synced rows.
+  Future<void> _seedDefaultBrushes() async {
+    await _database.batch((Batch batch) {
+      for (final ToolEntity tool in _defaultTools) {
+        batch.insert(
+          _database.brushes,
+          BrushesCompanion.insert(
+            id: tool.id,
+            nameKey: tool.nameKey,
+            previewPath: tool.previewPath,
+            isPressureSensitive: tool.isPressureSensitive,
+          ),
+          mode: InsertMode.insertOrIgnore,
+        );
+      }
+    });
   }
+
+  /// Inserts or updates tool rows fetched from Supabase.
+  Future<void> upsertTools(List<ToolEntity> tools) async {
+    if (tools.isEmpty) {
+      return;
+    }
+
+    await _database.batch((Batch batch) {
+      for (final ToolEntity tool in tools) {
+        batch.insert(
+          _database.brushes,
+          BrushesCompanion.insert(
+            id: tool.id,
+            nameKey: tool.nameKey,
+            previewPath: tool.previewPath,
+            isPressureSensitive: tool.isPressureSensitive,
+          ),
+          mode: InsertMode.insertOrReplace,
+        );
+      }
+    });
+  }
+
+  static const List<ToolEntity> _defaultTools = <ToolEntity>[
+    ToolEntity(
+      id: 'round_basic',
+      nameKey: LocaleKeys.brush_round_basic,
+      previewPath: '',
+      isPressureSensitive: false,
+      brushType: BrushType.circle,
+    ),
+    ToolEntity(
+      id: 'fine_liner',
+      nameKey: LocaleKeys.brush_fine_liner,
+      previewPath: '',
+      isPressureSensitive: true,
+      brushType: BrushType.circle,
+    ),
+    ToolEntity(
+      id: 'soft_round_basic',
+      nameKey: LocaleKeys.brush_soft_round_basic,
+      previewPath: '',
+      isPressureSensitive: false,
+      brushType: BrushType.softRoundBasic,
+    ),
+    ToolEntity(
+      id: 'soft_liner',
+      nameKey: LocaleKeys.brush_soft_liner,
+      previewPath: '',
+      isPressureSensitive: true,
+      brushType: BrushType.softLiner,
+    ),
+  ];
 
   /// Deletes all strokes for the given project.
   Future<void> clearStrokes(String projectId) async {

@@ -44,6 +44,8 @@
   "eyedropper": "Eyedropper",
   "brush_round_basic": "Round Basic",
   "brush_fine_liner": "Fine Liner",
+  "brush_soft_liner": "Soft Liner",
+  "brush_soft_round_basic": "Soft Round Basic",
   "eraser_standard": "Standard Eraser",
   "eraser_soft": "Soft Eraser",
   "reset_project_confirm_title": "Reset Project",

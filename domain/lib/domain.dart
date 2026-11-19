@@ -79,3 +79,5 @@ export 'src/use_cases/monetization/refresh_pending_purchase_use_case.dart';
 export 'src/use_cases/monetization/restore_purchases_use_case.dart';
 export 'src/use_cases/monetization/watch_purchase_updates_use_case.dart';
 export 'src/use_cases/monetization/watch_refunds_use_case.dart';
+export 'src/utils/brush_softness.dart';
+export 'src/utils/soft_brush_path.dart';

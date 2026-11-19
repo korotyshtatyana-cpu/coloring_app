@@ -30,6 +30,10 @@ class EraserButton extends StatelessWidget {
     final List<ToolEntity> availableTools = context.select(
       (CanvasBloc bloc) => bloc.state.availableTools,
     );
+    // Brushes and erasers share the same tool list: the eraser simply paints
+    // with the eraser color, so a soft or pressure-sensitive brush keeps its
+    // softness and pressure response when used for erasing.
+    final List<ToolEntity> erasers = availableTools;
 
     return AppIconButton(
       size: size,
@@ -49,7 +53,7 @@ class EraserButton extends StatelessWidget {
         if (!isEraser) {
           bloc.add(const SelectTool(CanvasTool.eraser));
         } else {
-          _showEraserSelector(context, bloc, availableTools, activeEraserId);
+          _showEraserSelector(context, bloc, erasers, activeEraserId);
         }
       },
     );

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:core/core.dart';
@@ -141,6 +140,9 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
           : null;
       final double? loadedOpacity = settings?['contourOpacity']?.toDouble();
       final String? thumbnailPath = project?.data['thumbnailPath'] as String?;
+      final ToolEntity? initialBrush = allTools.isNotEmpty
+          ? allTools.first
+          : null;
 
       Size? contourSize;
       String? contourSvg;
@@ -176,8 +178,9 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
           contourOpacity: loadedOpacity ?? state.contourOpacity,
           thumbnailPath: thumbnailPath,
           availableTools: allTools,
-          activeBrushId: allTools.isNotEmpty ? allTools.first.id : null,
-          activeEraserId: allTools.isNotEmpty ? allTools.first.id : null,
+          activeBrushId: initialBrush?.id,
+          activeEraserId: initialBrush?.id,
+          brushType: initialBrush?.brushType ?? state.brushType,
         ),
       );
 
@@ -187,8 +190,10 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
         emit(state.copyWith(status: CanvasStatus.ready, isContourReady: true));
       }
 
-      // Automatically update last_opened timestamp when project is opened
-      unawaited(saveProject(withThumbnail: false));
+      // Do not save on open: the freshly loaded state may come from a local
+      // cache, and a full save would rewrite remote strokes with it (or delete
+      // the project if the contour SVG failed to load and strokes are empty).
+      // last_opened is updated by real edits and saves instead.
 
       // A refund that arrived during the load could not be evaluated without
       // the contour; re-check access now that the project is known.
@@ -330,9 +335,6 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
     );
 
     final isPressure = activeTool.isPressureSensitive;
-    final effectiveSize = isPressure
-        ? _effectiveSize(event.pressure)
-        : state.brushSize;
 
     final stroke = StrokeEntity(
       points: <StrokePoint>[
@@ -342,9 +344,9 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
         ),
       ],
       color: state.isEraser ? Colors.white.toARGB32() : state.color.toARGB32(),
-      size: state.isEraser ? effectiveSize : state.brushSize,
+      size: state.brushSize,
       opacity: state.isEraser ? 1.0 : state.opacity,
-      brushType: state.isEraser ? BrushType.circle : state.brushType,
+      brushType: activeTool.brushType,
       brushId: activeToolId,
       isPressureSensitive: isPressure,
     );
@@ -358,7 +360,21 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
   }
 
   void _onSelectBrush(SelectBrush event, Emitter<CanvasState> emit) {
-    emit(state.copyWith(activeBrushId: event.brushId, isEraser: false));
+    BrushType brushType = state.brushType;
+    for (final ToolEntity tool in state.availableTools) {
+      if (tool.id == event.brushId) {
+        brushType = tool.brushType;
+        break;
+      }
+    }
+
+    emit(
+      state.copyWith(
+        activeBrushId: event.brushId,
+        brushType: brushType,
+        isEraser: false,
+      ),
+    );
   }
 
   void _onSelectEraser(SelectEraser event, Emitter<CanvasState> emit) {
@@ -673,11 +689,6 @@ class CanvasBloc extends Bloc<CanvasEvent, CanvasState> {
         lastExportType: event.exportType,
       ),
     );
-  }
-
-  double _effectiveSize(double pressure) {
-    final clamped = pressure.clamp(0.0, 1.0);
-    return max(Constants.minBrushSize, state.brushSize * clamped);
   }
 
   ProjectEntity _projectEntity({CanvasState? state, String? thumbnailPath}) {

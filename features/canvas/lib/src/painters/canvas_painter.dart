@@ -6,9 +6,55 @@ import 'package:flutter_svg/flutter_svg.dart' show PictureInfo;
 
 import '../utils/perf_log.dart';
 
-/// Extra space around stroke bounds for the mask-filter blur.
-/// The blur sigma is 4, and the visible bleed stays within ~3 sigma.
+/// Representative pressure of a stroke, shared by the blur and its bounds.
+///
+/// Kept here as a short alias so the sigma and the bleed margin can never use
+/// different pressure values for the same stroke.
+double _strokePressure(StrokeEntity stroke) =>
+    BrushSoftness.effectivePressure(stroke);
+
+/// Blur sigma used by the legacy watercolor/airbrush brushes.
+const double _legacyBlurSigma = 4;
+
+/// Extra space around stroke bounds for the legacy blur.
+///
+/// The legacy blur sigma is 4, and the visible bleed stays within ~3 sigma.
 const double _blurMargin = 12;
+
+/// Returns the mask-filter sigma for [stroke], or `null` for a hard edge.
+double? _blurSigmaFor(StrokeEntity stroke) {
+  if (stroke.brushType.isSoft) {
+    return BrushSoftness.sigmaFor(
+      stroke.size,
+      pressureSensitive: stroke.isPressureSensitive,
+      pressure: _strokePressure(stroke),
+    );
+  }
+  if (stroke.brushType == BrushType.watercolor ||
+      stroke.brushType == BrushType.airbrush) {
+    return _legacyBlurSigma;
+  }
+  return null;
+}
+
+/// Extra bounds needed around [stroke] for its blur bleed.
+double _boundsMarginFor(StrokeEntity stroke) {
+  return stroke.brushType.isSoft
+      ? BrushSoftness.marginFor(
+          stroke.size,
+          pressureSensitive: stroke.isPressureSensitive,
+          pressure: _strokePressure(stroke),
+        )
+      : _blurMargin;
+}
+
+/// Whether [stroke] must be rendered as a single filled silhouette.
+///
+/// Pressure-sensitive soft strokes are built as one path and blurred once,
+/// so consecutive blurred segments do not create darker joints.
+bool _isSoftSilhouette(StrokeEntity stroke) {
+  return stroke.brushType.isSoft && stroke.isPressureSensitive;
+}
 
 /// Utility class to render strokes onto a [Canvas].
 abstract final class StrokeRenderer {
@@ -25,7 +71,12 @@ abstract final class StrokeRenderer {
   }) {
     if (stroke.points.length < 2) return;
 
-    final bool useLayer = stroke.opacity < 1.0;
+    // A soft stroke is drawn as a single blurred path, so its opacity can be
+    // folded into the paint color. A saveLayer would also work in Skia, but
+    // Impeller can drop the layer alpha when the content has a mask filter,
+    // which made soft strokes look almost opaque.
+    final bool isSoft = stroke.brushType.isSoft;
+    final bool useLayer = stroke.opacity < 1.0 && !isSoft;
     if (useLayer) {
       final Rect bounds = getStrokeBounds(stroke);
       // Draw the stroke at full opacity into a layer, then composite the
@@ -36,23 +87,31 @@ abstract final class StrokeRenderer {
       );
     }
 
+    final Color baseColor = Color(stroke.color);
     final paint = Paint()
-      ..color = Color(stroke.color)
+      ..color = isSoft
+          ? baseColor.withValues(alpha: baseColor.a * stroke.opacity)
+          : baseColor
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round
       ..style = PaintingStyle.stroke;
 
-    if (stroke.brushType == BrushType.watercolor ||
-        stroke.brushType == BrushType.airbrush) {
-      paint.maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+    final double? sigma = _blurSigmaFor(stroke);
+    if (sigma != null) {
+      paint.maskFilter = MaskFilter.blur(BlurStyle.normal, sigma);
     }
 
-    final double? uniformWidth = _getUniformWidth(stroke);
-    if (uniformWidth != null) {
-      paint.strokeWidth = uniformWidth;
-      canvas.drawPath(_getStrokePath(stroke), paint);
+    if (_isSoftSilhouette(stroke)) {
+      paint.style = PaintingStyle.fill;
+      canvas.drawPath(SoftBrushPath.build(stroke), paint);
     } else {
-      _drawPressureStroke(canvas, stroke, paint);
+      final double? uniformWidth = _getUniformWidth(stroke);
+      if (uniformWidth != null) {
+        paint.strokeWidth = uniformWidth;
+        canvas.drawPath(_getStrokePath(stroke), paint);
+      } else {
+        _drawPressureStroke(canvas, stroke, paint);
+      }
     }
 
     if (useLayer) {
@@ -105,7 +164,7 @@ abstract final class StrokeRenderer {
       if (offset.dx > maxX) maxX = offset.dx;
       if (offset.dy > maxY) maxY = offset.dy;
     }
-    final double margin = stroke.size + _blurMargin;
+    final double margin = stroke.size + _boundsMarginFor(stroke);
     return Rect.fromLTRB(
       minX - margin,
       minY - margin,
@@ -194,10 +253,13 @@ class ActiveStrokePainter extends CustomPainter {
       'n=${stroke.points.length},pressure=${stroke.isPressureSensitive})',
     );
 
-    final bool useLayer = stroke.opacity < 1.0;
+    // Soft strokes are single paths: fold opacity into the paint instead of a
+    // saveLayer, whose alpha Impeller may drop for mask-filtered content.
+    final bool isSoft = stroke.brushType.isSoft;
+    final bool useLayer = stroke.opacity < 1.0 && !isSoft;
     Rect? layerBounds = rawBounds;
     if (useLayer && layerBounds != null) {
-      final double margin = stroke.size + _blurMargin;
+      final double margin = stroke.size + _boundsMarginFor(stroke);
       // The paint area is the page, so the layer is limited to the part of the
       // stroke the user can see: a stroke running outside of the page would
       // otherwise make the layer grow with the excursion.
@@ -213,31 +275,40 @@ class ActiveStrokePainter extends CustomPainter {
       );
     }
 
+    final Color baseColor = Color(stroke.color);
     final paint = Paint()
-      ..color = Color(stroke.color)
+      ..color = isSoft
+          ? baseColor.withValues(alpha: baseColor.a * stroke.opacity)
+          : baseColor
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round
       ..style = PaintingStyle.stroke;
 
-    if (stroke.brushType == BrushType.watercolor ||
-        stroke.brushType == BrushType.airbrush) {
-      paint.maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+    final double? sigma = _blurSigmaFor(stroke);
+    if (sigma != null) {
+      paint.maskFilter = MaskFilter.blur(BlurStyle.normal, sigma);
     }
 
-    final Path? path = cachedPath;
-    if (stroke.isPressureSensitive || path == null) {
-      // Variable-width strokes are drawn segment by segment.
-      for (int i = 0; i < stroke.points.length - 1; i++) {
-        final StrokePoint p1 = stroke.points[i];
-        final StrokePoint p2 = stroke.points[i + 1];
-        final double w1 = stroke.size * p1.pressure;
-        final double w2 = stroke.size * p2.pressure;
-        paint.strokeWidth = (w1 + w2) / 2;
-        canvas.drawLine(p1.offset, p2.offset, paint);
-      }
+    if (_isSoftSilhouette(stroke)) {
+      paint.style = PaintingStyle.fill;
+      final Path softPath = cachedPath ?? SoftBrushPath.build(stroke);
+      canvas.drawPath(softPath, paint);
     } else {
-      paint.strokeWidth = stroke.size;
-      canvas.drawPath(path, paint);
+      final Path? path = cachedPath;
+      if (stroke.isPressureSensitive || path == null) {
+        // Variable-width strokes are drawn segment by segment.
+        for (int i = 0; i < stroke.points.length - 1; i++) {
+          final StrokePoint p1 = stroke.points[i];
+          final StrokePoint p2 = stroke.points[i + 1];
+          final double w1 = stroke.size * p1.pressure;
+          final double w2 = stroke.size * p2.pressure;
+          paint.strokeWidth = (w1 + w2) / 2;
+          canvas.drawLine(p1.offset, p2.offset, paint);
+        }
+      } else {
+        paint.strokeWidth = stroke.size;
+        canvas.drawPath(path, paint);
+      }
     }
 
     if (useLayer && layerBounds != null) {

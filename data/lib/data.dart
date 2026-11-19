@@ -29,6 +29,7 @@ export 'src/mappers/project_mapper.dart';
 export 'src/mappers/purchase_refund_mapper.dart';
 export 'src/mappers/stroke_mapper.dart';
 export 'src/mappers/subscription_mapper.dart';
+export 'src/mappers/tool_mapper.dart';
 export 'src/mappers/user_entitlement_mapper.dart';
 export 'src/models/contour_model.dart';
 export 'src/models/pending_purchase_model.dart';
