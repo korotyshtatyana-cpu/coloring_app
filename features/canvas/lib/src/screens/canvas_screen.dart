@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 
+import '../utils/color_format.dart';
 import '../utils/perf_log.dart';
 
 import '../bloc/canvas_bloc.dart';
@@ -44,31 +45,35 @@ class CanvasScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<CanvasBloc>(
-      create: (context) => CanvasBloc(
-        contourId: contourId,
-        addStrokeUseCase: appLocator<AddStrokeUseCase>(),
-        saveProjectUseCase: appLocator<SaveProjectUseCase>(),
-        loadProjectUseCase: appLocator<LoadProjectUseCase>(),
-        getContourByIdUseCase: appLocator<GetContourByIdUseCase>(),
-        exportImageUseCase: appLocator<ExportImageUseCase>(),
-        shareFileUseCase: appLocator<ShareFileUseCase>(),
-        saveImageToGalleryUseCase: appLocator<SaveImageToGalleryUseCase>(),
-        renderProjectThumbnailUseCase:
-            appLocator<RenderProjectThumbnailUseCase>(),
-        getAvailableToolsUseCase: appLocator<GetAvailableToolsUseCase>(),
-        getCurrentUserUseCase: appLocator<GetCurrentUserUseCase>(),
-        watchRefundsUseCase: appLocator<WatchRefundsUseCase>(),
-        watchPurchaseUpdatesUseCase: appLocator<WatchPurchaseUpdatesUseCase>(),
-        getGalleryItemsUseCase: appLocator<GetGalleryItemsUseCase>(),
-        logger: appLocator<AppLogger>(),
-        isViewOnly: isViewOnly,
-      )..add(const LoadProject()),
-      child: CanvasContent(
-        key: _canvasKey,
-        onExport: () => _canvasKey.currentState?.showExportMenu(),
-        onEyedropper: ({required bool isContour}) =>
-            _canvasKey.currentState?.enterEyedropperMode(isContour: isContour),
+    return RepositoryProvider<RecentColorsService>.value(
+      value: appLocator<RecentColorsService>(),
+      child: BlocProvider<CanvasBloc>(
+        create: (context) => CanvasBloc(
+          contourId: contourId,
+          addStrokeUseCase: appLocator<AddStrokeUseCase>(),
+          saveProjectUseCase: appLocator<SaveProjectUseCase>(),
+          loadProjectUseCase: appLocator<LoadProjectUseCase>(),
+          getContourByIdUseCase: appLocator<GetContourByIdUseCase>(),
+          exportImageUseCase: appLocator<ExportImageUseCase>(),
+          shareFileUseCase: appLocator<ShareFileUseCase>(),
+          saveImageToGalleryUseCase: appLocator<SaveImageToGalleryUseCase>(),
+          renderProjectThumbnailUseCase:
+              appLocator<RenderProjectThumbnailUseCase>(),
+          getAvailableToolsUseCase: appLocator<GetAvailableToolsUseCase>(),
+          getCurrentUserUseCase: appLocator<GetCurrentUserUseCase>(),
+          watchRefundsUseCase: appLocator<WatchRefundsUseCase>(),
+          watchPurchaseUpdatesUseCase:
+              appLocator<WatchPurchaseUpdatesUseCase>(),
+          getGalleryItemsUseCase: appLocator<GetGalleryItemsUseCase>(),
+          logger: appLocator<AppLogger>(),
+          isViewOnly: isViewOnly,
+        )..add(const LoadProject()),
+        child: CanvasContent(
+          key: _canvasKey,
+          onExport: () => _canvasKey.currentState?.showExportMenu(),
+          onEyedropper: ({required bool isContour}) => _canvasKey.currentState
+              ?.enterEyedropperMode(isContour: isContour),
+        ),
       ),
     );
   }
@@ -219,7 +224,8 @@ class _CanvasContentState extends State<CanvasContent>
     final double buildMs =
         last.buildDuration.inMicroseconds / Duration.microsecondsPerMillisecond;
     final double rasterMs =
-        last.rasterDuration.inMicroseconds / Duration.microsecondsPerMillisecond;
+        last.rasterDuration.inMicroseconds /
+        Duration.microsecondsPerMillisecond;
     if (buildMs < _frameBudgetMs && rasterMs < _frameBudgetMs) return;
     debugPrint(
       '[perf] build=${buildMs.toStringAsFixed(1)}ms '
@@ -249,11 +255,11 @@ class _CanvasContentState extends State<CanvasContent>
         perfLogOnce(
           'env',
           'impeller=${ui.ImageFilter.isShaderFilterSupported} '
-          'dpr=$dpr '
-          'pageLogical=${page?.width.round()}x${page?.height.round()} '
-          'pagePhysical='
-          '${page == null ? null : '${(page.width * dpr).round()}x${(page.height * dpr).round()}'} '
-          'budgetMs=${_frameBudgetMs.toStringAsFixed(1)}',
+              'dpr=$dpr '
+              'pageLogical=${page?.width.round()}x${page?.height.round()} '
+              'pagePhysical='
+              '${page == null ? null : '${(page.width * dpr).round()}x${(page.height * dpr).round()}'} '
+              'budgetMs=${_frameBudgetMs.toStringAsFixed(1)}',
         );
       });
     }
@@ -263,9 +269,7 @@ class _CanvasContentState extends State<CanvasContent>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     if (kCanvasPerfLog) {
-      SchedulerBinding.instance.removeTimingsCallback(
-        _perfReportFrameTimings,
-      );
+      SchedulerBinding.instance.removeTimingsCallback(_perfReportFrameTimings);
     }
     _transformationController.dispose();
     _activeStroke.dispose();
@@ -626,10 +630,7 @@ class _CanvasContentState extends State<CanvasContent>
       // (CanvasStack clips the ink to the page, so any excursion is visually clipped).
       final Offset point = _viewportToScene(event.localPosition);
       if (_activeStroke.stroke == null) {
-        final StrokeEntity stroke = _startDrawingLocally(
-          point,
-          event.pressure,
-        );
+        final StrokeEntity stroke = _startDrawingLocally(point, event.pressure);
         _showBrushCursor(stroke, point, event.pressure);
       } else {
         _addPointLocally(point, event.pressure);
@@ -1112,6 +1113,11 @@ class _CanvasContentState extends State<CanvasContent>
       _eyedropperPosition = null;
       _previewColor = null;
     });
+    if (color != null) {
+      await context.read<RecentColorsService>().remember(
+        ColorFormat.toHex(color),
+      );
+    }
   }
 
   Future<void> _cancelEyedropper() async {

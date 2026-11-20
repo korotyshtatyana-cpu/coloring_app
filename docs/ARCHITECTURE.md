@@ -238,6 +238,7 @@ domain/lib/
 - `CanvasRepository` — getAvailableTools, addStroke, saveProject, deleteProject, loadProject, exportImage, renderProjectThumbnail, saveImageToGallery
 - `MonetizationRepository` — подписки, покупки проектов/кредитов, restore, pending, refunds, `watchRefunds`, `purchaseUpdates`
 - `SettingsRepository` — getLanguageCode, saveLanguageCode, canvas onboarding
+- `RecentColorsService` — загрузка и сохранение последних 8 цветов в формате `#RRGGBB`
 - `ShareRepository` — shareFile
 - `FeedbackRepository` — submitFeedback
 
@@ -317,6 +318,7 @@ data/lib/
     │   ├── rewarded_ad_outcome.dart / stub_ad_service.dart
     │   ├── share_service.dart
     │   ├── gallery_saver_service.dart
+    │   ├── recent_colors_service_impl.dart # SharedPreferences, recent_colors
     │   └── canvas_rendering_service.dart # Рендеринг в PNG
     └── utils/
         └── server_time.dart          # Парсинг UTC-времени с сервера
@@ -648,6 +650,27 @@ flutter pub run build_runner build --delete-conflicting-outputs
 
 ## Сервисы
 Платформенные операции (шаринг, сохранение в галерею) вынесены в статические сервисы в модуле `data`.
+
+### Недавние цвета
+`RecentColorsService` (domain) сохраняет до 8 последних цветов в `SharedPreferences`
+под ключом `recent_colors` в формате `#RRGGBB`; реализация — `RecentColorsServiceImpl`
+в модуле `data`. Чистая нормализация и дедупликация находятся в `RecentColors`.
+
+Сервис регистрируется в `DataDI` и предоставляется экраном canvas через
+`RepositoryProvider`, поэтому диалог цвета получает его через `context.read` без
+изменения публичного конструктора.
+
+### Диалог выбора цвета
+`ColorPickerDialog` содержит вкладки «Палитра» и «Библиотека»; пипетка и строка
+недавних цветов расположены в нижнем ряду под вкладками.
+Единственный источник правды для выбранного цвета — `CanvasBloc`: обе вкладки
+читают `state.color` / `state.contourColor` через `context.select` и обновляют его
+одними и теми же обработчиками. `LibraryTab` выделяет текущий цвет зелёной рамкой.
+
+До закрытия диалог только запоминает последний
+выбранный цвет в своём состоянии: ряд недавних не обновляется и в хранилище ничего
+не пишется. При закрытии вызывается `RecentColorsService.remember` с этим цветом.
+Цвет пипетки сохраняется сразу после захвата на холсте.
 
 ---
 

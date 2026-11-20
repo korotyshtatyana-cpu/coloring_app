@@ -1,12 +1,21 @@
+import 'dart:async';
+
 import 'package:core/core.dart';
 import 'package:core_ui/core_ui.dart';
+import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
 import '../bloc/canvas_bloc.dart';
+import '../utils/color_format.dart';
+import 'color_picker/library_tab.dart';
+import 'color_picker/palette_tab.dart';
+import 'color_picker/recent_colors_row.dart';
 
-/// Color picker dialog with color wheel, format selector, and input field.
+/// Dialog with a palette tab, a marker library and persistent recent colors.
+///
+/// The canvas BLoC remains the single source of truth for the selected color;
+/// both tabs read it with `context.select` and update it through the same
+/// callbacks.
 class ColorPickerDialog extends StatefulWidget {
   /// Callback invoked when the eyedropper mode is requested.
   /// Pass [isContour] to let the caller know which layer to update.
@@ -26,338 +35,152 @@ class ColorPickerDialog extends StatefulWidget {
   State<ColorPickerDialog> createState() => _ColorPickerDialogState();
 }
 
-class _ColorPickerDialogState extends State<ColorPickerDialog> {
-  final ColorLabelType _selectedFormat = ColorLabelType.hex;
-  final TextEditingController _textController = TextEditingController();
-  final FocusNode _textFocusNode = FocusNode();
-  HSVColor? _hsvColor;
+class _ColorPickerDialogState extends State<ColorPickerDialog>
+    with SingleTickerProviderStateMixin {
+  late final RecentColorsService _recentColorsService;
+  late final TabController _tabController;
+  List<String> _recentColors = const <String>[];
+  String? _lastSelectedHex;
+
+  @override
+  void initState() {
+    super.initState();
+    _recentColorsService = context.read<RecentColorsService>();
+    _tabController = TabController(length: 2, vsync: this);
+    unawaited(_loadRecentColors());
+  }
 
   @override
   void dispose() {
-    _textController.dispose();
-    _textFocusNode.dispose();
+    _tabController.dispose();
+    final String? hex = _lastSelectedHex;
+    if (hex != null) {
+      unawaited(_recentColorsService.remember(hex));
+    }
     super.dispose();
   }
 
-  String _colorToString(Color color, ColorLabelType format) {
-    switch (format) {
-      case ColorLabelType.hex:
-        final String hex = color
-            .toARGB32()
-            .toRadixString(16)
-            .padLeft(8, '0')
-            .substring(2)
-            .toUpperCase();
-        return '#$hex';
-      case ColorLabelType.rgb:
-        return '${(color.r * 255).round()}, ${(color.g * 255).round()}, '
-            '${(color.b * 255).round()}';
-      case ColorLabelType.hsv:
-        final HSVColor hsv = HSVColor.fromColor(color);
-        return '${hsv.hue.round()}, ${(hsv.saturation * 100).round()}, '
-            '${(hsv.value * 100).round()}';
-      case ColorLabelType.hsl:
-        final HSLColor hsl = HSLColor.fromColor(color);
-        return '${hsl.hue.round()}, ${(hsl.saturation * 100).round()}, '
-            '${(hsl.lightness * 100).round()}';
-    }
+  Future<void> _loadRecentColors() async {
+    final List<String> colors = await _recentColorsService.load();
+    if (mounted) setState(() => _recentColors = colors);
   }
 
-  List<num?> _extractNumbers(String value) {
-    return RegExp(r'[\d.]+')
-        .allMatches(value)
-        .map((RegExpMatch match) => num.tryParse(match.group(0)!))
-        .toList();
-  }
-
-  Color? _parseColor(String value, ColorLabelType format) {
-    switch (format) {
-      case ColorLabelType.hex:
-        String hex = value.trim();
-        if (hex.startsWith('#')) {
-          hex = hex.substring(1);
-        }
-        if (hex.length == 6) {
-          final int? colorValue = int.tryParse(hex, radix: 16);
-          if (colorValue != null) {
-            return Color(0xFF000000 | colorValue);
-          }
-        }
-        return null;
-      case ColorLabelType.rgb:
-        final List<num?> numbers = _extractNumbers(value);
-        if (numbers.length >= 3) {
-          return Color.fromARGB(
-            255,
-            numbers[0]!.toInt().clamp(0, 255),
-            numbers[1]!.toInt().clamp(0, 255),
-            numbers[2]!.toInt().clamp(0, 255),
-          );
-        }
-        return null;
-      case ColorLabelType.hsv:
-        final List<num?> numbers = _extractNumbers(value);
-        if (numbers.length >= 3) {
-          return HSVColor.fromAHSV(
-            1.0,
-            numbers[0]!.toDouble().clamp(0, 360),
-            numbers[1]!.toDouble().clamp(0, 100) / 100,
-            numbers[2]!.toDouble().clamp(0, 100) / 100,
-          ).toColor();
-        }
-        return null;
-      case ColorLabelType.hsl:
-        final List<num?> numbers = _extractNumbers(value);
-        if (numbers.length >= 3) {
-          return HSLColor.fromAHSL(
-            1.0,
-            numbers[0]!.toDouble().clamp(0, 360),
-            numbers[1]!.toDouble().clamp(0, 100) / 100,
-            numbers[2]!.toDouble().clamp(0, 100) / 100,
-          ).toColor();
-        }
-        return null;
-    }
-  }
-
-  void _updateTextFromColor(Color color) {
-    if (_textFocusNode.hasFocus) {
-      return;
-    }
-    _textController.text = _colorToString(color, _selectedFormat);
-  }
-
-  void _onTextChanged(String value, BuildContext context) {
-    final Color? color = _parseColor(value, _selectedFormat);
-    if (color != null) {
-      final bloc = context.read<CanvasBloc>();
-      if (widget.isContour) {
-        bloc.add(ChangeContourSettings(color: color));
-      } else {
-        bloc.add(ChangeColor(color));
-      }
-    }
-  }
-
-  Future<void> _copyValueToClipboard() async {
-    await Clipboard.setData(ClipboardData(text: _textController.text));
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            LocaleKeys.copied_to_clipboard.tr(),
-            style: AppFonts.normal16.copyWith(color: Colors.white),
-          ),
-          duration: const Duration(seconds: 1),
-        ),
-      );
-    }
-  }
-
-  void _onColorChanged(HSVColor color) {
-    setState(() => _hsvColor = color);
-    final bloc = context.read<CanvasBloc>();
+  void _dispatchColor(Color color) {
+    final CanvasBloc bloc = context.read<CanvasBloc>();
     if (widget.isContour) {
-      bloc.add(ChangeContourSettings(color: color.toColor()));
+      bloc.add(ChangeContourSettings(color: color));
     } else {
-      bloc.add(ChangeColor(color.toColor()));
+      bloc.add(ChangeColor(color));
     }
+  }
+
+  void _onColorChanged(Color color) => _dispatchColor(color);
+
+  void _onColorSelected(Color color) {
+    _dispatchColor(color);
+    _lastSelectedHex = ColorFormat.toHex(color);
+  }
+
+  void _onEyedropper() {
+    Navigator.of(context).pop();
+    widget.onEyedropper?.call(isContour: widget.isContour);
   }
 
   @override
   Widget build(BuildContext context) {
-    final AppColors colors = AppColors.of(context);
-    final Color currentColor = context.select(
-      (CanvasBloc bloc) =>
-          widget.isContour ? bloc.state.contourColor : bloc.state.color,
-    );
+    final AppColors palette = AppColors.of(context);
+    final String title = widget.isContour
+        ? LocaleKeys.contour.tr()
+        : LocaleKeys.color.tr();
 
-    final double contourOpacity = widget.isContour
-        ? context.select((CanvasBloc bloc) => bloc.state.contourOpacity)
-        : 1.0;
-
-    if (_hsvColor == null ||
-        (_hsvColor!.toColor().toARGB32() != currentColor.toARGB32() &&
-            currentColor.toARGB32() != 0xFF000000)) {
-      _hsvColor = HSVColor.fromColor(currentColor);
-    } else if (currentColor.toARGB32() == 0xFF000000 && _hsvColor != null) {
-      _hsvColor = _hsvColor!.withValue(0);
-    }
-
-    _updateTextFromColor(currentColor);
-
-    return IntrinsicWidth(
-      child: IntrinsicHeight(
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
-              Text(
-                widget.isContour
-                    ? LocaleKeys.contour.tr()
-                    : LocaleKeys.color.tr(),
-                style: AppFonts.semiBold20.copyWith(color: colors.primaryText),
-              ),
-              const SizedBox(height: 12),
-              Theme(
-                data: Theme.of(context).copyWith(
-                  textTheme: Theme.of(context).textTheme.apply(
-                    bodyColor: colors.primaryText,
-                    displayColor: colors.primaryText,
-                  ),
+    return SizedBox(
+      width: 320,
+      height: 590,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Theme(
+          data: Theme.of(context).copyWith(
+            textTheme: Theme.of(context).textTheme.apply(
+              bodyColor: palette.primaryText,
+              displayColor: palette.primaryText,
+            ),
+          ),
+          child: DefaultTextStyle(
+            style: AppFonts.normal16.copyWith(color: palette.primaryText),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    Padding(
+                      padding: const EdgeInsets.only(left: 6),
+                      child: Text(
+                        title,
+                        style: AppFonts.semiBold20.copyWith(
+                          color: palette.primaryText,
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      icon: Icon(
+                        Icons.close,
+                        color: palette.iconPrimary,
+                        size: 20,
+                      ),
+                      tooltip: LocaleKeys.close.tr(),
+                      onPressed: () => Navigator.of(context).pop(),
+                      padding: const EdgeInsets.all(4),
+                      constraints: const BoxConstraints(
+                        minWidth: 32,
+                        minHeight: 32,
+                      ),
+                    ),
+                  ],
                 ),
-                child: DefaultTextStyle(
-                  style: AppFonts.normal16.copyWith(color: colors.primaryText),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
+                const SizedBox(height: 8),
+                TabBar(
+                  labelStyle: AppFonts.normal14,
+                  controller: _tabController,
+                  labelColor: palette.iconActive,
+                  unselectedLabelColor: palette.primaryText,
+                  indicatorColor: palette.iconActive,
+                  indicatorPadding: const EdgeInsets.only(bottom: 8),
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  tabs: <Widget>[
+                    Tab(text: LocaleKeys.palette.tr()),
+                    Tab(text: LocaleKeys.library.tr()),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Expanded(
+                  child: TabBarView(
+                    physics: const NeverScrollableScrollPhysics(),
+                    controller: _tabController,
                     children: <Widget>[
-                      // Color picker area (color wheel)
-                      SizedBox(
-                        height: 200,
-                        width: 200,
-                        child: ColorPickerArea(
-                          _hsvColor!,
-                          _onColorChanged,
-                          PaletteType.hsv,
-                        ),
+                      PaletteTab(
+                        isContour: widget.isContour,
+                        onColorChanged: _onColorChanged,
+                        onColorSelected: _onColorSelected,
                       ),
-                      const SizedBox(height: 8),
-                      // Hue slider
-                      SizedBox(
-                        height: 40,
-                        width: 200,
-                        child: ColorPickerSlider(
-                          TrackType.hue,
-                          _hsvColor!,
-                          _onColorChanged,
-                          displayThumbColor: false,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      // Saturation slider
-                      SizedBox(
-                        height: 40,
-                        width: 200,
-                        child: ColorPickerSlider(
-                          TrackType.saturation,
-                          _hsvColor!,
-                          _onColorChanged,
-                          displayThumbColor: false,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      // Value/Brightness slider
-                      SizedBox(
-                        height: 40,
-                        width: 200,
-                        child: ColorPickerSlider(
-                          TrackType.value,
-                          _hsvColor!,
-                          _onColorChanged,
-                          displayThumbColor: false,
-                        ),
-                      ),
-                      if (widget.isContour) ...[
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          width: 200,
-                          height: 40,
-                          child: GradientSlider(
-                            value: contourOpacity,
-                            thumbColor: colors.white,
-                            onChanged: (double value) {
-                              context.read<CanvasBloc>().add(
-                                ChangeContourSettings(opacity: value),
-                              );
-                            },
-                            gradient: LinearGradient(
-                              colors: [
-                                currentColor.withValues(alpha: 0),
-                                currentColor.withValues(alpha: 1),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: 12),
-                      // Row with eyedropper, text input, and copy button
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          IconButton(
-                            icon: Icon(
-                              Icons.colorize,
-                              color: colors.iconPrimary,
-                              size: 20,
-                            ),
-                            tooltip: LocaleKeys.eyedropper.tr(),
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                              widget.onEyedropper?.call(
-                                isContour: widget.isContour,
-                              );
-                            },
-                            padding: const EdgeInsets.all(4),
-                            constraints: const BoxConstraints(
-                              minWidth: 32,
-                              minHeight: 32,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          SizedBox(
-                            width: 140,
-                            child: TextField(
-                              controller: _textController,
-                              focusNode: _textFocusNode,
-                              cursorColor: colors.iconActive,
-                              style: AppFonts.normal16.copyWith(
-                                color: colors.primaryText,
-                              ),
-                              decoration: InputDecoration(
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                isDense: true,
-                                enabledBorder: UnderlineInputBorder(
-                                  borderSide: BorderSide(
-                                    color: colors.secondaryText,
-                                  ),
-                                ),
-                                focusedBorder: UnderlineInputBorder(
-                                  borderSide: BorderSide(
-                                    color: colors.primaryText,
-                                  ),
-                                ),
-                              ),
-                              onChanged: (String value) {
-                                _onTextChanged(value, context);
-                              },
-                            ),
-                          ),
-                          IconButton(
-                            icon: Icon(
-                              Icons.copy,
-                              color: colors.iconPrimary,
-                              size: 20,
-                            ),
-                            tooltip: LocaleKeys.copy.tr(),
-                            onPressed: _copyValueToClipboard,
-                            padding: const EdgeInsets.all(4),
-                            constraints: const BoxConstraints(
-                              minWidth: 32,
-                              minHeight: 32,
-                            ),
-                          ),
-                        ],
+                      LibraryTab(
+                        isContour: widget.isContour,
+                        onColorSelected: _onColorSelected,
                       ),
                     ],
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 8),
+                RecentColorsRow(
+                  colors: _recentColors,
+                  onSelected: (String hex) {
+                    final Color? color = ColorFormat.tryParseHex(hex);
+                    if (color != null) _onColorSelected(color);
+                  },
+                  onEyedropper: _onEyedropper,
+                ),
+              ],
+            ),
           ),
         ),
       ),

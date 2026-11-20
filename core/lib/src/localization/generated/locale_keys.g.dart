@@ -2,7 +2,7 @@
 
 // ignore_for_file: constant_identifier_names
 
-abstract class  LocaleKeys {
+abstract class LocaleKeys {
   static const app_title = 'app_title';
   static const gallery = 'gallery';
   static const all = 'all';
@@ -46,6 +46,10 @@ abstract class  LocaleKeys {
   static const saved_to_gallery = 'saved_to_gallery';
   static const contour_color = 'contour_color';
   static const eyedropper = 'eyedropper';
+  static const recent = 'recent';
+  static const palette = 'palette';
+  static const library = 'library';
+  static const close = 'close';
   static const brush_round_basic = 'brush_round_basic';
   static const brush_fine_liner = 'brush_fine_liner';
   static const brush_soft_liner = 'brush_soft_liner';
@@ -58,7 +62,8 @@ abstract class  LocaleKeys {
   static const hi_user = 'hi_user';
   static const delete_account = 'delete_account';
   static const delete_account_confirm_title = 'delete_account_confirm_title';
-  static const delete_account_confirm_message = 'delete_account_confirm_message';
+  static const delete_account_confirm_message =
+      'delete_account_confirm_message';
   static const confirm = 'confirm';
   static const english = 'english';
   static const russian = 'russian';
@@ -71,15 +76,18 @@ abstract class  LocaleKeys {
   static const profile_status = 'profile_status';
   static const subscription_title = 'subscription_title';
   static const subscription_no_ads_title = 'subscription_no_ads_title';
-  static const subscription_no_ads_description = 'subscription_no_ads_description';
+  static const subscription_no_ads_description =
+      'subscription_no_ads_description';
   static const subscription_premium_title = 'subscription_premium_title';
-  static const subscription_premium_description = 'subscription_premium_description';
+  static const subscription_premium_description =
+      'subscription_premium_description';
   static const subscription_premium_badge = 'subscription_premium_badge';
   static const subscription_restore_button = 'subscription_restore_button';
   static const subscription_restore_hint = 'subscription_restore_hint';
   static const subscription_history_title = 'subscription_history_title';
   static const subscription_history_empty = 'subscription_history_empty';
-  static const subscription_history_auto_renewal = 'subscription_history_auto_renewal';
+  static const subscription_history_auto_renewal =
+      'subscription_history_auto_renewal';
   static const subscription_status_active = 'subscription_status_active';
   static const subscription_status_inactive = 'subscription_status_inactive';
   static const subscription_expires_at = 'subscription_expires_at';
@@ -89,7 +97,8 @@ abstract class  LocaleKeys {
   static const subscription_buy_button = 'subscription_buy_button';
   static const subscription_terms_of_service = 'subscription_terms_of_service';
   static const subscription_privacy_policy = 'subscription_privacy_policy';
-  static const subscription_stale_pending_notice = 'subscription_stale_pending_notice';
+  static const subscription_stale_pending_notice =
+      'subscription_stale_pending_notice';
   static const purchase_placeholder_message = 'purchase_placeholder_message';
   static const rewarded_ad_loading = 'rewarded_ad_loading';
   static const rewarded_ad_unavailable = 'rewarded_ad_unavailable';
@@ -97,9 +106,11 @@ abstract class  LocaleKeys {
   static const purchase_dialog_title = 'purchase_dialog_title';
   static const purchase_dialog_project_price = 'purchase_dialog_project_price';
   static const purchase_dialog_buy_project = 'purchase_dialog_buy_project';
-  static const purchase_dialog_buy_project_description = 'purchase_dialog_buy_project_description';
+  static const purchase_dialog_buy_project_description =
+      'purchase_dialog_buy_project_description';
   static const purchase_dialog_subscribe = 'purchase_dialog_subscribe';
-  static const purchase_dialog_subscribe_badge = 'purchase_dialog_subscribe_badge';
+  static const purchase_dialog_subscribe_badge =
+      'purchase_dialog_subscribe_badge';
   static const purchase_dialog_cancel = 'purchase_dialog_cancel';
   static const error_no_internet_title = 'error_no_internet_title';
   static const error_no_internet_text = 'error_no_internet_text';
@@ -159,10 +170,11 @@ abstract class  LocaleKeys {
   static const view_only_message = 'view_only_message';
   static const refund_dialog_title = 'refund_dialog_title';
   static const refund_dialog_body_credit = 'refund_dialog_body_credit';
-  static const refund_dialog_body_subscription = 'refund_dialog_body_subscription';
+  static const refund_dialog_body_subscription =
+      'refund_dialog_body_subscription';
   static const refund_dialog_ok = 'refund_dialog_ok';
   static const canvas_refund_banner = 'canvas_refund_banner';
-  static const canvas_subscription_expired_banner = 'canvas_subscription_expired_banner';
+  static const canvas_subscription_expired_banner =
+      'canvas_subscription_expired_banner';
   static const view_only_unlock_access = 'view_only_unlock_access';
-
 }

@@ -1,5 +1,6 @@
 import 'package:core/core.dart';
 import 'package:core_ui/core_ui.dart';
+import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 
 import '../../bloc/canvas_bloc.dart';
@@ -94,6 +95,8 @@ class BottomToolbar extends StatelessWidget {
 
   void _showColorPicker(BuildContext context, {bool isContour = false}) {
     final bloc = context.read<CanvasBloc>();
+    final RecentColorsService recentColors = context
+        .read<RecentColorsService>();
     final colors = AppColors.of(context);
 
     showGeneralDialog(
@@ -111,8 +114,9 @@ class BottomToolbar extends StatelessWidget {
               elevation: 4,
               shadowColor: colors.accentDark.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(24),
-              child: SingleChildScrollView(
-                child: PickerScrollView(
+              child: PickerScrollView(
+                child: RepositoryProvider<RecentColorsService>.value(
+                  value: recentColors,
                   child: BlocProvider<CanvasBloc>.value(
                     value: bloc,
                     child: ColorPickerDialog(

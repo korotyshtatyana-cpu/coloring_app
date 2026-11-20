@@ -76,6 +76,9 @@ abstract class DataDI {
   static Future<void> _initServices(AppConfig config) async {
     final preferences = await SharedPreferences.getInstance();
     appLocator.registerSingleton<SharedPreferences>(preferences);
+    appLocator.registerLazySingleton<RecentColorsService>(
+      () => RecentColorsServiceImpl(preferences: preferences),
+    );
   }
 
   static void _initRepositories(AppConfig config) {
